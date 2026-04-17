@@ -59,18 +59,22 @@ async def _fetch_bars(symbol: str, timeframe: str) -> tuple[list[dict], str]:
         "APCA-API-KEY-ID": ALPACA_KEY_ID,
         "APCA-API-SECRET-KEY": ALPACA_SECRET_KEY,
     }
-    async with httpx.AsyncClient() as client:
-        r = await client.get(
-            f"{ALPACA_BASE}/stocks/{symbol.upper()}/bars",
-            params=params,
-            headers=headers,
-        )
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.get(
+                f"{ALPACA_BASE}/stocks/{symbol.upper()}/bars",
+                params=params,
+                headers=headers,
+            )
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Alpaca API timed out")
+
+    if r.status_code == 401 or r.status_code == 403:
+        raise HTTPException(status_code=403, detail=f"Alpaca auth error: {r.text}")
     if r.status_code == 404:
         raise HTTPException(status_code=404, detail="Symbol not found")
-    if r.status_code == 403:
-        raise HTTPException(status_code=403, detail="Invalid API credentials")
     if r.status_code != 200:
-        raise HTTPException(status_code=502, detail=f"Upstream error: {r.status_code}")
+        raise HTTPException(status_code=502, detail=f"Alpaca error {r.status_code}: {r.text}")
 
     raw = r.json().get("bars") or []
     if not raw:
