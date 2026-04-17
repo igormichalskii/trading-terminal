@@ -25,13 +25,15 @@ ALPACA_KEY_ID = os.getenv("ALPACA_KEY_ID")
 ALPACA_SECRET_KEY = os.getenv("ALPACA_SECRET_KEY")
 ALPACA_BASE = "https://data.alpaca.markets/v2"
 
+FREE_CANDLE_LIMIT = 250
+
 TIMEFRAME_CONFIG = {
-    "1D":  {"alpaca_tf": "1Hour",  "days_back": 3},
-    "1W":  {"alpaca_tf": "1Hour",  "days_back": 7},
-    "1M":  {"alpaca_tf": "1Day",   "days_back": 30},
-    "3M":  {"alpaca_tf": "1Day",   "days_back": 90},
-    "1Y":  {"alpaca_tf": "1Week",  "days_back": 365},
-    "ALL": {"alpaca_tf": "1Month", "days_back": 9000},
+    "1D":  {"alpaca_tf": "1Hour",  "days_back": 7},
+    "1W":  {"alpaca_tf": "1Hour",  "days_back": 30},
+    "1M":  {"alpaca_tf": "1Day",   "days_back": 1825},   # 5 years
+    "3M":  {"alpaca_tf": "1Day",   "days_back": 1825},   # 5 years
+    "1Y":  {"alpaca_tf": "1Week",  "days_back": 5475},   # 15 years
+    "ALL": {"alpaca_tf": "1Month", "days_back": 10950},  # 30 years
 }
 
 DAILY_TFS = {"1Day", "1Week", "1Month"}
@@ -51,7 +53,7 @@ async def _fetch_bars(symbol: str, timeframe: str) -> tuple[list[dict], str]:
     params = {
         "timeframe": cfg["alpaca_tf"],
         "start": start.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "limit": 1000,
+        "limit": 10000,
         "feed": "iex",
         "sort": "asc",
     }
@@ -193,19 +195,23 @@ def health():
 
 
 @app.get("/ohlcv/{symbol}")
-async def get_ohlcv(symbol: str, timeframe: str = "1M"):
+async def get_ohlcv(symbol: str, timeframe: str = "1M", limit: int = 0):
     if timeframe not in TIMEFRAME_CONFIG:
         raise HTTPException(status_code=400, detail="Invalid timeframe")
     candles, _ = await _fetch_bars(symbol, timeframe)
+    if limit > 0:
+        candles = candles[-limit:]
     return {"symbol": symbol.upper(), "timeframe": timeframe, "candles": candles}
 
 
 @app.get("/indicators/{symbol}")
-async def get_indicators(symbol: str, timeframe: str = "1M", indicators: str = "sma"):
+async def get_indicators(symbol: str, timeframe: str = "1M", indicators: str = "sma", limit: int = 0):
     if timeframe not in TIMEFRAME_CONFIG:
         raise HTTPException(status_code=400, detail="Invalid timeframe")
     requested = {i.strip().lower() for i in indicators.split(",")}
     candles, _ = await _fetch_bars(symbol, timeframe)
+    if limit > 0:
+        candles = candles[-limit:]
     return {
         "symbol": symbol.upper(),
         "timeframe": timeframe,

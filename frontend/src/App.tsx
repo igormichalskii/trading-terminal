@@ -74,6 +74,8 @@ export default function App() {
         });
     }, []);
 
+    const limitParam = user ? "" : "&limit=250";
+
     useEffect(() => {
         if (activeIndicators.size === 0) { setOverlays({}); setSubPanels([]); return; }
 
@@ -81,7 +83,7 @@ export default function App() {
         const query = Array.from(activeIndicators).join(",");
 
         apiFetch<IndicatorResponse>(
-            `/indicators/${symbol}?timeframe=${timeframe}&indicators=${query}`,
+            `/indicators/${symbol}?timeframe=${timeframe}&indicators=${query}${limitParam}`,
             { signal: controller.signal },
         )
             .then(({ indicators }) => {
@@ -161,6 +163,7 @@ export default function App() {
                         symbol={symbol}
                         timeframe={timeframe}
                         overlays={overlays}
+                        limitParam={limitParam}
                         onTimeframeChange={setTimeframe}
                         onStatsChange={setStats}
                     />

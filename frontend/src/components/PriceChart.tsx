@@ -36,6 +36,7 @@ interface Props {
     symbol: string;
     timeframe: string;
     overlays: OverlayData;
+    limitParam: string;
     onTimeframeChange: (tf: string) => void;
     onStatsChange: (candle: Candle | null) => void;
 }
@@ -56,7 +57,7 @@ const ICHIMOKU_COLORS = {
     chikou:   "#f59e0b",
 };
 
-export default function PriceChart({ symbol, timeframe, overlays, onTimeframeChange, onStatsChange }: Props) {
+export default function PriceChart({ symbol, timeframe, overlays, limitParam, onTimeframeChange, onStatsChange }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
     const seriesRef = useRef<any>(null);
@@ -106,7 +107,7 @@ export default function PriceChart({ symbol, timeframe, overlays, onTimeframeCha
         if (!seriesRef.current) return;
         setLoading(true);
         setError(null);
-        apiFetch<{ candles: Candle[] }>(`/ohlcv/${symbol}?timeframe=${timeframe}`)
+        apiFetch<{ candles: Candle[] }>(`/ohlcv/${symbol}?timeframe=${timeframe}${limitParam}`)
             .then(({ candles }) => {
                 seriesRef.current!.setData(candles);
                 if (candles.length) onStatsChange(candles[candles.length - 1]);
