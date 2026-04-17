@@ -1,11 +1,11 @@
-import { useEffect, useRef } from "react";
-import { createChart, CandlestickSeries } from "lightweight-charts";
+import { useEffect, useRef, useState } from "react";
+import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
 import { apiFetch } from "../lib/api";
 
 const TIMEFRAMES = ["1D", "1W", "1M", "3M", "1Y", "ALL"];
 
 interface Candle {
-    time: string;
+    time: string | number;
     open: number;
     high: number;
     low: number;
@@ -13,17 +13,56 @@ interface Candle {
     volume: number;
 }
 
+interface Point {
+    time: string | number;
+    value: number;
+}
+
+export interface OverlayData {
+    sma?: Point[];
+    ema?: Point[];
+    bb?: { upper: Point[]; middle: Point[]; lower: Point[] };
+    vwap?: Point[];
+    ichimoku?: {
+        tenkan: Point[];
+        kijun: Point[];
+        senkou_a: Point[];
+        senkou_b: Point[];
+        chikou: Point[];
+    };
+}
+
 interface Props {
     symbol: string;
     timeframe: string;
+    overlays: OverlayData;
     onTimeframeChange: (tf: string) => void;
     onStatsChange: (candle: Candle | null) => void;
 }
 
-export default function PriceChart({ symbol, timeframe, onTimeframeChange, onStatsChange}: Props) {
+const OVERLAY_SERIES = [
+    { key: "sma",  color: "#f59e0b" },
+    { key: "ema",  color: "#3b82f6" },
+    { key: "vwap", color: "#a855f7" },
+];
+
+const BB_COLORS = { upper: "#6b7280", middle: "#6b7280", lower: "#6b7280" };
+
+const ICHIMOKU_COLORS = {
+    tenkan:   "#ef4444",
+    kijun:    "#3b82f6",
+    senkou_a: "#22c55e",
+    senkou_b: "#ef4444",
+    chikou:   "#f59e0b",
+};
+
+export default function PriceChart({ symbol, timeframe, overlays, onTimeframeChange, onStatsChange }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
     const seriesRef = useRef<any>(null);
+    const overlaySeriesRef = useRef<any[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -35,7 +74,7 @@ export default function PriceChart({ symbol, timeframe, onTimeframeChange, onSta
             },
             grid: {
                 vertLines: { color: "#1f1f1f" },
-                horzLines: { color: "1f1f1f" },
+                horzLines: { color: "#1f1f1f" },
             },
             width: containerRef.current.clientWidth,
             height: 420,
@@ -65,14 +104,62 @@ export default function PriceChart({ symbol, timeframe, onTimeframeChange, onSta
 
     useEffect(() => {
         if (!seriesRef.current) return;
+        setLoading(true);
+        setError(null);
         apiFetch<{ candles: Candle[] }>(`/ohlcv/${symbol}?timeframe=${timeframe}`)
-        .then(({ candles }) => {
-            seriesRef.current!.setData(candles);
-            if (candles.length) onStatsChange(candles[candles.length - 1]);
-            chartRef.current?.timeScale().fitContent();
-        })
-        .catch(console.error);
+            .then(({ candles }) => {
+                seriesRef.current!.setData(candles);
+                if (candles.length) onStatsChange(candles[candles.length - 1]);
+                chartRef.current?.timeScale().fitContent();
+            })
+            .catch((err) => {
+                const msg = err?.message ?? "Failed to load data";
+                setError(msg.includes("404") ? `No data found for "${symbol}"` : "Failed to load chart data");
+                onStatsChange(null);
+            })
+            .finally(() => setLoading(false));
     }, [symbol, timeframe]);
+
+    useEffect(() => {
+        const chart = chartRef.current;
+        if (!chart) return;
+
+        for (const s of overlaySeriesRef.current) {
+            try { chart.removeSeries(s); } catch {}
+        }
+        overlaySeriesRef.current = [];
+
+        const addLine = (data: Point[], color: string, dashed = false) => {
+            if (!data?.length) return;
+            const s = chart.addSeries(LineSeries, {
+                color,
+                lineWidth: 1,
+                lineStyle: dashed ? 1 : 0,
+                priceLineVisible: false,
+                lastValueVisible: false,
+                crosshairMarkerVisible: false,
+            });
+            s.setData(data as any);
+            overlaySeriesRef.current.push(s);
+        };
+
+        for (const { key, color } of OVERLAY_SERIES) {
+            const data = (overlays as any)[key];
+            if (data) addLine(data, color);
+        }
+
+        if (overlays.bb) {
+            addLine(overlays.bb.upper, BB_COLORS.upper, true);
+            addLine(overlays.bb.middle, BB_COLORS.middle);
+            addLine(overlays.bb.lower, BB_COLORS.lower, true);
+        }
+
+        if (overlays.ichimoku) {
+            for (const [key, color] of Object.entries(ICHIMOKU_COLORS)) {
+                addLine((overlays.ichimoku as any)[key], color);
+            }
+        }
+    }, [overlays]);
 
     return (
         <div>
@@ -83,15 +170,28 @@ export default function PriceChart({ symbol, timeframe, onTimeframeChange, onSta
                         onClick={() => onTimeframeChange(tf)}
                         className={`px-3 py-1 text-xs rounded cursor-pointer transition-colors ${
                             tf === timeframe
-                            ? "bg-white text-black"
-                            : "text-gray-400 hover:text-white"
+                                ? "bg-white text-black"
+                                : "text-gray-400 hover:text-white"
                         }`}
-                        >
-                            {tf}
-                        </button>
+                    >
+                        {tf}
+                    </button>
                 ))}
             </div>
-            <div ref={containerRef} />
+
+            <div className="relative">
+                <div ref={containerRef} />
+                {loading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-[#0f0f0f]/70 rounded">
+                        <div className="w-6 h-6 border-2 border-gray-600 border-t-white rounded-full animate-spin" />
+                    </div>
+                )}
+                {!loading && error && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <p className="text-sm text-red-400">{error}</p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
