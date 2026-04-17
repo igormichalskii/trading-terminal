@@ -119,7 +119,7 @@ export default function PriceChart({ symbol, timeframe, overlays, limitParam, on
                 onStatsChange(null);
             })
             .finally(() => setLoading(false));
-    }, [symbol, timeframe]);
+    }, [symbol, timeframe, limitParam]);
 
     useEffect(() => {
         const chart = chartRef.current;
