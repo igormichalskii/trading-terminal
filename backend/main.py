@@ -267,6 +267,8 @@ async def get_indicators(symbol: str, timeframe: str = "1M", indicators: str = "
 
 @app.get("/news/{symbol}")
 async def get_news(symbol: str):
+    if not FINNHUB_KEY:
+        raise HTTPException(status_code=503, detail="FINNHUB_KEY not configured")
     today = datetime.now(timezone.utc).date()
     from_date = today - timedelta(days=7)
 
@@ -319,6 +321,8 @@ async def get_news(symbol: str):
 
 @app.get("/earnings")
 async def get_earnings(symbols: str):
+    if not FINNHUB_KEY:
+        raise HTTPException(status_code=503, detail="FINNHUB_KEY not configured")
     symbol_list = [s.strip().upper() for s in symbols.split(",") if s.strip()]
     if not symbol_list:
         return {"earnings": []}
