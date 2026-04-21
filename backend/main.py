@@ -125,6 +125,8 @@ async def _fetch_bars(
             "volume": b["v"],
         }
         for b in raw
+        if b.get("o") is not None and b.get("h") is not None
+        and b.get("l") is not None and b.get("c") is not None
     ]
     # Already ascending (sort=asc); trim to page_size most-recent bars
     return candles[-size:], alpaca_tf

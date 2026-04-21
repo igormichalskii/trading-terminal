@@ -151,7 +151,9 @@ export default function PriceChart({ symbol, timeframe, overlays, limitParam, on
                     hasMoreRef.current = has_more;
 
                     const prevRange = chart.timeScale().getVisibleLogicalRange();
-                    const merged = [...candles, ...allCandlesRef.current];
+                    const seen = new Set(allCandlesRef.current.map(c => c.time));
+                    const prepend = candles.filter(c => !seen.has(c.time));
+                    const merged = [...prepend, ...allCandlesRef.current];
                     allCandlesRef.current = merged;
                     series.setData(merged as any);
 
