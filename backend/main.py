@@ -1,10 +1,18 @@
 import os
+import json
+import asyncio
 from datetime import datetime, timedelta, timezone
+from typing import Any
 import numpy as np
 import pandas as pd
+import scipy.optimize as sco
 import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+from anthropic import AsyncAnthropic
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,19 +29,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+anthropic_client = AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+FINNHUB_KEY = os.getenv("FINNHUB_KEY")
+_sia = SentimentIntensityAnalyzer()
+
 ALPACA_KEY_ID = os.getenv("ALPACA_KEY_ID")
 ALPACA_SECRET_KEY = os.getenv("ALPACA_SECRET_KEY")
 ALPACA_BASE = "https://data.alpaca.markets/v2"
 
 FREE_CANDLE_LIMIT = 250
 
+# page_size: bars per page; window_days: calendar days to cover ~page_size bars
 TIMEFRAME_CONFIG = {
-    "1D":  {"alpaca_tf": "1Hour",  "days_back": 7},
-    "1W":  {"alpaca_tf": "1Hour",  "days_back": 30},
-    "1M":  {"alpaca_tf": "1Day",   "days_back": 1825},   # 5 years
-    "3M":  {"alpaca_tf": "1Day",   "days_back": 1825},   # 5 years
-    "1Y":  {"alpaca_tf": "1Week",  "days_back": 5475},   # 15 years
-    "ALL": {"alpaca_tf": "1Month", "days_back": 10950},  # 30 years
+    "1D":  {"alpaca_tf": "1Hour",  "page_size": 168, "window_days": 60},
+    "1W":  {"alpaca_tf": "1Hour",  "page_size": 504, "window_days": 180},
+    "1M":  {"alpaca_tf": "1Day",   "page_size": 180, "window_days": 300},
+    "3M":  {"alpaca_tf": "1Day",   "page_size": 180, "window_days": 300},
+    "1Y":  {"alpaca_tf": "1Week",  "page_size": 104, "window_days": 800},
+    "ALL": {"alpaca_tf": "1Month", "page_size": 120, "window_days": 4000},
 }
 
 DAILY_TFS = {"1Day", "1Week", "1Month"}
@@ -47,16 +60,31 @@ def bar_time(t: str, alpaca_tf: str):
     return t[:10] if alpaca_tf in DAILY_TFS else to_unix(t)
 
 
-async def _fetch_bars(symbol: str, timeframe: str) -> tuple[list[dict], str]:
+async def _fetch_bars(
+    symbol: str,
+    timeframe: str,
+    before: str | None = None,
+    page_size: int | None = None,
+) -> tuple[list[dict], str]:
     cfg = TIMEFRAME_CONFIG[timeframe]
-    start = datetime.now(timezone.utc) - timedelta(days=cfg["days_back"])
+    size = page_size or cfg["page_size"]
+
+    if before:
+        end_dt = datetime.fromisoformat(before.replace("Z", "+00:00")) - timedelta(seconds=1)
+    else:
+        end_dt = datetime.now(timezone.utc)
+
+    start_dt = end_dt - timedelta(days=cfg["window_days"])
+
     params = {
         "timeframe": cfg["alpaca_tf"],
-        "start": start.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "limit": 10000,
+        "start": start_dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "end": end_dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "limit": size,
         "feed": "iex",
         "sort": "asc",
     }
+
     headers = {
         "APCA-API-KEY-ID": ALPACA_KEY_ID,
         "APCA-API-SECRET-KEY": ALPACA_SECRET_KEY,
@@ -71,7 +99,7 @@ async def _fetch_bars(symbol: str, timeframe: str) -> tuple[list[dict], str]:
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="Alpaca API timed out")
 
-    if r.status_code == 401 or r.status_code == 403:
+    if r.status_code in (401, 403):
         raise HTTPException(status_code=403, detail=f"Alpaca auth error: {r.text}")
     if r.status_code == 404:
         raise HTTPException(status_code=404, detail="Symbol not found")
@@ -80,6 +108,9 @@ async def _fetch_bars(symbol: str, timeframe: str) -> tuple[list[dict], str]:
 
     raw = r.json().get("bars") or []
     if not raw:
+        # When paginating backward, empty = reached beginning of history (not an error)
+        if before is not None:
+            return [], cfg["alpaca_tf"]
         raise HTTPException(status_code=404, detail="No data returned for symbol")
 
     alpaca_tf = cfg["alpaca_tf"]
@@ -94,7 +125,8 @@ async def _fetch_bars(symbol: str, timeframe: str) -> tuple[list[dict], str]:
         }
         for b in raw
     ]
-    return candles, alpaca_tf
+    # Already ascending (sort=asc); trim to page_size most-recent bars
+    return candles[-size:], alpaca_tf
 
 
 def _points(times, series: pd.Series) -> list[dict]:
@@ -195,13 +227,23 @@ def health():
 
 
 @app.get("/ohlcv/{symbol}")
-async def get_ohlcv(symbol: str, timeframe: str = "1M", limit: int = 0):
+async def get_ohlcv(symbol: str, timeframe: str = "1M", before: str = None, limit: int = 0):
     if timeframe not in TIMEFRAME_CONFIG:
         raise HTTPException(status_code=400, detail="Invalid timeframe")
-    candles, _ = await _fetch_bars(symbol, timeframe)
+
     if limit > 0:
-        candles = candles[-limit:]
-    return {"symbol": symbol.upper(), "timeframe": timeframe, "candles": candles}
+        # Unauthenticated / capped — ignore before, return the latest N candles only
+        candles, _ = await _fetch_bars(symbol, timeframe, page_size=limit)
+        return {"symbol": symbol.upper(), "timeframe": timeframe, "candles": candles, "has_more": False}
+
+    page_size = TIMEFRAME_CONFIG[timeframe]["page_size"]
+    candles, _ = await _fetch_bars(symbol, timeframe, before=before)
+    return {
+        "symbol": symbol.upper(),
+        "timeframe": timeframe,
+        "candles": candles,
+        "has_more": len(candles) >= page_size,
+    }
 
 
 @app.get("/indicators/{symbol}")
@@ -209,11 +251,348 @@ async def get_indicators(symbol: str, timeframe: str = "1M", indicators: str = "
     if timeframe not in TIMEFRAME_CONFIG:
         raise HTTPException(status_code=400, detail="Invalid timeframe")
     requested = {i.strip().lower() for i in indicators.split(",")}
-    candles, _ = await _fetch_bars(symbol, timeframe)
-    if limit > 0:
-        candles = candles[-limit:]
+    page_size = limit if limit > 0 else None
+    candles, _ = await _fetch_bars(symbol, timeframe, page_size=page_size)
     return {
         "symbol": symbol.upper(),
         "timeframe": timeframe,
         "indicators": compute_indicators(candles, requested),
     }
+
+
+# ── News & Sentiment ─────────────────────────────────────────────────────────
+
+@app.get("/news/{symbol}")
+async def get_news(symbol: str):
+    today = datetime.now(timezone.utc).date()
+    from_date = today - timedelta(days=7)
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.get(
+                "https://finnhub.io/api/v1/company-news",
+                params={
+                    "symbol": symbol.upper(),
+                    "from": from_date.isoformat(),
+                    "to": today.isoformat(),
+                    "token": FINNHUB_KEY,
+                },
+            )
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Finnhub API timed out")
+
+    if r.status_code != 200:
+        raise HTTPException(status_code=502, detail=f"Finnhub error {r.status_code}")
+
+    raw = r.json()
+    if not isinstance(raw, list):
+        raise HTTPException(status_code=502, detail="Unexpected Finnhub response")
+
+    articles = []
+    for a in raw[:25]:
+        headline = a.get("headline", "")
+        summary = a.get("summary", "")
+        compound = _sia.polarity_scores(f"{headline}. {summary}")["compound"]
+        if compound >= 0.05:
+            sentiment = "positive"
+        elif compound <= -0.05:
+            sentiment = "negative"
+        else:
+            sentiment = "neutral"
+        articles.append({
+            "headline": headline,
+            "summary": summary,
+            "source": a.get("source", ""),
+            "url": a.get("url", ""),
+            "datetime": a.get("datetime", 0),
+            "sentiment": sentiment,
+            "score": round(compound, 3),
+        })
+
+    return {"symbol": symbol.upper(), "articles": articles}
+
+
+# ── Earnings Calendar ─────────────────────────────────────────────────────────
+
+@app.get("/earnings")
+async def get_earnings(symbols: str):
+    symbol_list = [s.strip().upper() for s in symbols.split(",") if s.strip()]
+    if not symbol_list:
+        return {"earnings": []}
+
+    today = datetime.now(timezone.utc).date()
+    from_date = (today - timedelta(weeks=8)).isoformat()
+    to_date = (today + timedelta(weeks=8)).isoformat()
+
+    async def fetch_one(sym: str) -> list:
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.get(
+                    "https://finnhub.io/api/v1/calendar/earnings",
+                    params={"symbol": sym, "from": from_date, "to": to_date, "token": FINNHUB_KEY},
+                )
+            if r.status_code == 200:
+                return r.json().get("earningsCalendar") or []
+        except Exception:
+            pass
+        return []
+
+    results = await asyncio.gather(*[fetch_one(s) for s in symbol_list])
+
+    earnings = []
+    for batch in results:
+        for e in batch:
+            earnings.append({
+                "symbol":          e.get("symbol", ""),
+                "date":            e.get("date", ""),
+                "hour":            e.get("hour", ""),
+                "epsEstimate":     e.get("epsEstimate"),
+                "epsActual":       e.get("epsActual"),
+                "revenueEstimate": e.get("revenueEstimate"),
+                "revenueActual":   e.get("revenueActual"),
+                "quarter":         e.get("quarter"),
+                "year":            e.get("year"),
+            })
+
+    earnings.sort(key=lambda x: x["date"])
+    return {"earnings": earnings}
+
+
+# ── Portfolio Optimization ────────────────────────────────────────────────────
+
+class PortfolioOptimizeRequest(BaseModel):
+    symbols: list[str]
+    period_days: int = 365
+    risk_free_rate: float = 0.0
+
+
+async def _fetch_daily_closes(symbol: str, period_days: int) -> pd.Series:
+    end_dt = datetime.now(timezone.utc)
+    start_dt = end_dt - timedelta(days=period_days + 60)
+
+    params = {
+        "timeframe": "1Day",
+        "start": start_dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "end": end_dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "limit": period_days,
+        "feed": "iex",
+        "sort": "asc",
+    }
+    headers = {
+        "APCA-API-KEY-ID": ALPACA_KEY_ID,
+        "APCA-API-SECRET-KEY": ALPACA_SECRET_KEY,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            r = await client.get(
+                f"{ALPACA_BASE}/stocks/{symbol.upper()}/bars",
+                params=params,
+                headers=headers,
+            )
+    except Exception:
+        return pd.Series([], dtype=float, name=symbol.upper())
+
+    if r.status_code != 200:
+        return pd.Series([], dtype=float, name=symbol.upper())
+
+    raw = r.json().get("bars") or []
+    if not raw:
+        return pd.Series([], dtype=float, name=symbol.upper())
+
+    return pd.Series(
+        {b["t"][:10]: b["c"] for b in raw},
+        name=symbol.upper(),
+        dtype=float,
+    )
+
+
+def _portfolio_stats(
+    weights: np.ndarray, mean_ret: np.ndarray, cov: np.ndarray, rf: float
+) -> tuple[float, float, float]:
+    ret = float(np.dot(weights, mean_ret))
+    vol = float(np.sqrt(np.dot(weights.T, np.dot(cov, weights))))
+    sharpe = (ret - rf) / vol if vol > 1e-10 else 0.0
+    return ret, vol, sharpe
+
+
+@app.post("/portfolio/optimize")
+async def optimize_portfolio(req: PortfolioOptimizeRequest):
+    symbols = [s.strip().upper() for s in req.symbols if s.strip()]
+    if len(symbols) < 2:
+        raise HTTPException(status_code=400, detail="Need at least 2 symbols")
+    if len(symbols) > 20:
+        raise HTTPException(status_code=400, detail="Max 20 symbols")
+
+    series_list = await asyncio.gather(*[_fetch_daily_closes(s, req.period_days) for s in symbols])
+
+    price_df = pd.concat([s for s in series_list if len(s) >= 30], axis=1).dropna()
+
+    if price_df.shape[1] < 2:
+        raise HTTPException(status_code=422, detail="Insufficient price data — check symbols are valid")
+    if price_df.shape[0] < 30:
+        raise HTTPException(status_code=422, detail="Not enough overlapping trading days")
+
+    valid_symbols = price_df.columns.tolist()
+    n = len(valid_symbols)
+
+    returns = np.log(price_df / price_df.shift(1)).dropna()
+    mean_ret = returns.mean().values * 252
+    cov = returns.cov().values * 252
+
+    rf = req.risk_free_rate
+    rng = np.random.default_rng(42)
+
+    frontier = []
+    for _ in range(2000):
+        w = rng.random(n)
+        w /= w.sum()
+        ret, vol, sharpe = _portfolio_stats(w, mean_ret, cov, rf)
+        frontier.append({"vol": round(vol, 4), "ret": round(ret, 4), "sharpe": round(sharpe, 4)})
+
+    constraints = [{"type": "eq", "fun": lambda w: np.sum(w) - 1}]
+    bounds = [(0.0, 1.0)] * n
+    w0 = np.ones(n) / n
+
+    res_sharpe = sco.minimize(
+        lambda w: -_portfolio_stats(w, mean_ret, cov, rf)[2],
+        w0, method="SLSQP", bounds=bounds, constraints=constraints,
+    )
+    res_vol = sco.minimize(
+        lambda w: _portfolio_stats(w, mean_ret, cov, rf)[1],
+        w0, method="SLSQP", bounds=bounds, constraints=constraints,
+    )
+
+    def _alloc(weights: np.ndarray) -> dict:
+        ret, vol, sharpe = _portfolio_stats(weights, mean_ret, cov, rf)
+        return {
+            "weights": {sym: round(float(w), 4) for sym, w in zip(valid_symbols, weights)},
+            "expected_return": round(ret, 4),
+            "volatility": round(vol, 4),
+            "sharpe": round(sharpe, 4),
+        }
+
+    return {
+        "symbols": valid_symbols,
+        "frontier": frontier,
+        "max_sharpe": _alloc(res_sharpe.x),
+        "min_vol": _alloc(res_vol.x),
+        "equal_weight": _alloc(w0),
+    }
+
+
+class NewsAnalysisRequest(BaseModel):
+    symbol: str
+    headline: str
+    summary: str
+
+
+@app.post("/news/analyze")
+async def analyze_news(req: NewsAnalysisRequest):
+    summary_line = f"\nSummary: {req.summary}" if req.summary.strip() else ""
+    msg = await anthropic_client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=120,
+        system=f"You are a concise financial analyst. Analyze news impact on {req.symbol} stock in 2-3 short sentences only.",
+        messages=[{
+            "role": "user",
+            "content": (
+                f"Headline: {req.headline}{summary_line}\n\n"
+                f"Rate importance (High/Medium/Low), explain why briefly, "
+                f"and state the expected price impact for {req.symbol}."
+            ),
+        }],
+    )
+    return {"analysis": msg.content[0].text}
+
+
+# ── AI Assistant ──────────────────────────────────────────────────────────────
+
+SYSTEM_PROMPT = """You are an expert trading advisor embedded in a professional trading terminal. \
+You have access to real-time market data for whatever the user is currently analyzing.
+
+Your role:
+- Interpret price action, chart patterns, and technical indicators
+- Help plan trading strategies and optimize portfolio decisions
+- Explain what indicators signal and how to act on them
+- Analyze news and its potential market impact
+- Keep answers concise and actionable — this is a terminal, not a blog
+
+Current market context is injected at the start of each user message. \
+Always factor it into your response, but don't repeat it back verbatim."""
+
+
+class ChatMessage(BaseModel):
+    role: str   # "user" or "assistant"
+    content: str
+
+
+class ChatRequest(BaseModel):
+    messages: list[ChatMessage]
+    context: dict[str, Any]
+
+
+def _build_context_block(ctx: dict[str, Any]) -> str:
+    symbol = ctx.get("symbol", "?")
+    timeframe = ctx.get("timeframe", "?")
+    stats = ctx.get("stats")
+    active_indicators = ctx.get("activeIndicators", [])
+
+    lines = [f"[Market context — {symbol} · {timeframe}]"]
+
+    if stats:
+        change = stats["close"] - stats["open"]
+        pct = (change / stats["open"] * 100) if stats["open"] else 0
+        direction = "▲" if change >= 0 else "▼"
+        lines.append(
+            f"Price: {stats['close']:.2f}  {direction} {abs(pct):.2f}%  "
+            f"| O {stats['open']:.2f}  H {stats['high']:.2f}  L {stats['low']:.2f}  "
+            f"| Vol {int(stats['volume']):,}"
+        )
+
+    if active_indicators:
+        lines.append(f"Active indicators: {', '.join(active_indicators)}")
+
+    candles = ctx.get("candles", [])
+    if candles:
+        recent = candles[-10:]
+        lines.append(f"Recent candles (last {len(recent)}, oldest→newest):")
+        for c in recent:
+            lines.append(f"  {c['time']}  O{c['open']:.2f} H{c['high']:.2f} L{c['low']:.2f} C{c['close']:.2f}")
+
+    return "\n".join(lines)
+
+
+@app.post("/chat")
+async def chat(req: ChatRequest):
+    if not req.messages:
+        raise HTTPException(status_code=400, detail="No messages provided")
+
+    context_block = _build_context_block(req.context)
+
+    # Inject context into the latest user message
+    api_messages = []
+    for i, msg in enumerate(req.messages):
+        if i == len(req.messages) - 1 and msg.role == "user":
+            api_messages.append({
+                "role": "user",
+                "content": f"{context_block}\n\n{msg.content}",
+            })
+        else:
+            api_messages.append({"role": msg.role, "content": msg.content})
+
+    async def stream():
+        try:
+            async with anthropic_client.messages.stream(
+                model="claude-sonnet-4-6",
+                max_tokens=1024,
+                system=SYSTEM_PROMPT,
+                messages=api_messages,
+            ) as s:
+                async for text in s.text_stream:
+                    yield f"data: {json.dumps({'text': text})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        finally:
+            yield "data: [DONE]\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")

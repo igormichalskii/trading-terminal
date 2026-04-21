@@ -11,9 +11,10 @@ interface Props {
     user: User;
     activeSymbol: string;
     onSelect: (symbol: string) => void;
+    onSymbolsChange?: (symbols: string[]) => void;
 }
 
-export default function WatchlistPanel({ user, activeSymbol, onSelect }: Props) {
+export default function WatchlistPanel({ user, activeSymbol, onSelect, onSymbolsChange }: Props) {
     const [items, setItems] = useState<WatchlistItem[]>([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(true);
@@ -24,7 +25,10 @@ export default function WatchlistPanel({ user, activeSymbol, onSelect }: Props) 
             .select("id, symbol")
             .order("created_at", { ascending: true })
             .then(({ data }) => {
-                if (data) setItems(data);
+                if (data) {
+                    setItems(data);
+                    onSymbolsChange?.(data.map((i) => i.symbol));
+                }
                 setLoading(false);
             });
     }, [user.id]);
@@ -41,14 +45,22 @@ export default function WatchlistPanel({ user, activeSymbol, onSelect }: Props) 
             .select("id, symbol")
             .single();
         if (!error && data) {
-            setItems((prev) => [...prev, data]);
+            setItems((prev) => {
+                const next = [...prev, data];
+                onSymbolsChange?.(next.map((i) => i.symbol));
+                return next;
+            });
             setInput("");
         }
     };
 
     const remove = async (id: string) => {
         await supabase.from("watchlist").delete().eq("id", id);
-        setItems((prev) => prev.filter((i) => i.id !== id));
+        setItems((prev) => {
+            const next = prev.filter((i) => i.id !== id);
+            onSymbolsChange?.(next.map((i) => i.symbol));
+            return next;
+        });
     };
 
     return (

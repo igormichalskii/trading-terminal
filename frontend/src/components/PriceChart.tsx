@@ -18,6 +18,11 @@ interface Point {
     value: number;
 }
 
+interface OHLCVResponse {
+    candles: Candle[];
+    has_more: boolean;
+}
+
 export interface OverlayData {
     sma?: Point[];
     ema?: Point[];
@@ -39,6 +44,7 @@ interface Props {
     limitParam: string;
     onTimeframeChange: (tf: string) => void;
     onStatsChange: (candle: Candle | null) => void;
+    onCandlesChange?: (candles: Candle[]) => void;
 }
 
 const OVERLAY_SERIES = [
@@ -57,13 +63,35 @@ const ICHIMOKU_COLORS = {
     chikou:   "#f59e0b",
 };
 
-export default function PriceChart({ symbol, timeframe, overlays, limitParam, onTimeframeChange, onStatsChange }: Props) {
+function timeToISO(time: string | number): string {
+    if (typeof time === "number") {
+        return new Date(time * 1000).toISOString();
+    }
+    return (time as string) + "T00:00:00Z";
+}
+
+export default function PriceChart({ symbol, timeframe, overlays, limitParam, onTimeframeChange, onStatsChange, onCandlesChange }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
     const seriesRef = useRef<any>(null);
     const overlaySeriesRef = useRef<any[]>([]);
+
+    // Pagination refs — accessed in event handlers to avoid stale closures
+    const allCandlesRef = useRef<Candle[]>([]);
+    const isFetchingMoreRef = useRef(false);
+    const hasMoreRef = useRef(false);
+    const symbolRef = useRef(symbol);
+    const timeframeRef = useRef(timeframe);
+    const limitParamRef = useRef(limitParam);
+
     const [loading, setLoading] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Keep refs in sync with props
+    useEffect(() => { symbolRef.current = symbol; }, [symbol]);
+    useEffect(() => { timeframeRef.current = timeframe; }, [timeframe]);
+    useEffect(() => { limitParamRef.current = limitParam; }, [limitParam]);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -92,6 +120,57 @@ export default function PriceChart({ symbol, timeframe, overlays, limitParam, on
         chartRef.current = chart;
         seriesRef.current = series;
 
+        // Load historical candles when the user pans to the left edge
+        chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+            if (
+                !range ||
+                range.from > 10 ||
+                isFetchingMoreRef.current ||
+                !hasMoreRef.current ||
+                limitParamRef.current !== ""  // unauthenticated — no pagination
+            ) {
+                return;
+            }
+
+            const oldest = allCandlesRef.current[0];
+            if (!oldest) return;
+
+            isFetchingMoreRef.current = true;
+            setLoadingMore(true);
+
+            const before = timeToISO(oldest.time);
+
+            apiFetch<OHLCVResponse>(
+                `/ohlcv/${symbolRef.current}?timeframe=${timeframeRef.current}&before=${encodeURIComponent(before)}`
+            )
+                .then(({ candles, has_more }) => {
+                    if (!candles.length) {
+                        hasMoreRef.current = false;
+                        return;
+                    }
+                    hasMoreRef.current = has_more;
+
+                    const prevRange = chart.timeScale().getVisibleLogicalRange();
+                    const merged = [...candles, ...allCandlesRef.current];
+                    allCandlesRef.current = merged;
+                    series.setData(merged);
+
+                    // Shift the viewport right by the number of prepended candles
+                    // so the view doesn't jump
+                    if (prevRange) {
+                        chart.timeScale().setVisibleLogicalRange({
+                            from: prevRange.from + candles.length,
+                            to: prevRange.to + candles.length,
+                        });
+                    }
+                })
+                .catch(console.error)
+                .finally(() => {
+                    isFetchingMoreRef.current = false;
+                    setLoadingMore(false);
+                });
+        });
+
         const ro = new ResizeObserver(() => {
             chart.applyOptions({ width: containerRef.current!.clientWidth });
         });
@@ -105,12 +184,24 @@ export default function PriceChart({ symbol, timeframe, overlays, limitParam, on
 
     useEffect(() => {
         if (!seriesRef.current) return;
+
+        // Reset pagination state on symbol / timeframe change
+        allCandlesRef.current = [];
+        hasMoreRef.current = false;
+        isFetchingMoreRef.current = false;
+
         setLoading(true);
         setError(null);
-        apiFetch<{ candles: Candle[] }>(`/ohlcv/${symbol}?timeframe=${timeframe}${limitParam}`)
-            .then(({ candles }) => {
+
+        apiFetch<OHLCVResponse>(`/ohlcv/${symbol}?timeframe=${timeframe}${limitParam}`)
+            .then(({ candles, has_more }) => {
+                allCandlesRef.current = candles;
+                hasMoreRef.current = has_more;
                 seriesRef.current!.setData(candles);
-                if (candles.length) onStatsChange(candles[candles.length - 1]);
+                if (candles.length) {
+                    onStatsChange(candles[candles.length - 1]);
+                    onCandlesChange?.(candles);
+                }
                 chartRef.current?.timeScale().fitContent();
             })
             .catch((err) => {
@@ -190,6 +281,12 @@ export default function PriceChart({ symbol, timeframe, overlays, limitParam, on
                 {!loading && error && (
                     <div className="absolute inset-0 flex items-center justify-center">
                         <p className="text-sm text-red-400">{error}</p>
+                    </div>
+                )}
+                {loadingMore && (
+                    <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-[#1a1a1a] px-2 py-1 rounded text-xs text-gray-400">
+                        <div className="w-3 h-3 border border-gray-600 border-t-white rounded-full animate-spin" />
+                        Loading history…
                     </div>
                 )}
             </div>

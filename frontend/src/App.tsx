@@ -7,6 +7,10 @@ import type { SubChartSeries } from "./components/IndicatorSubChart";
 import AuthModal from "./components/AuthModal";
 import WatchlistPanel from "./components/WatchlistPanel";
 import PriceAlertPanel from "./components/PriceAlertPanel";
+import AIAssistant from "./components/AIAssistant";
+import NewsFeed from "./components/NewsFeed";
+import EarningsCalendar from "./components/EarningsCalendar";
+import PortfolioOptimizer from "./components/PortfolioOptimizer";
 import { apiFetch } from "./lib/api";
 import { useAuthStore } from "./store/authStore";
 
@@ -63,6 +67,9 @@ export default function App() {
     const [activeIndicators, setActiveIndicators] = useState<Set<string>>(new Set());
     const [overlays, setOverlays] = useState<OverlayData>({});
     const [subPanels, setSubPanels] = useState<SubPanel[]>([]);
+    const [currentCandles, setCurrentCandles] = useState<{ time: string | number; open: number; high: number; low: number; close: number; volume: number }[]>([]);
+    const [watchlistSymbols, setWatchlistSymbols] = useState<string[]>([]);
+    const [page, setPage] = useState<"chart" | "earnings" | "portfolio">("chart");
 
     useEffect(() => { init(); }, []);
 
@@ -121,6 +128,21 @@ export default function App() {
                 </button>
                 <span className="text-base font-semibold">{symbol}</span>
 
+                {/* Page nav */}
+                <div className="flex gap-1 ml-4">
+                    {(["chart", "earnings", "portfolio"] as const).map((p) => (
+                        <button
+                            key={p}
+                            onClick={() => setPage(p)}
+                            className={`px-3 py-1.5 text-xs rounded capitalize cursor-pointer transition-colors ${
+                                page === p ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"
+                            }`}
+                        >
+                            {p === "earnings" ? "Earnings" : p === "portfolio" ? "Portfolio" : "Chart"}
+                        </button>
+                    ))}
+                </div>
+
                 <div className="ml-auto">
                     {authLoading ? null : user ? (
                         <div className="flex items-center gap-3">
@@ -151,48 +173,67 @@ export default function App() {
                             user={user}
                             activeSymbol={symbol}
                             onSelect={(s) => { setSymbol(s); setInput(s); }}
+                            onSymbolsChange={setWatchlistSymbols}
                         />
                     </aside>
                 )}
 
                 {/* Main content */}
                 <main className="flex-1 min-w-0">
-                    <IndicatorToggle active={activeIndicators} onToggle={toggleIndicator} />
+                    {page === "chart" ? (
+                        <>
+                            <IndicatorToggle active={activeIndicators} onToggle={toggleIndicator} />
 
-                    <PriceChart
-                        symbol={symbol}
-                        timeframe={timeframe}
-                        overlays={overlays}
-                        limitParam={limitParam}
-                        onTimeframeChange={setTimeframe}
-                        onStatsChange={setStats}
-                    />
+                            <PriceChart
+                                symbol={symbol}
+                                timeframe={timeframe}
+                                overlays={overlays}
+                                limitParam={limitParam}
+                                onTimeframeChange={setTimeframe}
+                                onStatsChange={setStats}
+                                onCandlesChange={setCurrentCandles}
+                            />
 
-                    {stats && (
-                        <div className="grid grid-cols-5 gap-2 mt-3">
-                            {[
-                                { label: "Open",   value: stats.open.toFixed(2) },
-                                { label: "High",   value: stats.high.toFixed(2) },
-                                { label: "Low",    value: stats.low.toFixed(2) },
-                                { label: "Close",  value: stats.close.toFixed(2) },
-                                { label: "Volume", value: Number(stats.volume).toLocaleString() },
-                            ].map(({ label, value }) => (
-                                <div key={label} className="bg-[#1a1a1a] rounded p-3">
-                                    <div className="text-xs text-gray-500 mb-1">{label}</div>
-                                    <div className="text-sm font-medium">{value}</div>
+                            {stats && (
+                                <div className="grid grid-cols-5 gap-2 mt-3">
+                                    {[
+                                        { label: "Open",   value: stats.open.toFixed(2) },
+                                        { label: "High",   value: stats.high.toFixed(2) },
+                                        { label: "Low",    value: stats.low.toFixed(2) },
+                                        { label: "Close",  value: stats.close.toFixed(2) },
+                                        { label: "Volume", value: Number(stats.volume).toLocaleString() },
+                                    ].map(({ label, value }) => (
+                                        <div key={label} className="bg-[#1a1a1a] rounded p-3">
+                                            <div className="text-xs text-gray-500 mb-1">{label}</div>
+                                            <div className="text-sm font-medium">{value}</div>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                    )}
+                            )}
 
-                    {subPanels.map((panel) => (
-                        <IndicatorSubChart
-                            key={panel.id}
-                            label={panel.label}
-                            series={panel.series}
-                            refLines={panel.refLines}
+                            {subPanels.map((panel) => (
+                                <IndicatorSubChart
+                                    key={panel.id}
+                                    label={panel.label}
+                                    series={panel.series}
+                                    refLines={panel.refLines}
+                                />
+                            ))}
+
+                            <NewsFeed symbol={symbol} />
+                        </>
+                    ) : page === "earnings" ? (
+                        <EarningsCalendar
+                            watchlistSymbols={watchlistSymbols}
+                            activeSymbol={symbol}
+                            isLoggedIn={!!user}
                         />
-                    ))}
+                    ) : (
+                        <PortfolioOptimizer
+                            watchlistSymbols={watchlistSymbols}
+                            isLoggedIn={!!user}
+                        />
+                    )}
                 </main>
 
                 {/* Alerts sidebar */}
@@ -202,6 +243,16 @@ export default function App() {
                     </aside>
                 )}
             </div>
+
+            <AIAssistant
+                context={{
+                    symbol,
+                    timeframe,
+                    stats,
+                    candles: currentCandles,
+                    activeIndicators: Array.from(activeIndicators),
+                }}
+            />
 
             {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
         </div>
