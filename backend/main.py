@@ -6,6 +6,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import scipy.optimize as sco
+from sklearn.ensemble import RandomForestClassifier
 import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -477,6 +478,141 @@ async def optimize_portfolio(req: PortfolioOptimizeRequest):
         "max_sharpe": _alloc(res_sharpe.x),
         "min_vol": _alloc(res_vol.x),
         "equal_weight": _alloc(w0),
+    }
+
+
+# ── ML Prediction ─────────────────────────────────────────────────────────────
+
+FEATURE_COLS = ["ret_1d", "ret_5d", "ret_10d", "ret_20d", "vol_10d", "vol_20d",
+                "rsi", "macd_hist", "bb_pos", "vol_ratio"]
+
+FEATURE_LABELS = {
+    "ret_1d":    "1-day momentum",
+    "ret_5d":    "5-day momentum",
+    "ret_10d":   "10-day momentum",
+    "ret_20d":   "20-day momentum",
+    "vol_10d":   "Short-term volatility",
+    "vol_20d":   "Medium-term volatility",
+    "rsi":       "RSI (14)",
+    "macd_hist": "MACD histogram",
+    "bb_pos":    "Bollinger position",
+    "vol_ratio": "Volume ratio",
+}
+
+
+async def _fetch_daily_bars(symbol: str, period_days: int = 730) -> list[dict]:
+    end_dt = datetime.now(timezone.utc)
+    start_dt = end_dt - timedelta(days=period_days + 60)
+
+    params = {
+        "timeframe": "1Day",
+        "start": start_dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "end": end_dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "limit": period_days,
+        "feed": "iex",
+        "sort": "asc",
+    }
+    headers = {
+        "APCA-API-KEY-ID": ALPACA_KEY_ID,
+        "APCA-API-SECRET-KEY": ALPACA_SECRET_KEY,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            r = await client.get(
+                f"{ALPACA_BASE}/stocks/{symbol.upper()}/bars",
+                params=params,
+                headers=headers,
+            )
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Alpaca API timed out")
+
+    if r.status_code != 200:
+        raise HTTPException(status_code=502, detail=f"Alpaca error {r.status_code}")
+
+    raw = r.json().get("bars") or []
+    if not raw:
+        raise HTTPException(status_code=404, detail="No data for symbol")
+
+    return [
+        {"time": b["t"][:10], "open": b["o"], "high": b["h"],
+         "low": b["l"], "close": b["c"], "volume": b["v"]}
+        for b in raw
+    ]
+
+
+def _engineer_features(candles: list[dict]) -> pd.DataFrame:
+    df = pd.DataFrame(candles)
+
+    r = df["close"].pct_change()
+    df["ret_1d"]  = r
+    df["ret_5d"]  = df["close"].pct_change(5)
+    df["ret_10d"] = df["close"].pct_change(10)
+    df["ret_20d"] = df["close"].pct_change(20)
+    df["vol_10d"] = r.rolling(10).std()
+    df["vol_20d"] = r.rolling(20).std()
+
+    delta = df["close"].diff()
+    gain  = delta.clip(lower=0).rolling(14).mean()
+    loss  = (-delta.clip(upper=0)).rolling(14).mean()
+    df["rsi"] = 100 - (100 / (1 + gain / loss))
+
+    ema12 = df["close"].ewm(span=12, adjust=False).mean()
+    ema26 = df["close"].ewm(span=26, adjust=False).mean()
+    macd  = ema12 - ema26
+    df["macd_hist"] = macd - macd.ewm(span=9, adjust=False).mean()
+
+    mid = df["close"].rolling(20).mean()
+    std = df["close"].rolling(20).std()
+    df["bb_pos"] = (df["close"] - mid) / (2 * std.replace(0, np.nan))
+
+    df["vol_ratio"] = df["volume"] / df["volume"].rolling(20).mean()
+
+    # Target: next bar closes higher
+    df["target"] = (df["close"].shift(-1) > df["close"]).astype(int)
+
+    return df.dropna(subset=FEATURE_COLS + ["target"]).reset_index(drop=True)
+
+
+@app.get("/predict/{symbol}")
+async def predict(symbol: str):
+    candles = await _fetch_daily_bars(symbol, period_days=730)
+    df = _engineer_features(candles)
+
+    if len(df) < 60:
+        raise HTTPException(status_code=422, detail="Insufficient history for prediction")
+
+    # All rows except the last have a known target; use those to train
+    train = df.iloc[:-1]
+    latest = df.iloc[[-1]]
+
+    X_train = train[FEATURE_COLS].values
+    y_train = train["target"].values
+    X_latest = latest[FEATURE_COLS].values
+
+    model = RandomForestClassifier(
+        n_estimators=200, max_depth=6, min_samples_leaf=5,
+        random_state=42, n_jobs=-1,
+    )
+    model.fit(X_train, y_train)
+
+    proba = model.predict_proba(X_latest)[0]
+    up_prob = float(proba[1])
+    direction = "up" if up_prob >= 0.5 else "down"
+
+    importances = sorted(
+        [{"feature": k, "label": FEATURE_LABELS[k], "importance": round(float(v), 4)}
+         for k, v in zip(FEATURE_COLS, model.feature_importances_)],
+        key=lambda x: -x["importance"],
+    )
+
+    return {
+        "symbol": symbol.upper(),
+        "direction": direction,
+        "up_probability": round(up_prob, 3),
+        "confidence": round(max(up_prob, 1 - up_prob), 3),
+        "trained_on": len(X_train),
+        "feature_importances": importances,
+        "signal_date": candles[-1]["time"],
     }
 
 

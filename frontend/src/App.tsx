@@ -11,6 +11,7 @@ import AIAssistant from "./components/AIAssistant";
 import NewsFeed from "./components/NewsFeed";
 import EarningsCalendar from "./components/EarningsCalendar";
 import PortfolioOptimizer from "./components/PortfolioOptimizer";
+import MLPrediction from "./components/MLPrediction";
 import { apiFetch } from "./lib/api";
 import { useAuthStore } from "./store/authStore";
 
@@ -219,6 +220,8 @@ export default function App() {
                                     refLines={panel.refLines}
                                 />
                             ))}
+
+                            <MLPrediction symbol={symbol} />
 
                             <NewsFeed symbol={symbol} />
                         </>
