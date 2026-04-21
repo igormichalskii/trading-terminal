@@ -207,9 +207,12 @@ export default function PriceChart({ symbol, timeframe, overlays, limitParam, on
                 chartRef.current?.timeScale().fitContent();
             })
             .catch((err) => {
-                const msg = err?.message ?? "Failed to load data";
-                setError(msg.includes("404") ? `No data found for "${symbol}"` : "Failed to load chart data");
+                const msg: string = err?.message ?? "";
+                const is404 = msg.includes("404") || msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("no data");
+                setError(is404 ? `Symbol "${symbol}" not found` : (msg || "Failed to load chart data"));
+                seriesRef.current?.setData([]);
                 onStatsChange(null);
+                onCandlesChange?.([]);
             })
             .finally(() => setLoading(false));
     }, [symbol, timeframe, limitParam]);
@@ -281,8 +284,11 @@ export default function PriceChart({ symbol, timeframe, overlays, limitParam, on
                     </div>
                 )}
                 {!loading && error && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <p className="text-sm text-red-400">{error}</p>
+                    <div className="absolute inset-0 flex items-center justify-center bg-[#0f0f0f]/90 rounded">
+                        <div className="text-center space-y-1">
+                            <p className="text-sm text-red-400 font-medium">{error}</p>
+                            <p className="text-xs text-gray-600">Check the symbol and try again</p>
+                        </div>
                     </div>
                 )}
                 {loadingMore && (
