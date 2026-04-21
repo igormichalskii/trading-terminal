@@ -153,7 +153,7 @@ export default function PriceChart({ symbol, timeframe, overlays, limitParam, on
                     const prevRange = chart.timeScale().getVisibleLogicalRange();
                     const merged = [...candles, ...allCandlesRef.current];
                     allCandlesRef.current = merged;
-                    series.setData(merged);
+                    series.setData(merged as any);
 
                     // Shift the viewport right by the number of prepended candles
                     // so the view doesn't jump
@@ -197,7 +197,7 @@ export default function PriceChart({ symbol, timeframe, overlays, limitParam, on
             .then(({ candles, has_more }) => {
                 allCandlesRef.current = candles;
                 hasMoreRef.current = has_more;
-                seriesRef.current!.setData(candles);
+                seriesRef.current!.setData(candles as any);
                 if (candles.length) {
                     onStatsChange(candles[candles.length - 1]);
                     onCandlesChange?.(candles);
