@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { apiFetch } from "../lib/api";
+import { tickerError } from "../lib/validation";
+
+const MAX_CUSTOM_SYMBOLS = 20;
 
 interface FrontierPoint { vol: number; ret: number; sharpe: number }
 
@@ -248,6 +251,7 @@ export default function PortfolioOptimizer({ watchlistSymbols, isLoggedIn }: Pro
     const [customSymbols,  setCustomSymbols]  = useState<string[]>([]);
     const [customSelected, setCustomSelected] = useState<Set<string>>(new Set());
     const [customInput,    setCustomInput]    = useState("");
+    const [customInputErr, setCustomInputErr] = useState<string | null>(null);
     const [customResult,   setCustomResult]   = useState<OptimizeResult | null>(null);
     const [customLoading,  setCustomLoading]  = useState(false);
     const [customError,    setCustomError]    = useState<string | null>(null);
@@ -265,7 +269,11 @@ export default function PortfolioOptimizer({ watchlistSymbols, isLoggedIn }: Pro
 
     function addCustomSymbol() {
         const sym = customInput.trim().toUpperCase();
-        if (!sym || customSymbols.includes(sym)) { setCustomInput(""); return; }
+        const err = tickerError(sym);
+        if (err) { setCustomInputErr(err); return; }
+        if (customSymbols.includes(sym)) { setCustomInputErr("Already added."); return; }
+        if (customSymbols.length >= MAX_CUSTOM_SYMBOLS) { setCustomInputErr(`Max ${MAX_CUSTOM_SYMBOLS} symbols.`); return; }
+        setCustomInputErr(null);
         setCustomSymbols(prev => [...prev, sym]);
         setCustomSelected(prev => new Set([...prev, sym]));
         setCustomInput("");
@@ -350,18 +358,24 @@ export default function PortfolioOptimizer({ watchlistSymbols, isLoggedIn }: Pro
                         <div style={{ padding:"10px 14px", borderBottom:"1px solid var(--border)" }}>
                             <div style={{ ...mono, fontSize:9, color:"var(--text-muted)", letterSpacing:"0.1em", marginBottom:10 }}>ADD SYMBOLS</div>
                             <div style={{ display:"flex", gap:6 }}>
+                                <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
                                 <input
                                     ref={inputRef}
                                     value={customInput}
-                                    onChange={e => setCustomInput(e.target.value.toUpperCase())}
+                                    onChange={e => { setCustomInput(e.target.value.toUpperCase()); setCustomInputErr(null); }}
                                     onKeyDown={e => e.key === "Enter" && addCustomSymbol()}
                                     placeholder="TICKER"
                                     style={{
                                         ...mono, fontSize:11, width:100,
-                                        background:"var(--bg)", border:"1px solid var(--border-bright)",
+                                        background:"var(--bg)",
+                                        border:`1px solid ${customInputErr ? "var(--down)" : "var(--border-bright)"}`,
                                         color:"var(--text)", padding:"4px 8px", outline:"none",
                                     }}
                                 />
+                                {customInputErr && (
+                                    <span style={{ ...mono, fontSize:9, color:"var(--down)", letterSpacing:"0.04em" }}>{customInputErr}</span>
+                                )}
+                                </div>
                                 <button onClick={addCustomSymbol} style={{
                                     ...mono, fontSize:12, padding:"4px 10px", cursor:"pointer",
                                     background:"transparent", border:"1px solid var(--border-bright)",

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
+import { passwordError } from "../lib/validation";
 
 interface Props {
     onClose: () => void;
@@ -18,6 +19,8 @@ export default function AuthModal({ onClose }: Props) {
     const handleEmailAuth = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
+        const pwErr = passwordError(password);
+        if (pwErr) { setError(pwErr); return; }
         setLoading(true);
         try {
             if (mode === "signup") {

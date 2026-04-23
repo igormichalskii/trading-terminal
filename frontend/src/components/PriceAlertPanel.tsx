@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { apiFetch } from "../lib/api";
+import { tickerError, priceError } from "../lib/validation";
 import type { User } from "@supabase/supabase-js";
 
 interface Alert {
@@ -98,8 +99,11 @@ export default function PriceAlertPanel({ user }: Props) {
         e.preventDefault();
         setError(null);
         const sym = symbol.trim().toUpperCase();
+        const symErr = tickerError(sym);
+        if (symErr) { setError(symErr); return; }
+        const prErr = priceError(target);
+        if (prErr) { setError(prErr); return; }
         const t = parseFloat(target);
-        if (!sym || isNaN(t) || t <= 0) { setError("Enter a valid symbol and price."); return; }
 
         const { data, error: dbErr } = await supabase
             .from("price_alerts")

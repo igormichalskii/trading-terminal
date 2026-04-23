@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import type { User } from "@supabase/supabase-js";
 import { apiFetch } from "../lib/api";
+import { tickerError } from "../lib/validation";
 import "../terminal.css";
 
 const TICKER_SYMBOLS = ["SPY", "QQQ", "IWM", "GLD", "TLT"];
@@ -34,6 +35,7 @@ const isMac = navigator.platform.toUpperCase().includes("MAC");
 
 export default function TopBar({ symbol, onSymbolChange, page, onPageChange, user, authLoading, onSignIn, onSignOut }: Props) {
     const [input, setInput] = useState(symbol);
+    const [inputErr, setInputErr] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const [tickers, setTickers] = useState<TickerItem[]>([]);
 
@@ -76,7 +78,10 @@ export default function TopBar({ symbol, onSymbolChange, page, onPageChange, use
 
     function submit() {
         const val = input.trim().toUpperCase();
-        if (val) onSymbolChange(val);
+        const err = tickerError(val);
+        if (err) { setInputErr(err); return; }
+        setInputErr(null);
+        onSymbolChange(val);
     }
 
     return (
@@ -117,12 +122,13 @@ export default function TopBar({ symbol, onSymbolChange, page, onPageChange, use
                     ref={inputRef}
                     className="t-cmd-input"
                     value={input}
-                    onChange={(e) => setInput(e.target.value.toUpperCase())}
+                    onChange={(e) => { setInput(e.target.value.toUpperCase()); setInputErr(null); }}
                     onKeyDown={(e) => {
                         if (e.key === "Enter") { submit(); inputRef.current?.blur(); }
-                        if (e.key === "Escape") inputRef.current?.blur();
+                        if (e.key === "Escape") { setInputErr(null); inputRef.current?.blur(); }
                     }}
-                    placeholder={`${symbol} EQUITY <GO>   |   search tickers, news, screens...`}
+                    placeholder={inputErr ?? `${symbol} EQUITY <GO>   |   search tickers, news, screens...`}
+                    style={{ borderColor: inputErr ? "var(--down)" : undefined }}
                 />
                 <span className="t-cmd-kbd">{isMac ? "⌘K" : "Ctrl+K"}</span>
             </div>

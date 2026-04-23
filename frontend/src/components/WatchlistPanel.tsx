@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
+import { tickerError } from "../lib/validation";
 import type { User } from "@supabase/supabase-js";
 
 interface WatchlistItem {
@@ -17,6 +18,7 @@ interface Props {
 export default function WatchlistPanel({ user, activeSymbol, onSelect, onSymbolsChange }: Props) {
     const [items, setItems] = useState<WatchlistItem[]>([]);
     const [input, setInput] = useState("");
+    const [inputErr, setInputErr] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -35,10 +37,10 @@ export default function WatchlistPanel({ user, activeSymbol, onSelect, onSymbols
 
     const add = async () => {
         const symbol = input.trim().toUpperCase();
-        if (!symbol || items.some((i) => i.symbol === symbol)) {
-            setInput("");
-            return;
-        }
+        const err = tickerError(symbol);
+        if (err) { setInputErr(err); return; }
+        if (items.some((i) => i.symbol === symbol)) { setInputErr("Already in watchlist."); return; }
+        setInputErr(null);
         const { data, error } = await supabase
             .from("watchlist")
             .insert({ user_id: user.id, symbol })
@@ -70,10 +72,11 @@ export default function WatchlistPanel({ user, activeSymbol, onSelect, onSymbols
             <div className="flex gap-1">
                 <input
                     value={input}
-                    onChange={(e) => setInput(e.target.value.toUpperCase())}
+                    onChange={(e) => { setInput(e.target.value.toUpperCase()); setInputErr(null); }}
                     onKeyDown={(e) => e.key === "Enter" && add()}
                     placeholder="Add symbol"
-                    className="flex-1 min-w-0 bg-[#1a1a1a] border border-[#2a2a2a] rounded px-2 py-1 text-xs focus:outline-none focus:border-gray-500"
+                    className="flex-1 min-w-0 bg-[#1a1a1a] rounded px-2 py-1 text-xs focus:outline-none"
+                    style={{ border: `1px solid ${inputErr ? "#ff4757" : "#2a2a2a"}` }}
                 />
                 <button
                     onClick={add}
@@ -82,6 +85,7 @@ export default function WatchlistPanel({ user, activeSymbol, onSelect, onSymbols
                     +
                 </button>
             </div>
+            {inputErr && <p className="text-xs px-1" style={{ color: "#ff4757" }}>{inputErr}</p>}
 
             <div className="flex flex-col gap-0.5 mt-1">
                 {loading ? (
