@@ -167,24 +167,22 @@ export default function App() {
                 />
             </div>
 
-            {/* Full-page views */}
-            {page !== "chart" && (
-                <div className="t-fullpage">
-                    {page === "earnings" && (
-                        <EarningsCalendar
-                            watchlistSymbols={watchlistSymbols}
-                            activeSymbol={symbol}
-                            isLoggedIn={!!user}
-                        />
-                    )}
-                    {page === "portfolio" && (
-                        <PortfolioOptimizer
-                            watchlistSymbols={watchlistSymbols}
-                            isLoggedIn={!!user}
-                        />
-                    )}
+            {/* Full-page views — always mounted so state survives page switches */}
+            <div className="t-fullpage" style={{ display: page !== "chart" ? undefined : "none" }}>
+                <div style={{ display: page === "earnings" ? undefined : "none" }}>
+                    <EarningsCalendar
+                        watchlistSymbols={watchlistSymbols}
+                        activeSymbol={symbol}
+                        isLoggedIn={!!user}
+                    />
                 </div>
-            )}
+                <div style={{ display: page === "portfolio" ? undefined : "none" }}>
+                    <PortfolioOptimizer
+                        watchlistSymbols={watchlistSymbols}
+                        isLoggedIn={!!user}
+                    />
+                </div>
+            </div>
 
             <StatusBar onAskAI={() => setShowAI(true)} />
 
