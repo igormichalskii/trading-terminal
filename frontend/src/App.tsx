@@ -3,7 +3,6 @@ import type { OverlayData } from "./components/PriceChart";
 import TopBar from "./components/TopBar";
 import WatchlistSidebar from "./components/WatchlistSidebar";
 import ChartPanel from "./components/ChartPanel";
-import OrderBook from "./components/OrderBook";
 import IndicatorsPanel from "./components/IndicatorsPanel";
 import type { SubPanel } from "./components/IndicatorsPanel";
 import StatusBar from "./components/StatusBar";

@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
 import { apiFetch } from "../lib/api";
 
-const TIMEFRAMES = ["1D", "1W", "1M", "3M", "1Y", "ALL"];
-
 interface Candle {
     time: string | number;
     open: number;
@@ -23,6 +21,14 @@ interface OHLCVResponse {
     has_more: boolean;
 }
 
+export interface HoverCandle {
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume: number;
+}
+
 export interface OverlayData {
     sma?: Point[];
     ema?: Point[];
@@ -40,97 +46,130 @@ export interface OverlayData {
 interface Props {
     symbol: string;
     timeframe: string;
+    chartType: "CANDLE" | "LINE";
     overlays: OverlayData;
     limitParam: string;
-    onTimeframeChange: (tf: string) => void;
     onStatsChange: (candle: Candle | null) => void;
     onCandlesChange?: (candles: Candle[]) => void;
+    onHoverChange?: (data: HoverCandle | null) => void;
 }
 
 const OVERLAY_SERIES = [
-    { key: "sma",  color: "#f59e0b" },
-    { key: "ema",  color: "#3b82f6" },
-    { key: "vwap", color: "#a855f7" },
+    { key: "sma",  color: "#3b82f6" },  // accent blue — matches mockup SMA line
+    { key: "ema",  color: "#a78bfa" },  // purple
+    { key: "vwap", color: "#00b4d8" },  // cyan
 ];
 
-const BB_COLORS = { upper: "#6b7280", middle: "#6b7280", lower: "#6b7280" };
+const BB_COLORS = { upper: "#5a5a5a", middle: "#5a5a5a", lower: "#5a5a5a" };
 
 const ICHIMOKU_COLORS = {
     tenkan:   "#ef4444",
     kijun:    "#3b82f6",
-    senkou_a: "#22c55e",
-    senkou_b: "#ef4444",
+    senkou_a: "#00d68f",
+    senkou_b: "#ff4757",
     chikou:   "#f59e0b",
 };
 
 function timeToISO(time: string | number): string {
-    if (typeof time === "number") {
-        return new Date(time * 1000).toISOString();
-    }
+    if (typeof time === "number") return new Date(time * 1000).toISOString();
     return (time as string) + "T00:00:00Z";
 }
 
-export default function PriceChart({ symbol, timeframe, overlays, limitParam, onTimeframeChange, onStatsChange, onCandlesChange }: Props) {
+export default function PriceChart({
+    symbol, timeframe, chartType, overlays, limitParam,
+    onStatsChange, onCandlesChange, onHoverChange,
+}: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
-    const seriesRef = useRef<any>(null);
+    const chartRef     = useRef<ReturnType<typeof createChart> | null>(null);
+    const seriesRef    = useRef<any>(null);
     const overlaySeriesRef = useRef<any[]>([]);
 
-    // Pagination refs — accessed in event handlers to avoid stale closures
-    const allCandlesRef = useRef<Candle[]>([]);
-    const isFetchingMoreRef = useRef(false);
-    const hasMoreRef = useRef(false);
-    const symbolRef = useRef(symbol);
-    const timeframeRef = useRef(timeframe);
-    const limitParamRef = useRef(limitParam);
+    // Pagination refs
+    const allCandlesRef        = useRef<Candle[]>([]);
+    const isFetchingMoreRef    = useRef(false);
+    const hasMoreRef           = useRef(false);
+    const symbolRef            = useRef(symbol);
+    const timeframeRef         = useRef(timeframe);
+    const limitParamRef        = useRef(limitParam);
+    const chartTypeRef         = useRef(chartType);
 
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading]         = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError]             = useState<string | null>(null);
 
-    // Keep refs in sync with props
-    useEffect(() => { symbolRef.current = symbol; }, [symbol]);
-    useEffect(() => { timeframeRef.current = timeframe; }, [timeframe]);
+    useEffect(() => { symbolRef.current     = symbol;     }, [symbol]);
+    useEffect(() => { timeframeRef.current  = timeframe;  }, [timeframe]);
     useEffect(() => { limitParamRef.current = limitParam; }, [limitParam]);
+    useEffect(() => { chartTypeRef.current  = chartType;  }, [chartType]);
 
+    // Create chart once
     useEffect(() => {
         if (!containerRef.current) return;
 
         const chart = createChart(containerRef.current, {
             layout: {
-                background: { color: "#0f0f0f" },
-                textColor: "#9ca3af",
+                background: { color: "#111111" },
+                textColor: "#8a8a8a",
+                fontFamily: "JetBrains Mono, Consolas, monospace",
+                fontSize: 10,
             },
             grid: {
-                vertLines: { color: "#1f1f1f" },
-                horzLines: { color: "#1f1f1f" },
+                vertLines: { color: "#1a1a1a" },
+                horzLines: { color: "#1a1a1a" },
             },
-            width: containerRef.current.clientWidth,
-            height: 420,
+            crosshair: {
+                mode: 1,
+                vertLine: { color: "#3b82f6", width: 1, style: 2, labelBackgroundColor: "#3b82f6" },
+                horzLine: { color: "#3b82f6", width: 1, style: 2, labelBackgroundColor: "#3b82f6" },
+            },
+            rightPriceScale: { borderColor: "#1f1f1f" },
+            timeScale:        { borderColor: "#1f1f1f" },
+            width:  containerRef.current.clientWidth,
+            height: containerRef.current.clientHeight || 300,
+            handleScroll: true,
+            handleScale:  true,
         });
 
         const series = chart.addSeries(CandlestickSeries, {
-            upColor: "#22c55e",
-            downColor: "#ef4444",
+            upColor:      "#00d68f",
+            downColor:    "#ff4757",
             borderVisible: false,
-            wickUpColor: "#22c55e",
-            wickDownColor: "#ef4444",
+            wickUpColor:   "#00d68f",
+            wickDownColor: "#ff4757",
         });
 
-        chartRef.current = chart;
+        chartRef.current  = chart;
         seriesRef.current = series;
 
-        // Load historical candles when the user pans to the left edge
+        // Crosshair hover → feed OHLC overlay in ChartPanel
+        // Uses seriesRef.current so it works after chart-type switches.
+        chart.subscribeCrosshairMove((param) => {
+            if (!param.time || !param.seriesData.size) {
+                onHoverChange?.(null);
+                return;
+            }
+            // Look up the full candle (with volume) from our cached data.
+            const candle = allCandlesRef.current.find((c) => c.time === param.time);
+            if (candle) {
+                onHoverChange?.({ open: candle.open, high: candle.high, low: candle.low, close: candle.close, volume: candle.volume });
+                return;
+            }
+            // Fallback for candle series (no volume available)
+            const raw = param.seriesData.get(seriesRef.current) as any;
+            if (raw?.open !== undefined) {
+                onHoverChange?.({ open: raw.open, high: raw.high, low: raw.low, close: raw.close, volume: 0 });
+            }
+        });
+
+        // Pagination: load older candles when user pans to left edge
         chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
             if (
                 !range ||
                 range.from > 10 ||
                 isFetchingMoreRef.current ||
                 !hasMoreRef.current ||
-                limitParamRef.current !== ""  // unauthenticated — no pagination
-            ) {
-                return;
-            }
+                limitParamRef.current !== ""
+            ) return;
 
             const oldest = allCandlesRef.current[0];
             if (!oldest) return;
@@ -139,57 +178,48 @@ export default function PriceChart({ symbol, timeframe, overlays, limitParam, on
             setLoadingMore(true);
 
             const before = timeToISO(oldest.time);
-
             apiFetch<OHLCVResponse>(
                 `/ohlcv/${symbolRef.current}?timeframe=${timeframeRef.current}&before=${encodeURIComponent(before)}`
             )
                 .then(({ candles, has_more }) => {
-                    if (!candles.length) {
-                        hasMoreRef.current = false;
-                        return;
-                    }
+                    if (!candles.length) { hasMoreRef.current = false; return; }
                     hasMoreRef.current = has_more;
-
                     const prevRange = chart.timeScale().getVisibleLogicalRange();
-                    const seen = new Set(allCandlesRef.current.map(c => c.time));
-                    const prepend = candles.filter(c => !seen.has(c.time));
+                    const seen = new Set(allCandlesRef.current.map((c) => c.time));
+                    const prepend = candles.filter((c) => !seen.has(c.time));
                     const merged = [...prepend, ...allCandlesRef.current];
                     allCandlesRef.current = merged;
                     series.setData(merged as any);
-
-                    // Shift the viewport right by the number of prepended candles
-                    // so the view doesn't jump
                     if (prevRange) {
                         chart.timeScale().setVisibleLogicalRange({
                             from: prevRange.from + candles.length,
-                            to: prevRange.to + candles.length,
+                            to:   prevRange.to   + candles.length,
                         });
                     }
                 })
                 .catch(console.error)
-                .finally(() => {
-                    isFetchingMoreRef.current = false;
-                    setLoadingMore(false);
-                });
+                .finally(() => { isFetchingMoreRef.current = false; setLoadingMore(false); });
         });
 
+        // Resize: update both width and height
         const ro = new ResizeObserver(() => {
-            chart.applyOptions({ width: containerRef.current!.clientWidth });
+            if (!containerRef.current) return;
+            chart.applyOptions({
+                width:  containerRef.current.clientWidth,
+                height: containerRef.current.clientHeight,
+            });
         });
         ro.observe(containerRef.current);
 
-        return () => {
-            ro.disconnect();
-            chart.remove();
-        };
+        return () => { ro.disconnect(); chart.remove(); };
     }, []);
 
+    // Reload data on symbol / timeframe change
     useEffect(() => {
         if (!seriesRef.current) return;
 
-        // Reset pagination state on symbol / timeframe change
-        allCandlesRef.current = [];
-        hasMoreRef.current = false;
+        allCandlesRef.current    = [];
+        hasMoreRef.current       = false;
         isFetchingMoreRef.current = false;
 
         setLoading(true);
@@ -198,8 +228,11 @@ export default function PriceChart({ symbol, timeframe, overlays, limitParam, on
         apiFetch<OHLCVResponse>(`/ohlcv/${symbol}?timeframe=${timeframe}${limitParam}`)
             .then(({ candles, has_more }) => {
                 allCandlesRef.current = candles;
-                hasMoreRef.current = has_more;
-                seriesRef.current!.setData(candles as any);
+                hasMoreRef.current    = has_more;
+                const displayData = chartTypeRef.current === "LINE"
+                    ? candles.map((c) => ({ time: c.time, value: c.close }))
+                    : candles;
+                seriesRef.current!.setData(displayData as any);
                 if (candles.length) {
                     onStatsChange(candles[candles.length - 1]);
                     onCandlesChange?.(candles);
@@ -217,6 +250,42 @@ export default function PriceChart({ symbol, timeframe, overlays, limitParam, on
             .finally(() => setLoading(false));
     }, [symbol, timeframe, limitParam]);
 
+    // Switch between candlestick and line series when chartType changes
+    useEffect(() => {
+        const chart = chartRef.current;
+        if (!chart) return;
+
+        // Remove existing main series and overlay series
+        if (seriesRef.current) {
+            try { chart.removeSeries(seriesRef.current); } catch {}
+        }
+        for (const s of overlaySeriesRef.current) {
+            try { chart.removeSeries(s); } catch {}
+        }
+        overlaySeriesRef.current = [];
+
+        if (chartType === "CANDLE") {
+            seriesRef.current = chart.addSeries(CandlestickSeries, {
+                upColor: "#00d68f", downColor: "#ff4757",
+                borderVisible: false, wickUpColor: "#00d68f", wickDownColor: "#ff4757",
+            });
+        } else {
+            seriesRef.current = chart.addSeries(LineSeries, {
+                color: "#3b82f6", lineWidth: 2,
+                priceLineVisible: false, lastValueVisible: true,
+            });
+        }
+
+        if (allCandlesRef.current.length) {
+            const data = chartType === "LINE"
+                ? allCandlesRef.current.map((c) => ({ time: c.time, value: c.close }))
+                : allCandlesRef.current;
+            seriesRef.current.setData(data as any);
+            chart.timeScale().fitContent();
+        }
+    }, [chartType]);
+
+    // Sync overlay series (SMA, EMA, BB, etc.) whenever overlays prop changes
     useEffect(() => {
         const chart = chartRef.current;
         if (!chart) return;
@@ -229,12 +298,9 @@ export default function PriceChart({ symbol, timeframe, overlays, limitParam, on
         const addLine = (data: Point[], color: string, dashed = false) => {
             if (!data?.length) return;
             const s = chart.addSeries(LineSeries, {
-                color,
-                lineWidth: 1,
+                color, lineWidth: 1,
                 lineStyle: dashed ? 1 : 0,
-                priceLineVisible: false,
-                lastValueVisible: false,
-                crosshairMarkerVisible: false,
+                priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
             });
             s.setData(data as any);
             overlaySeriesRef.current.push(s);
@@ -246,9 +312,9 @@ export default function PriceChart({ symbol, timeframe, overlays, limitParam, on
         }
 
         if (overlays.bb) {
-            addLine(overlays.bb.upper, BB_COLORS.upper, true);
+            addLine(overlays.bb.upper,  BB_COLORS.upper,  true);
             addLine(overlays.bb.middle, BB_COLORS.middle);
-            addLine(overlays.bb.lower, BB_COLORS.lower, true);
+            addLine(overlays.bb.lower,  BB_COLORS.lower,  true);
         }
 
         if (overlays.ichimoku) {
@@ -259,45 +325,32 @@ export default function PriceChart({ symbol, timeframe, overlays, limitParam, on
     }, [overlays]);
 
     return (
-        <div>
-            <div className="flex gap-1 mb-2">
-                {TIMEFRAMES.map((tf) => (
-                    <button
-                        key={tf}
-                        onClick={() => onTimeframeChange(tf)}
-                        className={`px-3 py-1 text-xs rounded cursor-pointer transition-colors ${
-                            tf === timeframe
-                                ? "bg-white text-black"
-                                : "text-gray-400 hover:text-white"
-                        }`}
-                    >
-                        {tf}
-                    </button>
-                ))}
-            </div>
+        <div style={{ position: "relative", width: "100%", height: "100%" }}>
+            <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
 
-            <div className="relative">
-                <div ref={containerRef} />
-                {loading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-[#0f0f0f]/70 rounded">
-                        <div className="w-6 h-6 border-2 border-gray-600 border-t-white rounded-full animate-spin" />
+            {loading && (
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(17,17,17,0.7)" }}>
+                    <div style={{ width: 24, height: 24, border: "2px solid #2a2a2a", borderTopColor: "#3b82f6", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                </div>
+            )}
+
+            {!loading && error && (
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(17,17,17,0.9)" }}>
+                    <div style={{ textAlign: "center" }}>
+                        <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--down)", marginBottom: 6 }}>{error}</p>
+                        <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)" }}>CHECK SYMBOL AND RETRY</p>
                     </div>
-                )}
-                {!loading && error && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-[#0f0f0f]/90 rounded">
-                        <div className="text-center space-y-1">
-                            <p className="text-sm text-red-400 font-medium">{error}</p>
-                            <p className="text-xs text-gray-600">Check the symbol and try again</p>
-                        </div>
-                    </div>
-                )}
-                {loadingMore && (
-                    <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-[#1a1a1a] px-2 py-1 rounded text-xs text-gray-400">
-                        <div className="w-3 h-3 border border-gray-600 border-t-white rounded-full animate-spin" />
-                        Loading history…
-                    </div>
-                )}
-            </div>
+                </div>
+            )}
+
+            {loadingMore && (
+                <div style={{ position: "absolute", top: 8, left: 8, display: "flex", alignItems: "center", gap: 6, background: "var(--panel)", padding: "4px 10px", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-dim)" }}>
+                    <div style={{ width: 10, height: 10, border: "1px solid #2a2a2a", borderTopColor: "#3b82f6", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                    LOADING HISTORY…
+                </div>
+            )}
+
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
     );
 }
