@@ -1,0 +1,422 @@
+/* ── Terminal-specific CSS ──────────────────────────────────────────────────
+   Handles things Tailwind can't easily express: pseudo-elements, clip-path,
+   keyframe animations, 1-px-gap grid trick, depth-bar absolute positioning.
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* ── Top bar ── */
+.t-topbar {
+  height: 44px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.t-logo-mark {
+  width: 18px;
+  height: 18px;
+  background: var(--accent);
+  clip-path: polygon(0 0, 100% 0, 100% 50%, 50% 50%, 50% 100%, 0 100%);
+  flex-shrink: 0;
+}
+
+.t-cmd-search {
+  flex: 1;
+  max-width: 480px;
+  position: relative;
+}
+
+.t-cmd-search::before {
+  content: '>';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  pointer-events: none;
+  z-index: 1;
+  font-size: 12px;
+}
+
+.t-cmd-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border-bright);
+  color: var(--text);
+  padding: 7px 70px 7px 34px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  outline: none;
+  letter-spacing: 0.02em;
+  transition: border-color 0.15s;
+}
+
+.t-cmd-input:focus { border-color: var(--accent); }
+
+.t-cmd-kbd {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border: 1px solid var(--border-bright);
+  pointer-events: none;
+}
+
+/* ── Main grid ── */
+.t-main-grid {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Panels ── */
+.t-panel {
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.t-panel-header {
+  height: 32px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  flex-shrink: 0;
+}
+
+.t-panel-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.t-icon-btn {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: transparent;
+  border: none;
+  transition: color 0.15s, background 0.15s;
+}
+
+.t-icon-btn:hover { color: var(--text); background: var(--border); }
+
+/* ── Watchlist ── */
+.t-watchlist { grid-column: 1; grid-row: 1 / span 2; }
+
+.t-wl-item {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  align-items: center;
+  transition: background 0.1s;
+}
+
+.t-wl-item:hover { background: var(--panel-hover); }
+
+.t-wl-item.selected {
+  background: var(--accent-dim);
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+}
+
+/* ── Chart panel ── */
+.t-chart-panel { display: flex; flex-direction: column; }
+
+.t-chart-viewport {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+.t-chart-overlay-stats {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  z-index: 2;
+  pointer-events: none;
+  line-height: 1.6;
+  letter-spacing: 0.03em;
+}
+
+.t-chart-overlay-stats span {
+  color: var(--text);
+  margin-left: 4px;
+}
+
+/* ── Live pulse animation ── */
+.t-live-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--up);
+  animation: t-pulse 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes t-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 214, 143, 0.6); }
+  50%       { opacity: 0.5; box-shadow: 0 0 0 4px rgba(0, 214, 143, 0); }
+}
+
+/* ── Toolbar buttons ── */
+.t-tf-group {
+  display: flex;
+  border: 1px solid var(--border-bright);
+}
+
+.t-tf-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  transition: color 0.15s, background 0.15s;
+}
+
+.t-tf-btn:hover { color: var(--text); }
+.t-tf-btn.active { color: var(--bg); background: var(--accent); }
+
+.t-tool-btn {
+  background: transparent;
+  border: 1px solid var(--border-bright);
+  color: var(--text-dim);
+  padding: 4px 9px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  transition: all 0.15s;
+}
+
+.t-tool-btn:hover { color: var(--text); border-color: var(--text-muted); }
+.t-tool-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+
+/* ── Order book ── */
+.t-ob-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 3px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  position: relative;
+  cursor: pointer;
+}
+
+.t-ob-row:hover { background: var(--panel-hover); }
+
+.t-ob-depth {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 0;
+}
+
+.t-ob-row.ask .t-ob-depth { background: rgba(255, 71, 87, 0.08); }
+.t-ob-row.bid .t-ob-depth { background: rgba(0, 214, 143, 0.08); }
+.t-ob-row > div { position: relative; z-index: 1; }
+
+/* ── Indicators panel ── */
+.t-indicators-panel {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.t-ind-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.t-ind-tab {
+  padding: 8px 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  border-right: 1px solid var(--border);
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  background: none;
+  border-top: none;
+  border-left: none;
+  text-transform: uppercase;
+}
+
+.t-ind-tab:hover { color: var(--text-dim); }
+.t-ind-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.t-ind-content {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.t-ind-cell {
+  background: var(--panel);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.t-ind-name {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.t-ind-value {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.t-ind-signal {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  padding: 2px 6px;
+  width: fit-content;
+}
+
+.t-sig-buy  { color: var(--up);       background: var(--up-bg); }
+.t-sig-sell { color: var(--down);     background: var(--down-bg); }
+.t-sig-hold { color: var(--text-dim); background: var(--border); }
+
+.t-mini-bar {
+  height: 4px;
+  background: var(--border);
+  margin-top: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+.t-mini-bar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+}
+
+/* ── Sub-charts (IndicatorSubChart panels) in SIGNALS tab ── */
+.t-signals-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Status bar ── */
+.t-status-bar {
+  height: 24px;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.t-ai-badge {
+  margin-left: auto;
+  color: var(--accent);
+  padding: 2px 8px;
+  border: 1px solid var(--accent);
+  cursor: pointer;
+  transition: background 0.15s;
+  background: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+
+.t-ai-badge:hover { background: var(--accent-dim); }
+
+/* ── Watchlist tabs ── */
+.t-wl-tab {
+  flex: 1;
+  padding: 8px 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+
+.t-wl-tab:hover { color: var(--text-dim); }
+.t-wl-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── Page overlay (earnings/portfolio full-page) ── */
+.t-fullpage {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  background: var(--bg);
+}

@@ -23,6 +23,8 @@ interface Props {
     isLoggedIn: boolean;
 }
 
+const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" };
+
 function lerpColor(a: [number, number, number], b: [number, number, number], t: number): string {
     return `rgb(${Math.round(a[0] + (b[0] - a[0]) * t)},${Math.round(a[1] + (b[1] - a[1]) * t)},${Math.round(a[2] + (b[2] - a[2]) * t)})`;
 }
@@ -30,8 +32,8 @@ function lerpColor(a: [number, number, number], b: [number, number, number], t: 
 function sharpeColor(sharpe: number, minS: number, maxS: number): string {
     const t = maxS > minS ? Math.max(0, Math.min(1, (sharpe - minS) / (maxS - minS))) : 0.5;
     return t < 0.5
-        ? lerpColor([80, 80, 80], [234, 179, 8], t * 2)
-        : lerpColor([234, 179, 8], [34, 197, 94], (t - 0.5) * 2);
+        ? lerpColor([42, 42, 42], [59, 130, 246], t * 2)       // border → accent
+        : lerpColor([59, 130, 246], [0, 214, 143], (t - 0.5) * 2); // accent → up
 }
 
 function EfficientFrontier({ frontier, maxSharpe, minVol }: {
@@ -41,17 +43,17 @@ function EfficientFrontier({ frontier, maxSharpe, minVol }: {
 }) {
     if (frontier.length === 0) return null;
 
-    const W = 500, H = 280;
-    const PAD = { l: 48, r: 24, t: 20, b: 38 };
+    const W = 500, H = 260;
+    const PAD = { l: 48, r: 24, t: 16, b: 36 };
     const iW = W - PAD.l - PAD.r;
     const iH = H - PAD.t - PAD.b;
 
-    const vols = frontier.map(p => p.vol);
-    const rets = frontier.map(p => p.ret);
+    const vols   = frontier.map(p => p.vol);
+    const rets   = frontier.map(p => p.ret);
     const sharpes = frontier.map(p => p.sharpe);
 
-    const minV = Math.min(...vols), maxV = Math.max(...vols);
-    const minR = Math.min(...rets), maxR = Math.max(...rets);
+    const minV = Math.min(...vols),  maxV = Math.max(...vols);
+    const minR = Math.min(...rets),  maxR = Math.max(...rets);
     const minS = Math.min(...sharpes), maxS = Math.max(...sharpes);
 
     const toX = (v: number) => PAD.l + ((v - minV) / (maxV - minV || 1)) * iW;
@@ -61,80 +63,96 @@ function EfficientFrontier({ frontier, maxSharpe, minVol }: {
     const yTicks = [minR, (minR + maxR) / 2, maxR];
 
     return (
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-h-72">
+        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", maxHeight: 260 }}>
             {yTicks.map((r, i) => (
                 <g key={i}>
-                    <line x1={PAD.l} x2={W - PAD.r} y1={toY(r)} y2={toY(r)} stroke="#2a2a2a" strokeWidth="1" />
-                    <text x={PAD.l - 5} y={toY(r) + 3.5} textAnchor="end" fill="#4b5563" fontSize="9">
+                    <line x1={PAD.l} x2={W - PAD.r} y1={toY(r)} y2={toY(r)} stroke="#1f1f1f" strokeWidth="1" />
+                    <text x={PAD.l - 5} y={toY(r) + 3.5} textAnchor="end" fill="#5a5a5a" fontSize="9" fontFamily="var(--font-mono)">
                         {(r * 100).toFixed(0)}%
                     </text>
                 </g>
             ))}
             {xTicks.map((v, i) => (
                 <g key={i}>
-                    <line x1={toX(v)} x2={toX(v)} y1={PAD.t} y2={H - PAD.b} stroke="#2a2a2a" strokeWidth="1" />
-                    <text x={toX(v)} y={H - PAD.b + 13} textAnchor="middle" fill="#4b5563" fontSize="9">
+                    <line x1={toX(v)} x2={toX(v)} y1={PAD.t} y2={H - PAD.b} stroke="#1f1f1f" strokeWidth="1" />
+                    <text x={toX(v)} y={H - PAD.b + 12} textAnchor="middle" fill="#5a5a5a" fontSize="9" fontFamily="var(--font-mono)">
                         {(v * 100).toFixed(0)}%
                     </text>
                 </g>
             ))}
-            <text x={W / 2} y={H - 2} textAnchor="middle" fill="#6b7280" fontSize="9">Volatility (annualized)</text>
-            <text x={10} y={H / 2} textAnchor="middle" fill="#6b7280" fontSize="9" transform={`rotate(-90, 10, ${H / 2})`}>Return (annualized)</text>
+
+            <text x={W / 2} y={H - 1} textAnchor="middle" fill="#5a5a5a" fontSize="8" fontFamily="var(--font-mono)">VOLATILITY (ANNUALIZED)</text>
+            <text x={9} y={H / 2} textAnchor="middle" fill="#5a5a5a" fontSize="8" fontFamily="var(--font-mono)" transform={`rotate(-90, 9, ${H / 2})`}>RETURN</text>
 
             {frontier.map((p, i) => (
-                <circle key={i} cx={toX(p.vol)} cy={toY(p.ret)} r={2} fill={sharpeColor(p.sharpe, minS, maxS)} opacity={0.7} />
+                <circle key={i} cx={toX(p.vol)} cy={toY(p.ret)} r={2.5} fill={sharpeColor(p.sharpe, minS, maxS)} opacity={0.8} />
             ))}
 
-            <circle cx={toX(minVol.volatility)} cy={toY(minVol.expected_return)} r={6} fill="#3b82f6" stroke="#0f0f0f" strokeWidth="1.5" />
-            <text x={toX(minVol.volatility) + 9} y={toY(minVol.expected_return) + 3.5} fill="#60a5fa" fontSize="9">Min Vol</text>
+            <circle cx={toX(minVol.volatility)} cy={toY(minVol.expected_return)} r={5} fill="#3b82f6" stroke="#0a0a0a" strokeWidth="1.5" />
+            <text x={toX(minVol.volatility) + 8} y={toY(minVol.expected_return) + 3.5} fill="#3b82f6" fontSize="9" fontFamily="var(--font-mono)">MIN VOL</text>
 
-            <circle cx={toX(maxSharpe.volatility)} cy={toY(maxSharpe.expected_return)} r={6} fill="#f59e0b" stroke="#0f0f0f" strokeWidth="1.5" />
-            <text x={toX(maxSharpe.volatility) + 9} y={toY(maxSharpe.expected_return) + 3.5} fill="#fbbf24" fontSize="9">Max Sharpe</text>
+            <circle cx={toX(maxSharpe.volatility)} cy={toY(maxSharpe.expected_return)} r={5} fill="#00d68f" stroke="#0a0a0a" strokeWidth="1.5" />
+            <text x={toX(maxSharpe.volatility) + 8} y={toY(maxSharpe.expected_return) + 3.5} fill="#00d68f" fontSize="9" fontFamily="var(--font-mono)">MAX SHARPE</text>
         </svg>
     );
 }
 
 function WeightBar({ symbol, weight }: { symbol: string; weight: number }) {
     return (
-        <div className="flex items-center gap-2 text-xs">
-            <span className="w-16 shrink-0 text-gray-300 font-medium">{symbol}</span>
-            <div className="flex-1 h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
-                <div className="h-full bg-white/35 rounded-full transition-all" style={{ width: `${weight * 100}%` }} />
+        <div style={{ display: "grid", gridTemplateColumns: "64px 1fr 40px", gap: 8, alignItems: "center" }}>
+            <span style={{ ...mono, fontSize: 11, color: "var(--text)", fontWeight: 600 }}>{symbol}</span>
+            <div style={{ height: 3, background: "var(--border)", position: "relative" }}>
+                <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: `${weight * 100}%`, background: "var(--accent)" }} />
             </div>
-            <span className="w-10 shrink-0 text-right text-gray-400">{(weight * 100).toFixed(1)}%</span>
+            <span style={{ ...mono, fontSize: 10, color: "var(--text-dim)", textAlign: "right" }}>
+                {(weight * 100).toFixed(1)}%
+            </span>
         </div>
     );
 }
 
-function PortfolioCard({ title, portfolio, accentClass }: {
+function PortfolioCard({ title, portfolio, accentColor }: {
     title: string;
     portfolio: PortfolioAllocation;
-    accentClass: string;
+    accentColor: string;
 }) {
     const sorted = Object.entries(portfolio.weights).sort((a, b) => b[1] - a[1]);
+    const retColor = portfolio.expected_return >= 0 ? "var(--up)" : "var(--down)";
+
     return (
-        <div className="bg-[#1a1a1a] rounded-lg border border-[#2a2a2a] p-4 space-y-3">
-            <div className="flex items-center justify-between">
-                <h3 className={`text-sm font-medium ${accentClass}`}>{title}</h3>
-                <span className="text-xs text-gray-500">Sharpe {portfolio.sharpe.toFixed(2)}</span>
+        <div style={{ border: "1px solid var(--border)" }}>
+            {/* Card header */}
+            <div style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "8px 14px",
+                borderBottom: "1px solid var(--border)",
+            }}>
+                <span style={{ ...mono, fontSize: 11, fontWeight: 700, color: accentColor, letterSpacing: "0.06em" }}>
+                    {title}
+                </span>
+                <span style={{ ...mono, fontSize: 10, color: "var(--text-muted)" }}>
+                    SHARPE {portfolio.sharpe.toFixed(2)}
+                </span>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                    <div className="text-[10px] text-gray-500 mb-0.5">Return</div>
-                    <div className={`text-sm font-semibold ${portfolio.expected_return >= 0 ? "text-green-400" : "text-red-400"}`}>
-                        {(portfolio.expected_return * 100).toFixed(1)}%
+
+            {/* Stats row */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 1, background: "var(--border)", borderBottom: "1px solid var(--border)" }}>
+                {[
+                    { label: "RETURN",     value: `${portfolio.expected_return >= 0 ? "+" : ""}${(portfolio.expected_return * 100).toFixed(1)}%`, color: retColor },
+                    { label: "VOLATILITY", value: `${(portfolio.volatility * 100).toFixed(1)}%`,                                                   color: "var(--text)" },
+                    { label: "SHARPE",     value: portfolio.sharpe.toFixed(2),                                                                     color: "var(--text)" },
+                ].map(({ label, value, color }) => (
+                    <div key={label} style={{ background: "var(--panel)", padding: "8px 14px", textAlign: "center" }}>
+                        <div style={{ ...mono, fontSize: 9, color: "var(--text-muted)", letterSpacing: "0.1em", marginBottom: 4 }}>{label}</div>
+                        <div style={{ ...mono, fontSize: 14, fontWeight: 600, color }}>{value}</div>
                     </div>
-                </div>
-                <div>
-                    <div className="text-[10px] text-gray-500 mb-0.5">Volatility</div>
-                    <div className="text-sm font-semibold text-gray-200">{(portfolio.volatility * 100).toFixed(1)}%</div>
-                </div>
-                <div>
-                    <div className="text-[10px] text-gray-500 mb-0.5">Sharpe</div>
-                    <div className="text-sm font-semibold text-gray-200">{portfolio.sharpe.toFixed(2)}</div>
-                </div>
+                ))}
             </div>
-            <div className="space-y-1.5 pt-2 border-t border-[#2a2a2a]">
+
+            {/* Weight bars */}
+            <div style={{ padding: "10px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
                 {sorted.filter(([, w]) => w >= 0.005).map(([sym, w]) => (
                     <WeightBar key={sym} symbol={sym} weight={w} />
                 ))}
@@ -145,9 +163,9 @@ function PortfolioCard({ title, portfolio, accentClass }: {
 
 export default function PortfolioOptimizer({ watchlistSymbols, isLoggedIn }: Props) {
     const [selected, setSelected] = useState<Set<string>>(new Set(watchlistSymbols));
-    const [result, setResult] = useState<OptimizeResult | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [result,   setResult]   = useState<OptimizeResult | null>(null);
+    const [loading,  setLoading]  = useState(false);
+    const [error,    setError]    = useState<string | null>(null);
 
     useEffect(() => {
         setSelected(prev => {
@@ -167,7 +185,7 @@ export default function PortfolioOptimizer({ watchlistSymbols, isLoggedIn }: Pro
 
     const run = async () => {
         const symbols = [...selected];
-        if (symbols.length < 2) { setError("Select at least 2 symbols to optimize"); return; }
+        if (symbols.length < 2) { setError("SELECT AT LEAST 2 SYMBOLS TO OPTIMIZE"); return; }
         setLoading(true);
         setError(null);
         try {
@@ -178,84 +196,128 @@ export default function PortfolioOptimizer({ watchlistSymbols, isLoggedIn }: Pro
             });
             setResult(data);
         } catch (e: any) {
-            setError(e.message || "Optimization failed");
+            setError((e.message || "Optimization failed").toUpperCase());
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="flex-1 min-w-0 space-y-6">
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+
+            {/* Page header */}
             <div>
-                <h1 className="text-lg font-semibold text-gray-100">Portfolio Optimizer</h1>
-                <p className="text-xs text-gray-500 mt-0.5">Modern Portfolio Theory · 1-year daily returns · 2 000 Monte Carlo simulations</p>
+                <div style={{ ...mono, fontSize: 16, fontWeight: 700, color: "var(--text)", letterSpacing: "0.04em" }}>
+                    PORTFOLIO OPTIMIZER
+                </div>
+                <div style={{ ...mono, fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.08em", marginTop: 4 }}>
+                    MODERN PORTFOLIO THEORY · 1-YEAR DAILY RETURNS · 2,000 MONTE CARLO SIMULATIONS
+                </div>
             </div>
 
             {watchlistSymbols.length === 0 ? (
-                <div className="bg-[#1a1a1a] rounded-lg border border-[#2a2a2a] p-12 text-center">
-                    <p className="text-gray-400 text-sm">
+                <div style={{ border: "1px solid var(--border)", padding: "40px 24px", textAlign: "center" }}>
+                    <p style={{ ...mono, fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.06em" }}>
                         {isLoggedIn
-                            ? "Add symbols to your watchlist to optimize a portfolio."
-                            : "Sign in and add symbols to your watchlist to use the optimizer."}
+                            ? "ADD SYMBOLS TO YOUR WATCHLIST TO OPTIMIZE A PORTFOLIO."
+                            : "SIGN IN AND ADD SYMBOLS TO YOUR WATCHLIST TO USE THE OPTIMIZER."}
                     </p>
                 </div>
             ) : (
-                <div className="bg-[#1a1a1a] rounded-lg border border-[#2a2a2a] p-4 space-y-3">
-                    <p className="text-xs text-gray-500">Toggle symbols to include in optimization</p>
-                    <div className="flex flex-wrap gap-2">
-                        {watchlistSymbols.map(sym => (
-                            <button
-                                key={sym}
-                                onClick={() => toggle(sym)}
-                                className={`px-3 py-1 rounded text-xs font-medium cursor-pointer transition-colors ${
-                                    selected.has(sym)
-                                        ? "bg-white/15 text-white border border-white/25"
-                                        : "bg-transparent text-gray-500 border border-[#2a2a2a] hover:border-gray-600 hover:text-gray-400"
-                                }`}
-                            >
-                                {sym}
-                            </button>
-                        ))}
+                <div style={{ border: "1px solid var(--border)" }}>
+                    {/* Symbol selector */}
+                    <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--border)" }}>
+                        <div style={{ ...mono, fontSize: 9, color: "var(--text-muted)", letterSpacing: "0.1em", marginBottom: 10 }}>
+                            SELECT SYMBOLS
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                            {watchlistSymbols.map(sym => (
+                                <button
+                                    key={sym}
+                                    onClick={() => toggle(sym)}
+                                    style={{
+                                        ...mono,
+                                        fontSize: 10,
+                                        letterSpacing: "0.06em",
+                                        padding: "4px 10px",
+                                        cursor: "pointer",
+                                        border: `1px solid ${selected.has(sym) ? "var(--accent)" : "var(--border-bright)"}`,
+                                        color: selected.has(sym) ? "var(--accent)" : "var(--text-muted)",
+                                        background: selected.has(sym) ? "var(--accent-dim)" : "transparent",
+                                        transition: "all 0.15s",
+                                    }}
+                                >
+                                    {sym}
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                    <div className="flex items-center gap-3">
+
+                    {/* Run button */}
+                    <div style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: 12 }}>
                         <button
                             onClick={run}
                             disabled={loading || selected.size < 2}
-                            className="px-4 py-1.5 text-sm bg-white text-black rounded font-medium cursor-pointer hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            style={{
+                                ...mono,
+                                fontSize: 10,
+                                letterSpacing: "0.1em",
+                                padding: "6px 16px",
+                                cursor: loading || selected.size < 2 ? "not-allowed" : "pointer",
+                                border: "1px solid var(--accent)",
+                                color: "var(--bg)",
+                                background: loading || selected.size < 2 ? "var(--text-muted)" : "var(--accent)",
+                                opacity: loading || selected.size < 2 ? 0.5 : 1,
+                                transition: "all 0.15s",
+                            }}
                         >
-                            {loading ? "Optimizing…" : "Run Optimization"}
+                            {loading ? "OPTIMIZING…" : "RUN OPTIMIZATION"}
                         </button>
                         {selected.size < 2 && (
-                            <span className="text-xs text-gray-600">Select at least 2 symbols</span>
+                            <span style={{ ...mono, fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.05em" }}>
+                                SELECT AT LEAST 2 SYMBOLS
+                            </span>
+                        )}
+                        {error && (
+                            <span style={{ ...mono, fontSize: 10, color: "var(--down)", letterSpacing: "0.05em" }}>{error}</span>
                         )}
                     </div>
-                    {error && <p className="text-xs text-red-400">{error}</p>}
                 </div>
             )}
 
             {loading && (
-                <div className="flex justify-center py-16">
-                    <div className="w-6 h-6 border-2 border-gray-600 border-t-white rounded-full animate-spin" />
+                <div style={{ ...mono, padding: "40px 0", textAlign: "center", fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.1em" }}>
+                    RUNNING MODEL…
                 </div>
             )}
 
             {!loading && result && (
                 <>
-                    <div className="bg-[#1a1a1a] rounded-lg border border-[#2a2a2a] overflow-hidden">
-                        <div className="px-4 py-3 border-b border-[#2a2a2a] flex items-center justify-between">
-                            <h2 className="text-sm font-medium text-gray-200">Efficient Frontier</h2>
-                            <div className="flex items-center gap-4 text-xs text-gray-500">
-                                <span className="flex items-center gap-1.5">
-                                    <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
-                                    Max Sharpe
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                    <span className="w-2 h-2 rounded-full bg-blue-400 inline-block" />
-                                    Min Volatility
-                                </span>
+                    {/* Efficient Frontier chart */}
+                    <div style={{ border: "1px solid var(--border)" }}>
+                        <div style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "8px 14px",
+                            borderBottom: "1px solid var(--border)",
+                        }}>
+                            <span style={{ ...mono, fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", color: "var(--text-muted)" }}>
+                                EFFICIENT FRONTIER
+                            </span>
+                            <div style={{ display: "flex", gap: 16 }}>
+                                {[
+                                    { color: "#00d68f", label: "MAX SHARPE" },
+                                    { color: "#3b82f6", label: "MIN VOLATILITY" },
+                                ].map(({ color, label }) => (
+                                    <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                                        <div style={{ width: 6, height: 6, background: color, borderRadius: "50%" }} />
+                                        <span style={{ ...mono, fontSize: 9, color: "var(--text-muted)", letterSpacing: "0.06em" }}>{label}</span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                        <div className="p-4">
+                        <div style={{ padding: "12px 14px" }}>
                             <EfficientFrontier
                                 frontier={result.frontier}
                                 maxSharpe={result.max_sharpe}
@@ -264,10 +326,11 @@ export default function PortfolioOptimizer({ watchlistSymbols, isLoggedIn }: Pro
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <PortfolioCard title="Max Sharpe" portfolio={result.max_sharpe} accentClass="text-amber-400" />
-                        <PortfolioCard title="Min Volatility" portfolio={result.min_vol} accentClass="text-blue-400" />
-                        <PortfolioCard title="Equal Weight" portfolio={result.equal_weight} accentClass="text-gray-400" />
+                    {/* Portfolio cards */}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1, background: "var(--border)" }}>
+                        <PortfolioCard title="MAX SHARPE"    portfolio={result.max_sharpe}    accentColor="var(--up)" />
+                        <PortfolioCard title="MIN VOLATILITY" portfolio={result.min_vol}      accentColor="var(--accent)" />
+                        <PortfolioCard title="EQUAL WEIGHT"  portfolio={result.equal_weight}  accentColor="var(--text-dim)" />
                     </div>
                 </>
             )}

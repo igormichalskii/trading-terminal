@@ -22,9 +22,9 @@ interface Props {
 }
 
 export default function MLPrediction({ symbol }: Props) {
-    const [result, setResult] = useState<PredictionResult | null>(null);
+    const [result,  setResult]  = useState<PredictionResult | null>(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error,   setError]   = useState<string | null>(null);
 
     useEffect(() => {
         setResult(null);
@@ -36,89 +36,133 @@ export default function MLPrediction({ symbol }: Props) {
             .finally(() => setLoading(false));
     }, [symbol]);
 
-    const isUp = result?.direction === "up";
-    const confidencePct = result ? Math.round(result.confidence * 100) : 0;
-    const upPct = result ? Math.round(result.up_probability * 100) : 0;
-    const topFeatures = result?.feature_importances.slice(0, 4) ?? [];
+    const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" };
+
+    if (loading) return (
+        <div style={{ ...mono, padding: "16px 12px", fontSize: 11, color: "var(--text-muted)" }}>
+            RUNNING MODEL…
+        </div>
+    );
+
+    if (error) return (
+        <div style={{ ...mono, padding: "16px 12px", fontSize: 11, color: "var(--down)" }}>
+            {error.toUpperCase()}
+        </div>
+    );
+
+    if (!result) return null;
+
+    const isUp       = result.direction === "up";
+    const confPct    = Math.round(result.confidence * 100);
+    const upPct      = Math.round(result.up_probability * 100);
+    const downPct    = 100 - upPct;
+    const topFeats   = result.feature_importances.slice(0, 6);
+    const dirColor   = isUp ? "var(--up)" : "var(--down)";
+    const dirBg      = isUp ? "var(--up-bg)" : "var(--down-bg)";
 
     return (
-        <div className="bg-[#1a1a1a] rounded-lg border border-[#2a2a2a] p-4 mt-3">
-            <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-gray-300">ML Signal</span>
-                    <span className="text-[10px] text-gray-600 bg-[#2a2a2a] px-1.5 py-0.5 rounded">
-                        Random Forest
-                    </span>
+        <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+
+            {/* Direction header */}
+            <div style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "10px 12px",
+                borderBottom: "1px solid var(--border)",
+            }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{
+                        ...mono,
+                        fontSize: 22,
+                        fontWeight: 700,
+                        color: dirColor,
+                        background: dirBg,
+                        padding: "4px 10px",
+                        letterSpacing: "0.04em",
+                    }}>
+                        {isUp ? "↑ BULLISH" : "↓ BEARISH"}
+                    </div>
+                    <div style={{ ...mono, fontSize: 11, color: "var(--text-dim)" }}>
+                        <span style={{ color: dirColor, fontWeight: 600 }}>{confPct}%</span>
+                        <span style={{ color: "var(--text-muted)" }}> CONFIDENCE</span>
+                    </div>
                 </div>
-                {result && (
-                    <span className="text-[10px] text-gray-600">
-                        Trained on {result.trained_on} days · as of {result.signal_date}
-                    </span>
-                )}
+                <div style={{ ...mono, fontSize: 10, color: "var(--text-muted)", textAlign: "right" }}>
+                    <div>TRAINED ON {result.trained_on} DAYS</div>
+                    <div>AS OF {result.signal_date}</div>
+                </div>
             </div>
 
-            {loading && (
-                <div className="flex items-center gap-2 py-2">
-                    <div className="w-4 h-4 border-2 border-gray-600 border-t-white rounded-full animate-spin" />
-                    <span className="text-xs text-gray-500">Running model…</span>
+            {/* Probability bar */}
+            <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--border)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                    <span style={{ ...mono, fontSize: 10, color: "var(--down)" }}>
+                        ↓ BEARISH {downPct}%
+                    </span>
+                    <span style={{ ...mono, fontSize: 10, color: "var(--up)" }}>
+                        ↑ BULLISH {upPct}%
+                    </span>
                 </div>
-            )}
+                <div style={{ height: 6, background: "var(--border)", position: "relative" }}>
+                    {/* Bearish fill from left */}
+                    <div style={{
+                        position: "absolute", top: 0, bottom: 0, left: 0,
+                        width: `${downPct}%`,
+                        background: "var(--down)",
+                        opacity: 0.6,
+                    }} />
+                    {/* Bullish fill from right */}
+                    <div style={{
+                        position: "absolute", top: 0, bottom: 0, right: 0,
+                        width: `${upPct}%`,
+                        background: "var(--up)",
+                        opacity: 0.6,
+                    }} />
+                </div>
+            </div>
 
-            {!loading && error && (
-                <p className="text-xs text-gray-600">{error}</p>
-            )}
-
-            {!loading && result && (
-                <div className="flex gap-6">
-                    {/* Direction + confidence */}
-                    <div className="flex items-center gap-3 shrink-0">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold ${
-                            isUp ? "bg-green-500/15 text-green-400" : "bg-red-500/15 text-red-400"
-                        }`}>
-                            {isUp ? "↑" : "↓"}
-                        </div>
-                        <div>
-                            <div className={`text-sm font-semibold ${isUp ? "text-green-400" : "text-red-400"}`}>
-                                {isUp ? "Bullish" : "Bearish"}
-                            </div>
-                            <div className="text-[10px] text-gray-500">{confidencePct}% confidence</div>
-                        </div>
-                    </div>
-
-                    {/* Probability bar */}
-                    <div className="flex-1 min-w-0">
-                        <div className="flex justify-between text-[10px] text-gray-500 mb-1">
-                            <span>Bearish {100 - upPct}%</span>
-                            <span>Bullish {upPct}%</span>
-                        </div>
-                        <div className="h-2 bg-[#2a2a2a] rounded-full overflow-hidden">
-                            <div
-                                className="h-full rounded-full transition-all"
-                                style={{
-                                    width: `${upPct}%`,
-                                    background: upPct >= 50
-                                        ? `linear-gradient(90deg, #2a2a2a 0%, #22c55e ${upPct}%)`
-                                        : `linear-gradient(90deg, #ef4444 0%, #2a2a2a ${upPct}%)`,
-                                }}
-                            />
-                        </div>
-                        {/* Feature importances */}
-                        <div className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-1">
-                            {topFeatures.map((f) => (
-                                <div key={f.feature} className="flex items-center gap-1.5">
-                                    <div className="h-1 rounded-full bg-white/20" style={{ width: `${Math.round(f.importance * 100)}%`, minWidth: 4, maxWidth: 40 }} />
-                                    <span className="text-[10px] text-gray-500 truncate">{f.label}</span>
-                                    <span className="text-[10px] text-gray-600 ml-auto shrink-0">{Math.round(f.importance * 100)}%</span>
+            {/* Feature importances */}
+            <div style={{ padding: "10px 12px" }}>
+                <div style={{ ...mono, fontSize: 9, letterSpacing: "0.1em", color: "var(--text-muted)", marginBottom: 8 }}>
+                    TOP FEATURES
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {topFeats.map((f) => {
+                        const pct = Math.round(f.importance * 100);
+                        return (
+                            <div key={f.feature} style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 8, alignItems: "center" }}>
+                                <div style={{ height: 3, background: "var(--border)", position: "relative" }}>
+                                    <div style={{
+                                        position: "absolute", top: 0, bottom: 0, left: 0,
+                                        width: `${pct}%`,
+                                        background: "var(--accent)",
+                                    }} />
                                 </div>
-                            ))}
-                        </div>
-                    </div>
+                                <span style={{ ...mono, fontSize: 10, color: "var(--text-dim)", whiteSpace: "nowrap" }}>
+                                    {f.label}
+                                </span>
+                                <span style={{ ...mono, fontSize: 10, color: "var(--text-muted)", minWidth: 28, textAlign: "right" }}>
+                                    {pct}%
+                                </span>
+                            </div>
+                        );
+                    })}
                 </div>
-            )}
+            </div>
 
-            <p className="text-[10px] text-gray-700 mt-3">
-                Directional signal only — not financial advice. Past patterns do not guarantee future results.
-            </p>
+            {/* Disclaimer */}
+            <div style={{
+                ...mono,
+                fontSize: 9,
+                color: "var(--text-muted)",
+                letterSpacing: "0.04em",
+                padding: "6px 12px 10px",
+                borderTop: "1px solid var(--border)",
+                lineHeight: 1.5,
+            }}>
+                SIGNAL ONLY — NOT FINANCIAL ADVICE. PAST PATTERNS DO NOT GUARANTEE FUTURE RESULTS.
+            </div>
         </div>
     );
 }
