@@ -35,12 +35,13 @@ interface Context {
 
 interface Props {
     context: Context;
+    open: boolean;
+    onClose: () => void;
 }
 
 const DEFAULT_POS = { x: window.innerWidth - 380, y: window.innerHeight - 520 };
 
-export default function AIAssistant({ context }: Props) {
-    const [open, setOpen] = useState(false);
+export default function AIAssistant({ context, open, onClose }: Props) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [streaming, setStreaming] = useState(false);
@@ -169,19 +170,7 @@ export default function AIAssistant({ context }: Props) {
         }
     }
 
-    if (!open) {
-        return (
-            <button
-                onClick={() => setOpen(true)}
-                className="fixed bottom-5 right-5 z-50 flex items-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:border-gray-500 text-sm text-gray-300 hover:text-white px-4 py-2.5 rounded-full shadow-lg transition-colors cursor-pointer"
-            >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                </svg>
-                AI Advisor
-            </button>
-        );
-    }
+    if (!open) return null;
 
     return (
         <div
@@ -202,7 +191,7 @@ export default function AIAssistant({ context }: Props) {
                     <span className="text-xs text-gray-500">{context.symbol} · {context.timeframe}</span>
                 </div>
                 <button
-                    onClick={() => setOpen(false)}
+                    onClick={onClose}
                     className="text-gray-500 hover:text-white transition-colors cursor-pointer"
                 >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

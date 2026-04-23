@@ -81,6 +81,8 @@ export default function App() {
     const [overlays, setOverlays]         = useState<OverlayData>({});
     const [subPanels, setSubPanels]       = useState<SubPanel[]>([]);
     const [page, setPage]                 = useState<"chart" | "earnings" | "portfolio">("chart");
+    const [watchlistSymbols, setWatchlistSymbols] = useState<string[]>([]);
+    const [showAI, setShowAI]             = useState(false);
 
     useEffect(() => { init(); }, []);
 
@@ -129,64 +131,67 @@ export default function App() {
                 onSignOut={signOut}
             />
 
-            {/* Full-page views (earnings / portfolio) */}
-            {page !== "chart" ? (
+            {/* Terminal grid — always mounted so chart never reloads on page switch */}
+            <div className="t-main-grid" style={{ display: page === "chart" ? undefined : "none" }}>
+                {/* Left: watchlist (spans both rows) */}
+                <WatchlistSidebar
+                    user={user}
+                    activeSymbol={symbol}
+                    onSelect={setSymbol}
+                    onSymbolsChange={setWatchlistSymbols}
+                />
+
+                {/* Center top: chart */}
+                <ChartPanel
+                    symbol={symbol}
+                    overlays={overlays}
+                    activeIndicators={activeIndicators}
+                    onToggleIndicator={toggleIndicator}
+                    limitParam={limitParam}
+                    onStatsChange={setStats}
+                    onCandlesChange={setCandles}
+                    onTimeframeChange={setTimeframe}
+                    stats={stats}
+                    candles={candles}
+                />
+
+                {/* Right top: order book — hidden (requires paid data feed) */}
+                {/* <OrderBook lastPrice={stats?.close ?? null} /> */}
+
+                {/* Bottom center+right: indicators panel */}
+                <IndicatorsPanel
+                    subPanels={subPanels}
+                    symbol={symbol}
+                    timeframe={timeframe}
+                    lastClose={stats?.close ?? null}
+                />
+            </div>
+
+            {/* Full-page views */}
+            {page !== "chart" && (
                 <div className="t-fullpage">
                     {page === "earnings" && (
                         <EarningsCalendar
-                            watchlistSymbols={[]}
+                            watchlistSymbols={watchlistSymbols}
                             activeSymbol={symbol}
                             isLoggedIn={!!user}
                         />
                     )}
                     {page === "portfolio" && (
                         <PortfolioOptimizer
-                            watchlistSymbols={[]}
+                            watchlistSymbols={watchlistSymbols}
                             isLoggedIn={!!user}
                         />
                     )}
                 </div>
-            ) : (
-                /* ── Terminal grid ── */
-                <div className="t-main-grid">
-                    {/* Left: watchlist (spans both rows) */}
-                    <WatchlistSidebar
-                        user={user}
-                        activeSymbol={symbol}
-                        onSelect={setSymbol}
-                    />
-
-                    {/* Center top: chart */}
-                    <ChartPanel
-                        symbol={symbol}
-                        overlays={overlays}
-                        activeIndicators={activeIndicators}
-                        onToggleIndicator={toggleIndicator}
-                        limitParam={limitParam}
-                        onStatsChange={setStats}
-                        onCandlesChange={setCandles}
-                        onTimeframeChange={setTimeframe}
-                        stats={stats}
-                        candles={candles}
-                    />
-
-                    {/* Right top: order book — hidden (requires paid data feed) */}
-                    {/* <OrderBook lastPrice={stats?.close ?? null} /> */}
-
-                    {/* Bottom center+right: indicators panel */}
-                    <IndicatorsPanel
-                        subPanels={subPanels}
-                        symbol={symbol}
-                        timeframe={timeframe}
-                        lastClose={stats?.close ?? null}
-                    />
-                </div>
             )}
 
-            <StatusBar onAskAI={() => { /* AIAssistant has its own toggle — clicking opens it */ }} />
+            <StatusBar onAskAI={() => setShowAI(true)} />
 
             {/* Floating AI assistant (has its own open/close button) */}
             <AIAssistant
+                open={showAI}
+                onClose={() => setShowAI(false)}
                 context={{
                     symbol,
                     timeframe,
