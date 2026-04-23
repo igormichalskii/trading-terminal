@@ -184,14 +184,13 @@ function ResultSection({ result, loading }: { result: OptimizeResult | null; loa
     );
 }
 
-function SymbolSetup({ symbols, selected, onToggle, onRun, loading, error, canRun }: {
+function SymbolSetup({ symbols, selected, onToggle, onRun, loading, error }: {
     symbols: string[];
     selected: Set<string>;
     onToggle: (s: string) => void;
     onRun: () => void;
     loading: boolean;
     error: string | null;
-    canRun: boolean;
 }) {
     const btnDisabled = loading || selected.size < 2;
     return (
@@ -337,7 +336,6 @@ export default function PortfolioOptimizer({ watchlistSymbols, isLoggedIn }: Pro
                             onRun={() => runOptimization([...wlSelected], setWlResult, setWlLoading, setWlError)}
                             loading={wlLoading}
                             error={wlError}
-                            canRun={wlSelected.size >= 2}
                         />
                         <ResultSection result={wlResult} loading={wlLoading}/>
                     </>
