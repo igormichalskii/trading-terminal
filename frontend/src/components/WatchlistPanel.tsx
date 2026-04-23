@@ -47,12 +47,12 @@ export default function WatchlistPanel({ user, activeSymbol, onSelect, onSymbols
         const { valid, error } = await verifySymbol(symbol);
         setAdding(false);
         if (!valid) { setInputErr(error); return; }
-        const { data, error } = await supabase
+        const { data, error: dbErr } = await supabase
             .from("watchlist")
             .insert({ user_id: user.id, symbol })
             .select("id, symbol")
             .single();
-        if (!error && data) {
+        if (!dbErr && data) {
             setItems((prev) => {
                 const next = [...prev, data];
                 onSymbolsChange?.(next.map((i) => i.symbol));
