@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
+import { verifySymbol } from "../lib/api";
 import { tickerError } from "../lib/validation";
 import type { User } from "@supabase/supabase-js";
 
@@ -19,6 +20,7 @@ export default function WatchlistPanel({ user, activeSymbol, onSelect, onSymbols
     const [items, setItems] = useState<WatchlistItem[]>([]);
     const [input, setInput] = useState("");
     const [inputErr, setInputErr] = useState<string | null>(null);
+    const [adding, setAdding] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -37,10 +39,14 @@ export default function WatchlistPanel({ user, activeSymbol, onSelect, onSymbols
 
     const add = async () => {
         const symbol = input.trim().toUpperCase();
-        const err = tickerError(symbol);
-        if (err) { setInputErr(err); return; }
+        const fmtErr = tickerError(symbol);
+        if (fmtErr) { setInputErr(fmtErr); return; }
         if (items.some((i) => i.symbol === symbol)) { setInputErr("Already in watchlist."); return; }
         setInputErr(null);
+        setAdding(true);
+        const { valid, error } = await verifySymbol(symbol);
+        setAdding(false);
+        if (!valid) { setInputErr(error); return; }
         const { data, error } = await supabase
             .from("watchlist")
             .insert({ user_id: user.id, symbol })
@@ -74,15 +80,17 @@ export default function WatchlistPanel({ user, activeSymbol, onSelect, onSymbols
                     value={input}
                     onChange={(e) => { setInput(e.target.value.toUpperCase()); setInputErr(null); }}
                     onKeyDown={(e) => e.key === "Enter" && add()}
-                    placeholder="Add symbol"
+                    placeholder={adding ? "Verifying…" : "Add symbol"}
+                    disabled={adding}
                     className="flex-1 min-w-0 bg-[#1a1a1a] rounded px-2 py-1 text-xs focus:outline-none"
-                    style={{ border: `1px solid ${inputErr ? "#ff4757" : "#2a2a2a"}` }}
+                    style={{ border: `1px solid ${inputErr ? "#ff4757" : adding ? "#3b82f6" : "#2a2a2a"}` }}
                 />
                 <button
                     onClick={add}
-                    className="px-2 py-1 text-xs bg-[#1a1a1a] border border-[#2a2a2a] rounded hover:border-gray-500 transition-colors cursor-pointer"
+                    disabled={adding}
+                    className="px-2 py-1 text-xs bg-[#1a1a1a] border border-[#2a2a2a] rounded hover:border-gray-500 transition-colors cursor-pointer disabled:opacity-50"
                 >
-                    +
+                    {adding ? "…" : "+"}
                 </button>
             </div>
             {inputErr && <p className="text-xs px-1" style={{ color: "#ff4757" }}>{inputErr}</p>}

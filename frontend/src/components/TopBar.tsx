@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import type { User } from "@supabase/supabase-js";
-import { apiFetch } from "../lib/api";
+import { apiFetch, verifySymbol } from "../lib/api";
 import { tickerError } from "../lib/validation";
 import "../terminal.css";
 
@@ -36,6 +36,7 @@ const isMac = navigator.platform.toUpperCase().includes("MAC");
 export default function TopBar({ symbol, onSymbolChange, page, onPageChange, user, authLoading, onSignIn, onSignOut }: Props) {
     const [input, setInput] = useState(symbol);
     const [inputErr, setInputErr] = useState<string | null>(null);
+    const [checking, setChecking] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const [tickers, setTickers] = useState<TickerItem[]>([]);
 
@@ -76,12 +77,17 @@ export default function TopBar({ symbol, onSymbolChange, page, onPageChange, use
         });
     }, []);
 
-    function submit() {
+    async function submit() {
         const val = input.trim().toUpperCase();
-        const err = tickerError(val);
-        if (err) { setInputErr(err); return; }
+        const fmtErr = tickerError(val);
+        if (fmtErr) { setInputErr(fmtErr); return; }
         setInputErr(null);
+        setChecking(true);
+        const { valid, error } = await verifySymbol(val);
+        setChecking(false);
+        if (!valid) { setInputErr(error); return; }
         onSymbolChange(val);
+        inputRef.current?.blur();
     }
 
     return (
@@ -127,8 +133,9 @@ export default function TopBar({ symbol, onSymbolChange, page, onPageChange, use
                         if (e.key === "Enter") { submit(); inputRef.current?.blur(); }
                         if (e.key === "Escape") { setInputErr(null); inputRef.current?.blur(); }
                     }}
-                    placeholder={inputErr ?? `${symbol} EQUITY <GO>   |   search tickers, news, screens...`}
-                    style={{ borderColor: inputErr ? "var(--down)" : undefined }}
+                    placeholder={inputErr ?? (checking ? "VERIFYING…" : `${symbol} EQUITY <GO>   |   search tickers, news, screens...`)}
+                    style={{ borderColor: inputErr ? "var(--down)" : checking ? "var(--accent)" : undefined }}
+                    disabled={checking}
                 />
                 <span className="t-cmd-kbd">{isMac ? "⌘K" : "Ctrl+K"}</span>
             </div>

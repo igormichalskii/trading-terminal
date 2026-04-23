@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { apiFetch } from "../lib/api";
+import { apiFetch, verifySymbol } from "../lib/api";
 import { tickerError } from "../lib/validation";
 
 const MAX_CUSTOM_SYMBOLS = 20;
@@ -251,7 +251,8 @@ export default function PortfolioOptimizer({ watchlistSymbols, isLoggedIn }: Pro
     const [customSymbols,  setCustomSymbols]  = useState<string[]>([]);
     const [customSelected, setCustomSelected] = useState<Set<string>>(new Set());
     const [customInput,    setCustomInput]    = useState("");
-    const [customInputErr, setCustomInputErr] = useState<string | null>(null);
+    const [customInputErr,      setCustomInputErr]      = useState<string | null>(null);
+    const [customInputChecking, setCustomInputChecking] = useState(false);
     const [customResult,   setCustomResult]   = useState<OptimizeResult | null>(null);
     const [customLoading,  setCustomLoading]  = useState(false);
     const [customError,    setCustomError]    = useState<string | null>(null);
@@ -267,13 +268,17 @@ export default function PortfolioOptimizer({ watchlistSymbols, isLoggedIn }: Pro
         });
     }, [watchlistSymbols.join(",")]);
 
-    function addCustomSymbol() {
+    async function addCustomSymbol() {
         const sym = customInput.trim().toUpperCase();
-        const err = tickerError(sym);
-        if (err) { setCustomInputErr(err); return; }
+        const fmtErr = tickerError(sym);
+        if (fmtErr) { setCustomInputErr(fmtErr); return; }
         if (customSymbols.includes(sym)) { setCustomInputErr("Already added."); return; }
         if (customSymbols.length >= MAX_CUSTOM_SYMBOLS) { setCustomInputErr(`Max ${MAX_CUSTOM_SYMBOLS} symbols.`); return; }
         setCustomInputErr(null);
+        setCustomInputChecking(true);
+        const { valid, error } = await verifySymbol(sym);
+        setCustomInputChecking(false);
+        if (!valid) { setCustomInputErr(error); return; }
         setCustomSymbols(prev => [...prev, sym]);
         setCustomSelected(prev => new Set([...prev, sym]));
         setCustomInput("");
@@ -364,11 +369,12 @@ export default function PortfolioOptimizer({ watchlistSymbols, isLoggedIn }: Pro
                                     value={customInput}
                                     onChange={e => { setCustomInput(e.target.value.toUpperCase()); setCustomInputErr(null); }}
                                     onKeyDown={e => e.key === "Enter" && addCustomSymbol()}
-                                    placeholder="TICKER"
+                                    placeholder={customInputChecking ? "VERIFYING…" : "TICKER"}
+                                    disabled={customInputChecking}
                                     style={{
                                         ...mono, fontSize:11, width:100,
                                         background:"var(--bg)",
-                                        border:`1px solid ${customInputErr ? "var(--down)" : "var(--border-bright)"}`,
+                                        border:`1px solid ${customInputErr ? "var(--down)" : customInputChecking ? "var(--accent)" : "var(--border-bright)"}`,
                                         color:"var(--text)", padding:"4px 8px", outline:"none",
                                     }}
                                 />
@@ -376,11 +382,13 @@ export default function PortfolioOptimizer({ watchlistSymbols, isLoggedIn }: Pro
                                     <span style={{ ...mono, fontSize:9, color:"var(--down)", letterSpacing:"0.04em" }}>{customInputErr}</span>
                                 )}
                                 </div>
-                                <button onClick={addCustomSymbol} style={{
-                                    ...mono, fontSize:12, padding:"4px 10px", cursor:"pointer",
+                                <button onClick={addCustomSymbol} disabled={customInputChecking} style={{
+                                    ...mono, fontSize:12, padding:"4px 10px",
+                                    cursor: customInputChecking ? "not-allowed" : "pointer",
                                     background:"transparent", border:"1px solid var(--border-bright)",
-                                    color:"var(--text-dim)", transition:"all 0.15s",
-                                }}>+</button>
+                                    color: customInputChecking ? "var(--text-muted)" : "var(--text-dim)",
+                                    transition:"all 0.15s",
+                                }}>{customInputChecking ? "…" : "+"}</button>
                             </div>
                         </div>
 
