@@ -128,12 +128,27 @@ interface Props {
 export default function IndicatorsPanel({ subPanels, symbol, timeframe, lastClose }: Props) {
     const [tab, setTab] = useState<Tab>("OVERVIEW");
     const [cells, setCells] = useState<IndicatorCell[]>([]);
+    const [signalPanels, setSignalPanels] = useState<SubPanel[]>([]);
 
     useEffect(() => {
         if (!lastClose) return;
         const all = "sma,ema,bb,vwap,rsi,macd,stoch,atr,obv";
         apiFetch<IndicatorResponse>(`/indicators/${symbol}?timeframe=${timeframe}&indicators=${all}`)
-            .then(({ indicators }) => setCells(buildCells(indicators, lastClose)))
+            .then(({ indicators }) => {
+                setCells(buildCells(indicators, lastClose));
+                const panels: SubPanel[] = [];
+                if (indicators.rsi)
+                    panels.push({ id: "rsi", label: "RSI (14)", series: [{ data: indicators.rsi, color: "#f59e0b" }], refLines: [{ value: 70, color: "#ef444466" }, { value: 30, color: "#22c55e66" }] });
+                if (indicators.macd)
+                    panels.push({ id: "macd", label: "MACD (12, 26, 9)", series: [{ data: indicators.macd.macd, color: "#3b82f6" }, { data: indicators.macd.signal, color: "#f59e0b" }, { data: indicators.macd.histogram, color: "#22c55e", type: "histogram" as const }] });
+                if (indicators.stoch)
+                    panels.push({ id: "stoch", label: "Stochastic (14, 3)", series: [{ data: indicators.stoch.k, color: "#3b82f6" }, { data: indicators.stoch.d, color: "#f59e0b" }], refLines: [{ value: 80, color: "#ef444466" }, { value: 20, color: "#22c55e66" }] });
+                if (indicators.atr)
+                    panels.push({ id: "atr", label: "ATR (14)", series: [{ data: indicators.atr, color: "#a855f7" }] });
+                if (indicators.obv)
+                    panels.push({ id: "obv", label: "OBV", series: [{ data: indicators.obv, color: "#06b6d4" }] });
+                setSignalPanels(panels);
+            })
             .catch(() => {});
     }, [symbol, timeframe, lastClose]);
 
@@ -185,15 +200,15 @@ export default function IndicatorsPanel({ subPanels, symbol, timeframe, lastClos
                 </div>
             )}
 
-            {/* SIGNALS — real indicator sub-charts (from active overlays) */}
+            {/* SIGNALS — oscillator sub-charts, always populated */}
             {tab === "SIGNALS" && (
                 <div className="t-signals-scroll">
-                    {subPanels.length === 0 ? (
+                    {signalPanels.length === 0 ? (
                         <div style={{ padding: 24, color: "var(--text-muted)", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.05em" }}>
-                            NO SIGNALS ACTIVE — toggle indicators in the chart toolbar above
+                            {lastClose ? "Loading…" : "Load a symbol to see signals."}
                         </div>
                     ) : (
-                        subPanels.map((p) => (
+                        signalPanels.map((p) => (
                             <IndicatorSubChart
                                 key={p.id}
                                 label={p.label}

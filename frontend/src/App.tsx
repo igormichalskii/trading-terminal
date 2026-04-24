@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import type { OverlayData } from "./components/PriceChart";
 import TopBar from "./components/TopBar";
 import WatchlistSidebar from "./components/WatchlistSidebar";
@@ -7,6 +7,7 @@ import IndicatorsPanel from "./components/IndicatorsPanel";
 import type { SubPanel } from "./components/IndicatorsPanel";
 import StatusBar from "./components/StatusBar";
 import AuthModal from "./components/AuthModal";
+import MobileGate from "./components/MobileGate";
 import AIAssistant from "./components/AIAssistant";
 import EarningsCalendar from "./components/EarningsCalendar";
 import PortfolioOptimizer from "./components/PortfolioOptimizer";
@@ -84,6 +85,11 @@ export default function App() {
     const [watchlistSymbols, setWatchlistSymbols] = useState<string[]>([]);
     const [showAI, setShowAI]             = useState(false);
 
+    const isNarrow = useSyncExternalStore(
+        (cb) => { window.addEventListener("resize", cb); return () => window.removeEventListener("resize", cb); },
+        () => window.innerWidth < 768,
+    );
+
     useEffect(() => { init(); }, []);
 
     const toggleIndicator = useCallback((id: string) => {
@@ -117,6 +123,8 @@ export default function App() {
             .catch((err) => { if (err.name !== "AbortError") console.error(err); });
         return () => controller.abort();
     }, [symbol, timeframe, activeIndicators]);
+
+    if (isNarrow) return <MobileGate />;
 
     return (
         <div style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100vw", overflow: "hidden" }}>

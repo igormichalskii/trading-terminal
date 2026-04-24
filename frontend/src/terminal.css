@@ -142,6 +142,7 @@
 }
 
 .t-wl-item:hover { background: var(--panel-hover); }
+.t-wl-item:hover .wl-remove-btn { opacity: 1 !important; }
 
 .t-wl-item.selected {
   background: var(--accent-dim);

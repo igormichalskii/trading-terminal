@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
-import { apiFetch } from "../lib/api";
+import { apiFetch, verifySymbol } from "../lib/api";
+import { tickerError } from "../lib/validation";
 import type { User } from "@supabase/supabase-js";
 import "../terminal.css";
 
@@ -44,6 +45,11 @@ export default function WatchlistSidebar({ user, activeSymbol, onSelect, onSymbo
     const [tab, setTab] = useState<Tab>("FAV");
     const [items, setItems] = useState<WatchlistItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [addOpen, setAddOpen] = useState(false);
+    const [addInput, setAddInput] = useState("");
+    const [addErr, setAddErr] = useState<string | null>(null);
+    const [adding, setAdding] = useState(false);
+    const addInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (!user) {
@@ -86,6 +92,54 @@ export default function WatchlistSidebar({ user, activeSymbol, onSelect, onSymbo
             });
     }, [user?.id]);
 
+    const openAdd = () => {
+        setAddOpen(true);
+        setAddInput("");
+        setAddErr(null);
+        setTimeout(() => addInputRef.current?.focus(), 0);
+    };
+
+    const addSymbol = async () => {
+        const symbol = addInput.trim().toUpperCase();
+        const fmtErr = tickerError(symbol);
+        if (fmtErr) { setAddErr(fmtErr); return; }
+        if (items.some((i) => i.symbol === symbol)) { setAddErr("Already in watchlist."); return; }
+        setAddErr(null);
+        setAdding(true);
+        const { valid, error } = await verifySymbol(symbol);
+        if (!valid) { setAdding(false); setAddErr(error); return; }
+        const { data, error: dbErr } = await supabase
+            .from("watchlist")
+            .insert({ user_id: user!.id, symbol })
+            .select("id, symbol")
+            .single();
+        setAdding(false);
+        if (dbErr || !data) return;
+        const candles = await apiFetch<{ candles: Candle[] }>(`/ohlcv/${symbol}?timeframe=1M`)
+            .then(({ candles }) => candles)
+            .catch(() => [] as Candle[]);
+        const last = candles[candles.length - 1];
+        const prev = candles[candles.length - 2];
+        const price = last?.close ?? 0;
+        const chg = last && prev ? ((last.close - prev.close) / prev.close) * 100 : 0;
+        setItems((prev) => {
+            const next = [...prev, { id: data.id, symbol: data.symbol, price, chg }];
+            onSymbolsChange?.(next.map((i) => i.symbol));
+            return next;
+        });
+        setAddInput("");
+        setAddOpen(false);
+    };
+
+    const removeSymbol = async (id: string) => {
+        await supabase.from("watchlist").delete().eq("id", id);
+        setItems((prev) => {
+            const next = prev.filter((i) => i.id !== id);
+            onSymbolsChange?.(next.map((i) => i.symbol));
+            return next;
+        });
+    };
+
     const sorted = tab === "GAIN"
         ? [...items].sort((a, b) => b.chg - a.chg)
         : tab === "LOSE"
@@ -99,10 +153,38 @@ export default function WatchlistSidebar({ user, activeSymbol, onSelect, onSymbo
             <div className="t-panel-header">
                 <span className="t-panel-title">WATCHLIST · MKT MOVERS</span>
                 <div style={{ display: "flex", gap: 2 }}>
-                    <button className="t-icon-btn" title="Add symbol">+</button>
+                    <button className="t-icon-btn" title="Add symbol" onClick={user ? openAdd : undefined} style={{ opacity: user ? 1 : 0.4 }}>+</button>
                     <button className="t-icon-btn" title="Filter">▾</button>
                 </div>
             </div>
+
+            {/* Inline add-symbol row */}
+            {addOpen && (
+                <div style={{ padding: "6px 8px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
+                    <div style={{ display: "flex", gap: 4 }}>
+                        <input
+                            ref={addInputRef}
+                            value={addInput}
+                            onChange={(e) => { setAddInput(e.target.value.toUpperCase()); setAddErr(null); }}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") addSymbol();
+                                if (e.key === "Escape") { setAddOpen(false); setAddErr(null); }
+                            }}
+                            placeholder={adding ? "Verifying…" : "SYMBOL"}
+                            disabled={adding}
+                            style={{ flex: 1, minWidth: 0, background: "var(--bg)", border: `1px solid ${addErr ? "var(--down)" : adding ? "var(--accent)" : "var(--border-bright)"}`, color: "var(--text)", padding: "4px 8px", fontFamily: "var(--font-mono)", fontSize: 11, outline: "none", letterSpacing: "0.05em" }}
+                        />
+                        <button
+                            onClick={addSymbol}
+                            disabled={adding}
+                            style={{ background: "transparent", border: "1px solid var(--border-bright)", color: "var(--text-dim)", padding: "4px 8px", fontFamily: "var(--font-mono)", fontSize: 11, cursor: adding ? "default" : "pointer", opacity: adding ? 0.5 : 1 }}
+                        >
+                            {adding ? "…" : "ADD"}
+                        </button>
+                    </div>
+                    {addErr && <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--down)", marginTop: 4, letterSpacing: "0.03em" }}>{addErr}</p>}
+                </div>
+            )}
 
             {/* Tabs */}
             <div style={{ display: "flex", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
@@ -135,6 +217,7 @@ export default function WatchlistSidebar({ user, activeSymbol, onSelect, onSymbo
                                 key={item.id}
                                 className={"t-wl-item" + (selected ? " selected" : "")}
                                 onClick={() => onSelect(item.symbol)}
+                                style={{ position: "relative" }}
                             >
                                 <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, color: "var(--text)", letterSpacing: "0.03em" }}>
                                     {item.symbol}
@@ -155,6 +238,16 @@ export default function WatchlistSidebar({ user, activeSymbol, onSelect, onSymbo
                                 }}>
                                     {sign}{item.chg.toFixed(2)}%
                                 </span>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); removeSymbol(item.id); }}
+                                    title="Remove"
+                                    style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "var(--text-muted)", fontSize: 14, lineHeight: 1, cursor: "pointer", opacity: 0, transition: "opacity 0.15s", padding: "0 2px" }}
+                                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--down)"; }}
+                                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-muted)"; }}
+                                    className="wl-remove-btn"
+                                >
+                                    ×
+                                </button>
                             </div>
                         );
                     })

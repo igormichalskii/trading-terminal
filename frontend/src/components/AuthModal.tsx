@@ -48,81 +48,109 @@ export default function AuthModal({ onClose }: Props) {
         if (error) setError(error.message);
     };
 
+    const inputStyle: React.CSSProperties = {
+        width: "100%",
+        background: "var(--bg)",
+        border: "1px solid var(--border-bright)",
+        color: "var(--text)",
+        padding: "8px 12px",
+        fontFamily: "var(--font-mono)",
+        fontSize: 12,
+        outline: "none",
+        letterSpacing: "0.02em",
+        transition: "border-color 0.15s",
+    };
+
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+        <div
+            style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.7)" }}
+            onClick={onClose}
+        >
             <div
-                className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-6 w-full max-w-sm mx-4"
+                style={{ background: "var(--panel)", border: "1px solid var(--border-bright)", padding: "28px 24px", width: "100%", maxWidth: 360, margin: "0 16px" }}
                 onClick={(e) => e.stopPropagation()}
             >
-                <h2 className="text-lg font-semibold mb-5">
-                    {mode === "signin" ? "Sign in" : "Create account"}
-                </h2>
-
-                {/* OAuth buttons */}
-                <div className="flex flex-col gap-2 mb-5">
-                    <button
-                        onClick={() => handleOAuth("google")}
-                        className="flex items-center justify-center gap-2 px-4 py-2 rounded border border-[#2a2a2a] text-sm hover:border-gray-500 transition-colors cursor-pointer"
-                    >
-                        <GoogleIcon />
-                        Continue with Google
-                    </button>
-                    <button
-                        onClick={() => handleOAuth("apple")}
-                        className="flex items-center justify-center gap-2 px-4 py-2 rounded border border-[#2a2a2a] text-sm hover:border-gray-500 transition-colors cursor-pointer"
-                    >
-                        <AppleIcon />
-                        Continue with Apple
-                    </button>
+                {/* Header */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
+                    <div style={{ width: 14, height: 14, background: "var(--accent)", clipPath: "polygon(0 0, 100% 0, 100% 50%, 50% 50%, 50% 100%, 0 100%)", flexShrink: 0 }} />
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, color: "var(--text)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                        {mode === "signin" ? "Sign In" : "Create Account"}
+                    </span>
                 </div>
 
-                <div className="flex items-center gap-3 mb-5">
-                    <div className="flex-1 h-px bg-[#2a2a2a]" />
-                    <span className="text-xs text-gray-500">or</span>
-                    <div className="flex-1 h-px bg-[#2a2a2a]" />
+                {/* OAuth buttons */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
+                    {(["google", "apple"] as const).map((provider) => (
+                        <button
+                            key={provider}
+                            onClick={() => handleOAuth(provider)}
+                            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "8px 12px", background: "transparent", border: "1px solid var(--border-bright)", color: "var(--text-dim)", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.05em", cursor: "pointer", transition: "all 0.15s" }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--text-muted)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text)"; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-bright)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dim)"; }}
+                        >
+                            {provider === "google" ? <GoogleIcon /> : <AppleIcon />}
+                            {provider === "google" ? "CONTINUE WITH GOOGLE" : "CONTINUE WITH APPLE"}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Divider */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                    <div style={{ flex: 1, height: 1, background: "var(--border-bright)" }} />
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.1em" }}>OR</span>
+                    <div style={{ flex: 1, height: 1, background: "var(--border-bright)" }} />
                 </div>
 
                 {/* Email/password form */}
                 {successMsg ? (
-                    <p className="text-sm text-green-400 text-center">{successMsg}</p>
+                    <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--up)", textAlign: "center", letterSpacing: "0.05em" }}>{successMsg}</p>
                 ) : (
-                    <form onSubmit={handleEmailAuth} className="flex flex-col gap-3">
+                    <form onSubmit={handleEmailAuth} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                         <input
                             type="email"
-                            placeholder="Email"
+                            placeholder="EMAIL"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
+                            style={inputStyle}
+                            onFocus={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = "var(--accent)"; }}
+                            onBlur={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = "var(--border-bright)"; }}
                         />
                         <input
                             type="password"
-                            placeholder="Password"
+                            placeholder="PASSWORD"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
-                            className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
+                            style={inputStyle}
+                            onFocus={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = "var(--accent)"; }}
+                            onBlur={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = "var(--border-bright)"; }}
                         />
-                        {error && <p className="text-xs text-red-400">{error}</p>}
+                        {error && (
+                            <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--down)", letterSpacing: "0.04em" }}>{error}</p>
+                        )}
                         <button
                             type="submit"
                             disabled={loading}
-                            className="bg-white text-black text-sm px-4 py-2 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 cursor-pointer"
+                            style={{ padding: "9px 12px", background: loading ? "var(--border-bright)" : "var(--accent)", border: "none", color: loading ? "var(--text-muted)" : "#fff", fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", cursor: loading ? "default" : "pointer", transition: "all 0.15s", opacity: loading ? 0.7 : 1 }}
                         >
-                            {loading ? "…" : mode === "signin" ? "Sign in" : "Sign up"}
+                            {loading ? "…" : mode === "signin" ? "SIGN IN" : "CREATE ACCOUNT"}
                         </button>
                     </form>
                 )}
 
-                <p className="text-xs text-gray-500 mt-4 text-center">
-                    {mode === "signin" ? "Don't have an account?" : "Already have an account?"}{" "}
+                {/* Toggle mode */}
+                <div style={{ marginTop: 20, textAlign: "center" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)", letterSpacing: "0.04em" }}>
+                        {mode === "signin" ? "No account? " : "Have an account? "}
+                    </span>
                     <button
                         onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setError(null); }}
-                        className="text-white underline cursor-pointer"
+                        style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", background: "none", border: "none", cursor: "pointer", letterSpacing: "0.04em", textDecoration: "underline" }}
                     >
                         {mode === "signin" ? "Sign up" : "Sign in"}
                     </button>
-                </p>
+                </div>
             </div>
         </div>
     );

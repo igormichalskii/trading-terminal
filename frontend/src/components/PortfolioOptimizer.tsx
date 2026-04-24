@@ -4,6 +4,18 @@ import { tickerError } from "../lib/validation";
 
 const MAX_CUSTOM_SYMBOLS = 20;
 
+interface SavedPreset {
+    id: string;
+    label: string;
+    symbols: string[];
+}
+
+const STATIC_PRESETS: SavedPreset[] = [
+    { id: "ndx5",  label: "NASDAQ TOP 5",  symbols: ["AAPL","MSFT","NVDA","AMZN","META"] },
+    { id: "ndx10", label: "NASDAQ TOP 10", symbols: ["AAPL","MSFT","NVDA","AMZN","META","TSLA","GOOGL","AVGO","COST","NFLX"] },
+    { id: "ndx20", label: "NASDAQ TOP 20", symbols: ["AAPL","MSFT","NVDA","AMZN","META","TSLA","GOOGL","AVGO","COST","NFLX","AMD","ADBE","QCOM","PEP","INTU","AMAT","ISRG","MU","LRCX","TXN"] },
+];
+
 interface FrontierPoint { vol: number; ret: number; sharpe: number }
 
 interface PortfolioAllocation {
@@ -26,7 +38,7 @@ interface Props {
     isLoggedIn: boolean;
 }
 
-type Tab = "watchlist" | "custom" | "compare";
+type Tab = "watchlist" | "custom" | "presets" | "compare";
 
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" };
 
@@ -187,6 +199,52 @@ function ResultSection({ result, loading }: { result: OptimizeResult | null; loa
     );
 }
 
+function PresetCard({ preset, isStatic, isActive, loading, onRun, onDelete }: {
+    preset: SavedPreset;
+    isStatic: boolean;
+    isActive: boolean;
+    loading: boolean;
+    onRun: () => void;
+    onDelete?: () => void;
+}) {
+    return (
+        <div style={{ background:"var(--panel)", border:`1px solid ${isActive?"var(--accent)":"var(--border)"}`, transition:"border-color 0.15s" }}>
+            <div style={{ padding:"10px 14px", borderBottom:"1px solid var(--border)", display:"flex", alignItems:"center", gap:8 }}>
+                {isStatic && <span style={{ ...mono, fontSize:9, color:"var(--text-muted)" }}>▣</span>}
+                <span style={{ ...mono, fontSize:11, fontWeight:700, color:isActive?"var(--accent)":"var(--text)", letterSpacing:"0.06em", flex:1 }}>
+                    {preset.label}
+                </span>
+                <span style={{ ...mono, fontSize:9, color:"var(--text-muted)" }}>{preset.symbols.length} SYM</span>
+            </div>
+            <div style={{ padding:"10px 14px", borderBottom:"1px solid var(--border)", minHeight:52 }}>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
+                    {preset.symbols.map(s=>(
+                        <span key={s} style={{ ...mono, fontSize:9, color:"var(--text-dim)", border:"1px solid var(--border-bright)", padding:"1px 5px" }}>{s}</span>
+                    ))}
+                </div>
+            </div>
+            <div style={{ padding:"8px 14px", display:"flex", gap:6 }}>
+                <button onClick={onRun} disabled={loading} style={{
+                    ...mono, fontSize:10, letterSpacing:"0.08em", padding:"4px 12px",
+                    cursor:loading?"not-allowed":"pointer",
+                    border:"1px solid var(--accent)", color:"var(--bg)",
+                    background:loading?"var(--text-muted)":"var(--accent)",
+                    opacity:loading?0.5:1, transition:"all 0.15s",
+                }}>
+                    {loading&&isActive?"RUNNING…":"RUN"}
+                </button>
+                {!isStatic && onDelete && (
+                    <button onClick={onDelete} style={{
+                        ...mono, fontSize:10, padding:"4px 10px", cursor:"pointer",
+                        border:"1px solid var(--border-bright)", color:"var(--text-muted)",
+                        background:"transparent", transition:"all 0.15s",
+                    }}>DELETE</button>
+                )}
+            </div>
+        </div>
+    );
+}
+
 function SymbolSetup({ symbols, selected, onToggle, onRun, loading, error }: {
     symbols: string[];
     selected: Set<string>;
@@ -258,6 +316,23 @@ export default function PortfolioOptimizer({ watchlistSymbols, isLoggedIn }: Pro
     const [customError,    setCustomError]    = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
+    // Presets tab
+    const [userPresets,      setUserPresets]      = useState<SavedPreset[]>(() => {
+        try { return JSON.parse(localStorage.getItem("portfolio_presets") || "[]"); } catch { return []; }
+    });
+    const [activePresetId,   setActivePresetId]   = useState<string | null>(null);
+    const [presetResult,     setPresetResult]     = useState<OptimizeResult | null>(null);
+    const [presetLoading,    setPresetLoading]    = useState(false);
+    const [presetError,      setPresetError]      = useState<string | null>(null);
+    // New preset form
+    const [newPresetOpen,    setNewPresetOpen]    = useState(false);
+    const [newPresetName,    setNewPresetName]    = useState("");
+    const [newPresetSymbols, setNewPresetSymbols] = useState<string[]>([]);
+    const [newPresetInput,   setNewPresetInput]   = useState("");
+    const [newPresetInputErr,     setNewPresetInputErr]     = useState<string | null>(null);
+    const [newPresetChecking,     setNewPresetChecking]     = useState(false);
+    const newPresetInputRef = useRef<HTMLInputElement>(null);
+
     const canCompare = !!wlResult && !!customResult;
 
     useEffect(() => {
@@ -290,9 +365,45 @@ export default function PortfolioOptimizer({ watchlistSymbols, isLoggedIn }: Pro
         setCustomSelected(prev => { const n = new Set(prev); n.delete(sym); return n; });
     }
 
+    function persistUserPresets(presets: SavedPreset[]) {
+        setUserPresets(presets);
+        localStorage.setItem("portfolio_presets", JSON.stringify(presets));
+    }
+
+    async function addNewPresetSymbol() {
+        const sym = newPresetInput.trim().toUpperCase();
+        const fmtErr = tickerError(sym);
+        if (fmtErr) { setNewPresetInputErr(fmtErr); return; }
+        if (newPresetSymbols.includes(sym)) { setNewPresetInputErr("Already added."); return; }
+        if (newPresetSymbols.length >= MAX_CUSTOM_SYMBOLS) { setNewPresetInputErr(`Max ${MAX_CUSTOM_SYMBOLS} symbols.`); return; }
+        setNewPresetInputErr(null);
+        setNewPresetChecking(true);
+        const { valid, error } = await verifySymbol(sym);
+        setNewPresetChecking(false);
+        if (!valid) { setNewPresetInputErr(error); return; }
+        setNewPresetSymbols(prev => [...prev, sym]);
+        setNewPresetInput("");
+        newPresetInputRef.current?.focus();
+    }
+
+    function saveNewPreset() {
+        if (!newPresetName.trim() || newPresetSymbols.length < 2) return;
+        const preset: SavedPreset = {
+            id: `user_${Date.now()}`,
+            label: newPresetName.trim().toUpperCase(),
+            symbols: [...newPresetSymbols],
+        };
+        persistUserPresets([...userPresets, preset]);
+        setNewPresetOpen(false);
+        setNewPresetName("");
+        setNewPresetSymbols([]);
+        setNewPresetInput("");
+    }
+
     const tabs: { id: Tab; label: string }[] = [
         { id: "watchlist", label: "WATCHLIST" },
         { id: "custom",    label: "CUSTOM" },
+        { id: "presets",   label: "PRESETS" },
         ...(canCompare ? [{ id: "compare" as Tab, label: "COMPARE ▶" }] : []),
     ];
 
@@ -444,6 +555,129 @@ export default function PortfolioOptimizer({ watchlistSymbols, isLoggedIn }: Pro
                     </div>
 
                     <ResultSection result={customResult} loading={customLoading}/>
+                </>
+            )}
+
+            {/* ── PRESETS tab ── */}
+            {tab === "presets" && (
+                <>
+                    {/* Static presets */}
+                    <div>
+                        <div style={{ ...mono, fontSize:9, color:"var(--text-muted)", letterSpacing:"0.1em", marginBottom:10 }}>BUILT-IN PRESETS</div>
+                        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:1, background:"var(--border)" }}>
+                            {STATIC_PRESETS.map(p=>(
+                                <PresetCard
+                                    key={p.id}
+                                    preset={p}
+                                    isStatic={true}
+                                    isActive={activePresetId===p.id}
+                                    loading={presetLoading&&activePresetId===p.id}
+                                    onRun={()=>{ setActivePresetId(p.id); runOptimization(p.symbols,setPresetResult,setPresetLoading,setPresetError); }}
+                                />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* User presets */}
+                    <div>
+                        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+                            <div style={{ ...mono, fontSize:9, color:"var(--text-muted)", letterSpacing:"0.1em" }}>MY PRESETS</div>
+                            <button
+                                onClick={()=>{ setNewPresetOpen(o=>!o); setNewPresetInputErr(null); }}
+                                style={{ ...mono, fontSize:10, padding:"4px 12px", cursor:"pointer", border:"1px solid var(--border-bright)", color:"var(--text-dim)", background:"transparent", transition:"all 0.15s" }}
+                            >
+                                {newPresetOpen?"CANCEL":"+ NEW PRESET"}
+                            </button>
+                        </div>
+
+                        {/* New preset form */}
+                        {newPresetOpen && (
+                            <div style={{ border:"1px solid var(--border)", marginBottom:12 }}>
+                                <div style={{ padding:"10px 14px", borderBottom:"1px solid var(--border)" }}>
+                                    <div style={{ ...mono, fontSize:9, color:"var(--text-muted)", letterSpacing:"0.1em", marginBottom:8 }}>PRESET NAME</div>
+                                    <input
+                                        value={newPresetName}
+                                        onChange={e=>setNewPresetName(e.target.value)}
+                                        placeholder="MY PRESET"
+                                        maxLength={32}
+                                        style={{ ...mono, fontSize:11, width:220, background:"var(--bg)", border:"1px solid var(--border-bright)", color:"var(--text)", padding:"5px 10px", outline:"none" }}
+                                        onFocus={e=>{ (e.currentTarget as HTMLInputElement).style.borderColor="var(--accent)"; }}
+                                        onBlur={e=>{ (e.currentTarget as HTMLInputElement).style.borderColor="var(--border-bright)"; }}
+                                    />
+                                </div>
+                                <div style={{ padding:"10px 14px", borderBottom:"1px solid var(--border)" }}>
+                                    <div style={{ ...mono, fontSize:9, color:"var(--text-muted)", letterSpacing:"0.1em", marginBottom:8 }}>ADD SYMBOLS</div>
+                                    <div style={{ display:"flex", gap:6, marginBottom:6 }}>
+                                        <input
+                                            ref={newPresetInputRef}
+                                            value={newPresetInput}
+                                            onChange={e=>{ setNewPresetInput(e.target.value.toUpperCase()); setNewPresetInputErr(null); }}
+                                            onKeyDown={e=>e.key==="Enter"&&addNewPresetSymbol()}
+                                            placeholder={newPresetChecking?"VERIFYING…":"TICKER"}
+                                            disabled={newPresetChecking}
+                                            style={{ ...mono, fontSize:11, width:100, background:"var(--bg)", border:`1px solid ${newPresetInputErr?"var(--down)":newPresetChecking?"var(--accent)":"var(--border-bright)"}`, color:"var(--text)", padding:"4px 8px", outline:"none" }}
+                                        />
+                                        <button onClick={addNewPresetSymbol} disabled={newPresetChecking} style={{ ...mono, fontSize:12, padding:"4px 10px", cursor:newPresetChecking?"not-allowed":"pointer", background:"transparent", border:"1px solid var(--border-bright)", color:newPresetChecking?"var(--text-muted)":"var(--text-dim)", transition:"all 0.15s" }}>
+                                            {newPresetChecking?"…":"+"}
+                                        </button>
+                                    </div>
+                                    {newPresetInputErr && <p style={{ ...mono, fontSize:9, color:"var(--down)", marginBottom:6 }}>{newPresetInputErr}</p>}
+                                    {newPresetSymbols.length>0 && (
+                                        <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
+                                            {newPresetSymbols.map(s=>(
+                                                <div key={s} style={{ display:"flex", alignItems:"center" }}>
+                                                    <span style={{ ...mono, fontSize:10, color:"var(--text-dim)", border:"1px solid var(--border-bright)", borderRight:"none", padding:"2px 6px" }}>{s}</span>
+                                                    <button onClick={()=>setNewPresetSymbols(prev=>prev.filter(x=>x!==s))} style={{ ...mono, fontSize:10, padding:"2px 5px", cursor:"pointer", border:"1px solid var(--border-bright)", color:"var(--text-muted)", background:"transparent" }}>×</button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <div style={{ padding:"10px 14px", display:"flex", alignItems:"center", gap:12 }}>
+                                    <button
+                                        onClick={saveNewPreset}
+                                        disabled={!newPresetName.trim()||newPresetSymbols.length<2}
+                                        style={{ ...mono, fontSize:10, letterSpacing:"0.08em", padding:"6px 16px", cursor:!newPresetName.trim()||newPresetSymbols.length<2?"not-allowed":"pointer", border:"1px solid var(--up)", color:"var(--bg)", background:!newPresetName.trim()||newPresetSymbols.length<2?"var(--text-muted)":"var(--up)", opacity:!newPresetName.trim()||newPresetSymbols.length<2?0.5:1, transition:"all 0.15s" }}
+                                    >
+                                        SAVE PRESET
+                                    </button>
+                                    {newPresetSymbols.length<2 && (
+                                        <span style={{ ...mono, fontSize:10, color:"var(--text-muted)" }}>
+                                            {newPresetSymbols.length===0?"ADD AT LEAST 2 SYMBOLS":"ONE MORE SYMBOL NEEDED"}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {userPresets.length===0 ? (
+                            !newPresetOpen && (
+                                <div style={{ border:"1px solid var(--border)", padding:"32px 24px", textAlign:"center" }}>
+                                    <span style={{ ...mono, fontSize:11, color:"var(--text-muted)", letterSpacing:"0.06em" }}>NO SAVED PRESETS — CREATE ONE ABOVE</span>
+                                </div>
+                            )
+                        ) : (
+                            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:1, background:"var(--border)" }}>
+                                {userPresets.map(p=>(
+                                    <PresetCard
+                                        key={p.id}
+                                        preset={p}
+                                        isStatic={false}
+                                        isActive={activePresetId===p.id}
+                                        loading={presetLoading&&activePresetId===p.id}
+                                        onRun={()=>{ setActivePresetId(p.id); runOptimization(p.symbols,setPresetResult,setPresetLoading,setPresetError); }}
+                                        onDelete={()=>{
+                                            persistUserPresets(userPresets.filter(x=>x.id!==p.id));
+                                            if(activePresetId===p.id){ setActivePresetId(null); setPresetResult(null); }
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {presetError && <div style={{ ...mono, fontSize:10, color:"var(--down)" }}>{presetError}</div>}
+                    <ResultSection result={presetResult} loading={presetLoading}/>
                 </>
             )}
 
