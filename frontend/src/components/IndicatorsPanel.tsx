@@ -119,13 +119,12 @@ const TABS = ["OVERVIEW", "SIGNALS", "NEWS", "PREDICTIONS"] as const;
 type Tab = typeof TABS[number];
 
 interface Props {
-    subPanels: SubPanel[];
     symbol: string;
     timeframe: string;
     lastClose: number | null;
 }
 
-export default function IndicatorsPanel({ subPanels, symbol, timeframe, lastClose }: Props) {
+export default function IndicatorsPanel({ symbol, timeframe, lastClose }: Props) {
     const [tab, setTab] = useState<Tab>("OVERVIEW");
     const [cells, setCells] = useState<IndicatorCell[]>([]);
     const [signalPanels, setSignalPanels] = useState<SubPanel[]>([]);

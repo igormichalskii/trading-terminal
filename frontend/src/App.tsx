@@ -168,7 +168,6 @@ export default function App() {
 
                 {/* Bottom center+right: indicators panel */}
                 <IndicatorsPanel
-                    subPanels={subPanels}
                     symbol={symbol}
                     timeframe={timeframe}
                     lastClose={stats?.close ?? null}
