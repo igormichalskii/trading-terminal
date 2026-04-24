@@ -4,7 +4,6 @@ import TopBar from "./components/TopBar";
 import WatchlistSidebar from "./components/WatchlistSidebar";
 import ChartPanel from "./components/ChartPanel";
 import IndicatorsPanel from "./components/IndicatorsPanel";
-import type { SubPanel } from "./components/IndicatorsPanel";
 import StatusBar from "./components/StatusBar";
 import AuthModal from "./components/AuthModal";
 import MobileGate from "./components/MobileGate";
@@ -56,20 +55,6 @@ interface IndicatorResponse {
     };
 }
 
-function buildSubPanels(indicators: IndicatorResponse["indicators"]): SubPanel[] {
-    const panels: SubPanel[] = [];
-    if (indicators.rsi)
-        panels.push({ id: "rsi", label: "RSI (14)", series: [{ data: indicators.rsi, color: "#f59e0b" }], refLines: [{ value: 70, color: "#ef444466" }, { value: 30, color: "#22c55e66" }] });
-    if (indicators.macd)
-        panels.push({ id: "macd", label: "MACD (12, 26, 9)", series: [{ data: indicators.macd.macd, color: "#3b82f6" }, { data: indicators.macd.signal, color: "#f59e0b" }, { data: indicators.macd.histogram, color: "#22c55e", type: "histogram" as const }] });
-    if (indicators.stoch)
-        panels.push({ id: "stoch", label: "Stochastic (14, 3)", series: [{ data: indicators.stoch.k, color: "#3b82f6" }, { data: indicators.stoch.d, color: "#f59e0b" }], refLines: [{ value: 80, color: "#ef444466" }, { value: 20, color: "#22c55e66" }] });
-    if (indicators.atr)
-        panels.push({ id: "atr", label: "ATR (14)", series: [{ data: indicators.atr, color: "#a855f7" }] });
-    if (indicators.obv)
-        panels.push({ id: "obv", label: "OBV", series: [{ data: indicators.obv, color: "#06b6d4" }] });
-    return panels;
-}
 
 export default function App() {
     const { user, loading: authLoading, init, signOut } = useAuthStore();
@@ -80,7 +65,6 @@ export default function App() {
     const [candles, setCandles]           = useState<Candle[]>([]);
     const [activeIndicators, setActiveIndicators] = useState<Set<string>>(new Set());
     const [overlays, setOverlays]         = useState<OverlayData>({});
-    const [subPanels, setSubPanels]       = useState<SubPanel[]>([]);
     const [page, setPage]                 = useState<"chart" | "earnings" | "portfolio">("chart");
     const [watchlistSymbols, setWatchlistSymbols] = useState<string[]>([]);
     const [showAI, setShowAI]             = useState(false);
@@ -103,7 +87,7 @@ export default function App() {
     const limitParam = user ? "" : "&limit=250";
 
     useEffect(() => {
-        if (activeIndicators.size === 0) { setOverlays({}); setSubPanels([]); return; }
+        if (activeIndicators.size === 0) { setOverlays({}); return; }
         const controller = new AbortController();
         const query = Array.from(activeIndicators).join(",");
         apiFetch<IndicatorResponse>(
@@ -118,7 +102,6 @@ export default function App() {
                 if (indicators.vwap)     newOverlays.vwap = indicators.vwap;
                 if (indicators.ichimoku) newOverlays.ichimoku = indicators.ichimoku;
                 setOverlays(newOverlays);
-                setSubPanels(buildSubPanels(indicators));
             })
             .catch((err) => { if (err.name !== "AbortError") console.error(err); });
         return () => controller.abort();
