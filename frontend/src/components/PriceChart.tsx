@@ -48,7 +48,6 @@ interface Props {
     timeframe: string;
     chartType: "CANDLE" | "LINE";
     overlays: OverlayData;
-    limitParam: string;
     onStatsChange: (candle: Candle | null) => void;
     onCandlesChange?: (candles: Candle[]) => void;
     onHoverChange?: (data: HoverCandle | null) => void;
@@ -76,7 +75,7 @@ function timeToISO(time: string | number): string {
 }
 
 export default function PriceChart({
-    symbol, timeframe, chartType, overlays, limitParam,
+    symbol, timeframe, chartType, overlays,
     onStatsChange, onCandlesChange, onHoverChange,
 }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -90,7 +89,6 @@ export default function PriceChart({
     const hasMoreRef           = useRef(false);
     const symbolRef            = useRef(symbol);
     const timeframeRef         = useRef(timeframe);
-    const limitParamRef        = useRef(limitParam);
     const chartTypeRef         = useRef(chartType);
 
     const [loading, setLoading]         = useState(false);
@@ -99,7 +97,6 @@ export default function PriceChart({
 
     useEffect(() => { symbolRef.current     = symbol;     }, [symbol]);
     useEffect(() => { timeframeRef.current  = timeframe;  }, [timeframe]);
-    useEffect(() => { limitParamRef.current = limitParam; }, [limitParam]);
     useEffect(() => { chartTypeRef.current  = chartType;  }, [chartType]);
 
     // Create chart once
@@ -167,8 +164,7 @@ export default function PriceChart({
                 !range ||
                 range.from > 10 ||
                 isFetchingMoreRef.current ||
-                !hasMoreRef.current ||
-                limitParamRef.current !== ""
+                !hasMoreRef.current
             ) return;
 
             const oldest = allCandlesRef.current[0];
@@ -225,7 +221,7 @@ export default function PriceChart({
         setLoading(true);
         setError(null);
 
-        apiFetch<OHLCVResponse>(`/ohlcv/${symbol}?timeframe=${timeframe}${limitParam}`)
+        apiFetch<OHLCVResponse>(`/ohlcv/${symbol}?timeframe=${timeframe}`)
             .then(({ candles, has_more }) => {
                 allCandlesRef.current = candles;
                 hasMoreRef.current    = has_more;
@@ -248,7 +244,7 @@ export default function PriceChart({
                 onCandlesChange?.([]);
             })
             .finally(() => setLoading(false));
-    }, [symbol, timeframe, limitParam]);
+    }, [symbol, timeframe]);
 
     // Switch between candlestick and line series when chartType changes
     useEffect(() => {

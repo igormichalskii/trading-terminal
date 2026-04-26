@@ -28,7 +28,6 @@ interface Props {
     overlays: OverlayData;
     activeIndicators: Set<string>;
     onToggleIndicator: (id: string) => void;
-    limitParam: string;
     onStatsChange: (c: Candle | null) => void;
     onCandlesChange: (c: Candle[]) => void;
     onTimeframeChange: (tf: string) => void;
@@ -47,7 +46,6 @@ export default function ChartPanel({
     overlays,
     activeIndicators,
     onToggleIndicator,
-    limitParam,
     onStatsChange,
     onCandlesChange,
     onTimeframeChange,
@@ -189,7 +187,6 @@ export default function ChartPanel({
                     timeframe={timeframe}
                     chartType={chartType}
                     overlays={overlays}
-                    limitParam={limitParam}
                     onStatsChange={onStatsChange}
                     onCandlesChange={onCandlesChange}
                     onHoverChange={setHover}

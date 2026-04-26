@@ -84,14 +84,12 @@ export default function App() {
         });
     }, []);
 
-    const limitParam = user ? "" : "&limit=250";
-
     useEffect(() => {
         if (activeIndicators.size === 0) { setOverlays({}); return; }
         const controller = new AbortController();
         const query = Array.from(activeIndicators).join(",");
         apiFetch<IndicatorResponse>(
-            `/indicators/${symbol}?timeframe=${timeframe}&indicators=${query}${limitParam}`,
+            `/indicators/${symbol}?timeframe=${timeframe}&indicators=${query}`,
             { signal: controller.signal },
         )
             .then(({ indicators }) => {
@@ -138,7 +136,6 @@ export default function App() {
                     overlays={overlays}
                     activeIndicators={activeIndicators}
                     onToggleIndicator={toggleIndicator}
-                    limitParam={limitParam}
                     onStatsChange={setStats}
                     onCandlesChange={setCandles}
                     onTimeframeChange={setTimeframe}
