@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
 
-const SUBCHART_INDICATORS = [
-    { id: "rsi", label: "RSI (14)" },
-    { id: "macd", label: "MACD" },
-    { id: "stoch", label: "Stochastic" },
-    { id: "atr", label: "ATR (14)" },
-    { id: "obv", label: "OBV" },
-];
-
 const NAME_TO_SUBCHART_ID: Record<string, string> = {
     "RSI (14)": "rsi",
     "MACD": "macd",
