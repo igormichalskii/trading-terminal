@@ -144,52 +144,57 @@ export default function RightPanel({
             .catch(() => { });
     }, [symbol, timeframe, lastClose]);
 
-    if (!activePanel) return null;
+    // if (!activePanel) return null;
 
     return (
         <div className="t-panel t-right-panel">
-            <div style={{
-                padding: "12px 14px", borderBottom: "1px solid var(--border)",
-                fontFamily: "var(--font-mono)", fontSize: 11
-            }}>
-                {activePanel.toUpperCase()}
-            </div>
-            <div style={{ flex: 1, overflowY: "auto" }}>
-                {activePanel === "indicators" && (
-                    <div>
-                        {cells.length === 0 ? (
-                            <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-dim)" }}>
-                                {lastClose ? "Loading…" : "Load a symbol to see signals."}
-                            </div>
-                        ) : cells.map((cell) => {
-                            const subchartId = NAME_TO_SUBCHART_ID[cell.name] ?? null;
-                            return (
-                                <div key={cell.name} className="t-ind-cell">
-                                    <div>
-                                        <div className="t-ind-name">{cell.name}</div>
-                                        <div className="t-ind-value" style={{ color: sigColor(cell.signal) }}>{cell.value}</div>
-                                    </div>
-                                    <div>
-                                        <div className={`t-ind-signal t-sig-${cell.signal.toLowerCase()}`}>● {cell.signal}</div>
-                                        <div className="t-mini-bar">
-                                            <div className="t-mini-bar-fill" style={{ width: `${cell.bar}%`, background: sigColor(cell.signal) }} />
-                                        </div>
-                                        {subchartId && (
-                                            <button onClick={() => onToggleSubChart(subchartId)}
-                                                style={{
-                                                    marginTop: 4, background: "none", border: "1px solid var(--border-bright)", color: activeSubCharts.has(subchartId) ? "var(--accent)" :
-                                                        "var(--text-dim)", fontFamily: "var(--font-mono)", fontSize: 9, padding: "2px 6px", cursor: "pointer"
-                                                }}>
-                                                {activeSubCharts.has(subchartId) ? "CHART ●" : "CHART"}
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
+            {activePanel && (
+                <>
+                    <div style={{
+                        padding: "12px 14px", borderBottom: "1px solid var(--border)",
+                        fontFamily: "var(--font-mono)", fontSize: 11
+                    }}>
+                        {activePanel.toUpperCase()}
                     </div>
-                )}
-            </div>
+                    <div style={{ flex: 1, overflowY: "auto" }}>
+                        {activePanel === "indicators" && (
+                            <div>
+                                {cells.length === 0 ? (
+                                    <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-dim)" }}>
+                                        {lastClose ? "Loading…" : "Load a symbol to see signals."}
+                                    </div>
+                                ) : cells.map((cell) => {
+                                    const subchartId = NAME_TO_SUBCHART_ID[cell.name] ?? null;
+                                    return (
+                                        <div key={cell.name} className="t-ind-cell">
+                                            <div>
+                                                <div className="t-ind-name">{cell.name}</div>
+                                                <div className="t-ind-value" style={{ color: sigColor(cell.signal) }}>{cell.value}</div>
+                                            </div>
+                                            <div>
+                                                <div className={`t-ind-signal t-sig-${cell.signal.toLowerCase()}`}>● {cell.signal}</div>
+                                                <div className="t-mini-bar">
+                                                    <div className="t-mini-bar-fill" style={{ width: `${cell.bar}%`, background: sigColor(cell.signal) }} />
+                                                </div>
+                                                {subchartId && (
+                                                    <button onClick={() => onToggleSubChart(subchartId)}
+                                                        style={{
+                                                            marginTop: 4, background: "none", border: "1px solid var(--border-bright)", color: activeSubCharts.has(subchartId) ? "var(--accent)" :
+                                                                "var(--text-dim)", fontFamily: "var(--font-mono)", fontSize: 9, padding: "2px 6px", cursor: "pointer"
+                                                        }}>
+                                                        {activeSubCharts.has(subchartId) ? "CHART ●" : "CHART"}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </>
+            )}
+
         </div>
-    )
+    );
 }

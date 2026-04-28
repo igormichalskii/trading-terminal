@@ -154,7 +154,6 @@ export default function WatchlistSidebar({ user, activeSymbol, onSelect, onSymbo
                 <span className="t-panel-title">WATCHLIST · MKT MOVERS</span>
                 <div style={{ display: "flex", gap: 2 }}>
                     <button className="t-icon-btn" title="Add symbol" onClick={user ? openAdd : undefined} style={{ opacity: user ? 1 : 0.4 }}>+</button>
-                    <button className="t-icon-btn" title="Filter">▾</button>
                 </div>
             </div>
 
@@ -231,6 +230,7 @@ export default function WatchlistSidebar({ user, activeSymbol, onSelect, onSymbo
                                     fontWeight: 500,
                                     textAlign: "right",
                                     padding: "2px 5px",
+                                    marginRight: 18,
                                     borderRadius: 2,
                                     minWidth: 52,
                                     background: up ? "var(--up-bg)" : "var(--down-bg)",
