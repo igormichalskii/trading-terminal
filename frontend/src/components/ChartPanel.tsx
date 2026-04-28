@@ -25,6 +25,7 @@ interface Candle {
 
 interface Props {
     symbol: string;
+    timeframe: string;
     overlays: OverlayData;
     activeIndicators: Set<string>;
     onToggleIndicator: (id: string) => void;
@@ -48,6 +49,7 @@ function fmtTime(time: string | number): string {
 
 export default function ChartPanel({
     symbol,
+    timeframe,
     overlays,
     activeIndicators,
     onToggleIndicator,
@@ -57,12 +59,10 @@ export default function ChartPanel({
     stats,
     candles,
 }: Props) {
-    const [timeframe, setTimeframe] = useState<TF>("1M");
     const [chartType, setChartType] = useState<"CANDLE" | "LINE">("CANDLE");
     const [hover, setHover] = useState<HoverCandle | null>(null);
 
     function handleTimeframe(tf: TF) {
-        setTimeframe(tf);
         onTimeframeChange(tf);
     }
 

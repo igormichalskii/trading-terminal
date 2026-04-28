@@ -59,11 +59,14 @@ interface IndicatorResponse {
 export default function App() {
     const { user, loading: authLoading, init, signOut } = useAuthStore();
     const [showAuth, setShowAuth]         = useState(false);
-    const [symbol, setSymbol]             = useState("AAPL");
-    const [timeframe, setTimeframe]       = useState("1M");
+    const [symbol, setSymbol]             = useState(() => localStorage.getItem("symbol") ?? "AAPL");
+    const [timeframe, setTimeframe]       = useState(() => localStorage.getItem("timeframe") ?? "1M");
     const [stats, setStats]               = useState<Candle | null>(null);
     const [candles, setCandles]           = useState<Candle[]>([]);
-    const [activeIndicators, setActiveIndicators] = useState<Set<string>>(new Set());
+    const [activeIndicators, setActiveIndicators] = useState<Set<string>>(() => {
+        const saved = localStorage.getItem("indicators");
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+    });
     const [overlays, setOverlays]         = useState<OverlayData>({});
     const [page, setPage]                 = useState<"chart" | "earnings" | "portfolio">("chart");
     const [watchlistSymbols, setWatchlistSymbols] = useState<string[]>([]);
@@ -75,6 +78,14 @@ export default function App() {
     );
 
     useEffect(() => { init(); }, []);
+    useEffect(() => {
+        setOverlays({});
+    }, [symbol, timeframe]);
+    useEffect(() => { localStorage.setItem("symbol", symbol); }, [symbol]);
+    useEffect(() => { localStorage.setItem("timeframe", timeframe); }, [timeframe]);
+    useEffect(() => {
+        localStorage.setItem("indicators", JSON.stringify(Array.from(activeIndicators)));
+    }, [activeIndicators]);
 
     const toggleIndicator = useCallback((id: string) => {
         setActiveIndicators((prev) => {
@@ -88,8 +99,9 @@ export default function App() {
         if (activeIndicators.size === 0) { setOverlays({}); return; }
         const controller = new AbortController();
         const query = Array.from(activeIndicators).join(",");
+        const afterParam = candles.length > 0 ? `&after=${encodeURIComponent(candles[0].time)}` : "";
         apiFetch<IndicatorResponse>(
-            `/indicators/${symbol}?timeframe=${timeframe}&indicators=${query}`,
+            `/indicators/${symbol}?timeframe=${timeframe}&indicators=${query}${afterParam}`,
             { signal: controller.signal },
         )
             .then(({ indicators }) => {
@@ -103,7 +115,7 @@ export default function App() {
             })
             .catch((err) => { if (err.name !== "AbortError") console.error(err); });
         return () => controller.abort();
-    }, [symbol, timeframe, activeIndicators]);
+    }, [symbol, timeframe, activeIndicators, candles[0]?.time]);
 
     if (isNarrow) return <MobileGate />;
 
@@ -133,6 +145,7 @@ export default function App() {
                 {/* Center top: chart */}
                 <ChartPanel
                     symbol={symbol}
+                    timeframe={timeframe}
                     overlays={overlays}
                     activeIndicators={activeIndicators}
                     onToggleIndicator={toggleIndicator}

@@ -39,6 +39,7 @@ ALPACA_SECRET_KEY = os.getenv("ALPACA_SECRET_KEY")
 ALPACA_BASE = "https://data.alpaca.markets/v2"
 
 FREE_CANDLE_LIMIT = 250
+INDICATOR_WARMUP = 60
 
 # page_size: bars per page; window_days: calendar days to cover ~page_size bars
 TIMEFRAME_CONFIG = {
@@ -68,6 +69,8 @@ async def _fetch_bars(
     timeframe: str,
     before: str | None = None,
     page_size: int | None = None,
+    window_days: int | None = None,
+    after: str | None = None,
 ) -> tuple[list[dict], str]:
     cfg = TIMEFRAME_CONFIG[timeframe]
     size = page_size or cfg["page_size"]
@@ -77,7 +80,15 @@ async def _fetch_bars(
     else:
         end_dt = datetime.now(timezone.utc)
 
-    start_dt = end_dt - timedelta(days=cfg["window_days"])
+    if after:
+        if after.isdigit():
+            start_dt = datetime.fromtimestamp(int(after), tz=timezone.utc)
+        else:
+            start_dt = datetime.fromisoformat(after.replace("Z", "+00:00"))
+            if start_dt.tzinfo is None:
+                start_dt = start_dt.replace(tzinfo=timezone.utc)
+    else:
+        start_dt = end_dt - timedelta(days=window_days or cfg["window_days"])
 
     params = {
         "timeframe": cfg["alpaca_tf"],
@@ -252,12 +263,25 @@ async def get_ohlcv(symbol: str, timeframe: str = "1M", before: str = None, limi
 
 
 @app.get("/indicators/{symbol}")
-async def get_indicators(symbol: str, timeframe: str = "1M", indicators: str = "sma", limit: int = 0):
+async def get_indicators(symbol: str, timeframe: str = "1M", indicators: str = "sma", after: str = None):
     if timeframe not in TIMEFRAME_CONFIG:
         raise HTTPException(status_code=400, detail="Invalid timeframe")
+    cfg = TIMEFRAME_CONFIG[timeframe]
+    days_per_bar = cfg["window_days"] / cfg["page_size"]
+    extra_days = int(cfg["window_days"] + INDICATOR_WARMUP * days_per_bar)
+    if after:
+        if after.isdigit():
+            span_days = (datetime.now(timezone.utc) - datetime.fromtimestamp(int(after), tz=timezone.utc)).days
+        else:
+            dt = datetime.fromisoformat(after.replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            span_days = (datetime.now(timezone.utc) - dt).days
+    else:
+        span_days = extra_days
+    full_size = int(span_days / days_per_bar) + INDICATOR_WARMUP
     requested = {i.strip().lower() for i in indicators.split(",")}
-    page_size = limit if limit > 0 else None
-    candles, _ = await _fetch_bars(symbol, timeframe, page_size=page_size)
+    candles, _ = await _fetch_bars(symbol, timeframe, page_size=full_size, window_days=extra_days, after=after)
     return {
         "symbol": symbol.upper(),
         "timeframe": timeframe,

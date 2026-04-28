@@ -91,6 +91,7 @@ export default function PriceChart({
     const symbolRef            = useRef(symbol);
     const timeframeRef         = useRef(timeframe);
     const chartTypeRef         = useRef(chartType);
+    const overlaysRef          = useRef(overlays);
 
     const [loading, setLoading]         = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -99,6 +100,7 @@ export default function PriceChart({
     useEffect(() => { symbolRef.current     = symbol;     }, [symbol]);
     useEffect(() => { timeframeRef.current  = timeframe;  }, [timeframe]);
     useEffect(() => { chartTypeRef.current  = chartType;  }, [chartType]);
+    useEffect(() => { overlaysRef.current   = overlays;   }, [overlays]);
 
     // Create chart once
     useEffect(() => {
@@ -194,7 +196,11 @@ export default function PriceChart({
                     const merged = [...prepend, ...allCandlesRef.current];
                     console.log("[pagination]", { tf: timeframeRef.current, fetched: candles.length, prepended: prepend.length, merged: merged.length, seriesOK: !!seriesRef.current, prevRange });
                     allCandlesRef.current = merged;
-                    seriesRef.current?.setData(merged as any);
+                    onCandlesChange?.(merged);
+                    const displayData = chartTypeRef.current === "LINE"
+                        ? merged.map((c) => ({ time: c.time, value: c.close }))
+                        : merged;
+                    seriesRef.current!.setData(displayData as any);
                     if (prevRange) {
                         chart.timeScale().setVisibleLogicalRange({
                             from: prevRange.from + candles.length,
@@ -255,6 +261,18 @@ export default function PriceChart({
             .finally(() => setLoading(false));
     }, [symbol, timeframe]);
 
+    const addLine = (data: Point[], color: string, dashed = false) => {
+        const chart = chartRef.current;
+        if (!chart || !data?.length) return;
+        const s = chart.addSeries(LineSeries, {
+            color, lineWidth: 1,
+            lineStyle: dashed ? 1 : 0,
+            priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
+        });
+        s.setData(data as any);
+        overlaySeriesRef.current.push(s);
+    };
+
     // Switch between candlestick and line series when chartType changes
     useEffect(() => {
         const chart = chartRef.current;
@@ -286,6 +304,21 @@ export default function PriceChart({
                 ? allCandlesRef.current.map((c) => ({ time: c.time, value: c.close }))
                 : allCandlesRef.current;
             seriesRef.current.setData(data as any);
+            const ov = overlaysRef.current;
+            for (const { key, color } of OVERLAY_SERIES) {
+                const d = (ov as any)[key];
+                if (d) addLine(d, color);
+            }
+            if (ov.bb) {
+                addLine(ov.bb.upper, BB_COLORS.upper, true);
+                addLine(ov.bb.middle, BB_COLORS.middle);
+                addLine(ov.bb.lower, BB_COLORS.lower, true);
+            }
+            if (ov.ichimoku) {
+                for (const [key, color] of Object.entries(ICHIMOKU_COLORS)) {
+                    addLine((ov.ichimoku as any)[key], color);
+                }
+            }
             chart.timeScale().fitContent();
         }
     }, [chartType]);
@@ -299,17 +332,6 @@ export default function PriceChart({
             try { chart.removeSeries(s); } catch {}
         }
         overlaySeriesRef.current = [];
-
-        const addLine = (data: Point[], color: string, dashed = false) => {
-            if (!data?.length) return;
-            const s = chart.addSeries(LineSeries, {
-                color, lineWidth: 1,
-                lineStyle: dashed ? 1 : 0,
-                priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
-            });
-            s.setData(data as any);
-            overlaySeriesRef.current.push(s);
-        };
 
         for (const { key, color } of OVERLAY_SERIES) {
             const data = (overlays as any)[key];
