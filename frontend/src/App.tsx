@@ -234,7 +234,7 @@ export default function App() {
                     activePanel={rightPanel}
                     activeSubCharts={activeSubCharts}
                     onToggleSubChart={toggleSubChart}
-                    onDataReady={(ind) => setSubChartData(ind)}
+                    onDataReady={(ind: IndicatorResponse["indicators"]) => setSubChartData(ind)}
                 />
                 <RightSidebar activePanel={rightPanel} onToggle={toggleRightPanel} />
             </div>
