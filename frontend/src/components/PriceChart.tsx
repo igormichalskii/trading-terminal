@@ -27,6 +27,7 @@ export interface HoverCandle {
     low: number;
     close: number;
     volume: number;
+    time: string | number;
 }
 
 export interface OverlayData {
@@ -119,6 +120,12 @@ export default function PriceChart({
                 vertLine: { color: "#3b82f6", width: 1, style: 2, labelBackgroundColor: "#3b82f6" },
                 horzLine: { color: "#3b82f6", width: 1, style: 2, labelBackgroundColor: "#3b82f6" },
             },
+            localization: {
+                timeFormatter: (time: string | number) => {
+                    if (typeof time === "number") return new Date(time * 1000).toLocaleString();
+                    return time;
+                }
+            },
             rightPriceScale: { borderColor: "#1f1f1f" },
             timeScale:        { borderColor: "#1f1f1f" },
             width:  containerRef.current.clientWidth,
@@ -148,13 +155,13 @@ export default function PriceChart({
             // Look up the full candle (with volume) from our cached data.
             const candle = allCandlesRef.current.find((c) => c.time === param.time);
             if (candle) {
-                onHoverChange?.({ open: candle.open, high: candle.high, low: candle.low, close: candle.close, volume: candle.volume });
+                onHoverChange?.({ open: candle.open, high: candle.high, low: candle.low, close: candle.close, volume: candle.volume, time: candle.time });
                 return;
             }
             // Fallback for candle series (no volume available)
             const raw = param.seriesData.get(seriesRef.current) as any;
             if (raw?.open !== undefined) {
-                onHoverChange?.({ open: raw.open, high: raw.high, low: raw.low, close: raw.close, volume: 0 });
+                onHoverChange?.({ open: raw.open, high: raw.high, low: raw.low, close: raw.close, volume: 0, time: raw.time });
             }
         });
 
@@ -174,6 +181,7 @@ export default function PriceChart({
             setLoadingMore(true);
 
             const before = timeToISO(oldest.time);
+
             apiFetch<OHLCVResponse>(
                 `/ohlcv/${symbolRef.current}?timeframe=${timeframeRef.current}&before=${encodeURIComponent(before)}`
             )
@@ -184,8 +192,9 @@ export default function PriceChart({
                     const seen = new Set(allCandlesRef.current.map((c) => c.time));
                     const prepend = candles.filter((c) => !seen.has(c.time));
                     const merged = [...prepend, ...allCandlesRef.current];
+                    console.log("[pagination]", { tf: timeframeRef.current, fetched: candles.length, prepended: prepend.length, merged: merged.length, seriesOK: !!seriesRef.current, prevRange });
                     allCandlesRef.current = merged;
-                    series.setData(merged as any);
+                    seriesRef.current?.setData(merged as any);
                     if (prevRange) {
                         chart.timeScale().setVisibleLogicalRange({
                             from: prevRange.from + candles.length,

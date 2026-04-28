@@ -1,5 +1,7 @@
 # Trading Terminal
 
+> **TL;DR** — A self-built Terminal for retail investors. React + FastAPI app with real candlestick charts (Alpaca data), multi-timeframe support (1D–ALL), OHLCV hover stats, and a dark terminal UI. Early Phase 1 — indicators and AI assistant coming next.
+
 An all-in-one trading terminal for retail investors — think Bloomberg Terminal, but accessible and AI-native. Built solo as a learning project with the goal of covering stocks, ETFs, crypto, forex, options, and commodities with technical indicators, an AI trading assistant, and portfolio optimization.
 
 ![Status](https://img.shields.io/badge/status-in%20development-yellow)
@@ -19,7 +21,7 @@ An all-in-one trading terminal for retail investors — think Bloomberg Terminal
 ### Sprint 2 — Charts & Data
 - **Candlestick chart** powered by TradingView Lightweight Charts
 - **Symbol search** — type any US stock ticker and hit Enter or Load
-- **Timeframe selector** — 1D (hourly), 1W, 1M, 3M, 1Y, ALL
+- **Timeframe selector** — 1D · 1W · 1M · 3M · 6M · 1Y · 5Y · ALL with infinite scroll / paginated data loading
 - **Price stats panel** — Open, High, Low, Close, Volume for the latest bar
 - **Alpaca Market Data API** as the data provider (free tier, real historical bars)
 

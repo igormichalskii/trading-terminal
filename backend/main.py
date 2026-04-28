@@ -42,12 +42,14 @@ FREE_CANDLE_LIMIT = 250
 
 # page_size: bars per page; window_days: calendar days to cover ~page_size bars
 TIMEFRAME_CONFIG = {
-    "1D":  {"alpaca_tf": "1Hour",  "page_size": 168, "window_days": 60},
-    "1W":  {"alpaca_tf": "1Hour",  "page_size": 504, "window_days": 180},
-    "1M":  {"alpaca_tf": "1Day",   "page_size": 180, "window_days": 300},
-    "3M":  {"alpaca_tf": "1Day",   "page_size": 180, "window_days": 300},
-    "1Y":  {"alpaca_tf": "1Week",  "page_size": 104, "window_days": 800},
-    "ALL": {"alpaca_tf": "1Month", "page_size": 120, "window_days": 4000},
+    "1D":  {"alpaca_tf": "1Hour",   "page_size": 8,  "window_days": 7},
+    "1W":  {"alpaca_tf": "1Hour",  "page_size": 42,  "window_days": 10},
+    "1M":  {"alpaca_tf": "1Day",   "page_size": 25,  "window_days": 40},
+    "3M":  {"alpaca_tf": "1Day",   "page_size": 70,  "window_days": 100},
+    "6M":  {"alpaca_tf": "1Day",   "page_size": 135, "window_days": 200},
+    "1Y":  {"alpaca_tf": "1Day",   "page_size": 260, "window_days": 380},
+    "5Y":  {"alpaca_tf": "1Week",  "page_size": 265, "window_days": 1900},
+    "ALL": {"alpaca_tf": "1Month", "page_size": 240, "window_days": 8000},
 }
 
 DAILY_TFS = {"1Day", "1Week", "1Month"}

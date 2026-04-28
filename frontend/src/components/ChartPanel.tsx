@@ -3,7 +3,7 @@ import PriceChart from "./PriceChart";
 import type { OverlayData, HoverCandle } from "./PriceChart";
 import "../terminal.css";
 
-const TIMEFRAMES = ["1W", "1M", "3M", "1Y", "ALL"] as const;
+const TIMEFRAMES = ["1D", "1W", "1M", "3M", "6M", "1Y", "5Y", "ALL"] as const;
 type TF = typeof TIMEFRAMES[number];
 
 // Overlay indicator keys that can be toggled from the toolbar
@@ -39,6 +39,11 @@ function fmtVol(v: number): string {
     if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
     if (v >= 1_000) return `${(v / 1_000).toFixed(0)}K`;
     return String(v);
+}
+
+function fmtTime(time: string | number): string {
+    if (typeof time === "number") return new Date(time * 1000).toLocaleString();
+    return time;
 }
 
 export default function ChartPanel({
@@ -180,6 +185,7 @@ export default function ChartPanel({
                         {"  "}L<span>{ohlcDisplay.low.toFixed(2)}</span>
                         {"  "}C<span>{ohlcDisplay.close.toFixed(2)}</span>
                         {"  "}VOL<span>{fmtVol(ohlcDisplay.volume)}</span>
+                        {"  "}T<span>{fmtTime(ohlcDisplay.time)}</span>
                     </div>
                 )}
                 <PriceChart
