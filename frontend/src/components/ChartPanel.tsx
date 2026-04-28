@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PriceChart from "./PriceChart";
 import type { OverlayData, HoverCandle } from "./PriceChart";
 import "../terminal.css";
@@ -59,8 +59,12 @@ export default function ChartPanel({
     stats,
     candles,
 }: Props) {
-    const [chartType, setChartType] = useState<"CANDLE" | "LINE">("CANDLE");
     const [hover, setHover] = useState<HoverCandle | null>(null);
+    const [chartType, setChartType] = useState<"CANDLE" | "LINE">(() => 
+        (localStorage.getItem("chartType") as "CANDLE" | "LINE") ?? "CANDLE"
+    );
+
+    useEffect(() => { localStorage.setItem("chartType", chartType); }, [chartType]);
 
     function handleTimeframe(tf: TF) {
         onTimeframeChange(tf);

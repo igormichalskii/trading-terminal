@@ -55,19 +55,19 @@ interface Props {
 }
 
 const OVERLAY_SERIES = [
-    { key: "sma",  color: "#3b82f6" },  // accent blue — matches mockup SMA line
-    { key: "ema",  color: "#a78bfa" },  // purple
+    { key: "sma", color: "#3b82f6" },  // accent blue — matches mockup SMA line
+    { key: "ema", color: "#a78bfa" },  // purple
     { key: "vwap", color: "#00b4d8" },  // cyan
 ];
 
 const BB_COLORS = { upper: "#5a5a5a", middle: "#5a5a5a", lower: "#5a5a5a" };
 
 const ICHIMOKU_COLORS = {
-    tenkan:   "#ef4444",
-    kijun:    "#3b82f6",
+    tenkan: "#ef4444",
+    kijun: "#3b82f6",
     senkou_a: "#00d68f",
     senkou_b: "#ff4757",
-    chikou:   "#f59e0b",
+    chikou: "#f59e0b",
 };
 
 function timeToISO(time: string | number): string {
@@ -80,27 +80,27 @@ export default function PriceChart({
     onStatsChange, onCandlesChange, onHoverChange,
 }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const chartRef     = useRef<ReturnType<typeof createChart> | null>(null);
-    const seriesRef    = useRef<any>(null);
+    const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
+    const seriesRef = useRef<any>(null);
     const overlaySeriesRef = useRef<any[]>([]);
 
     // Pagination refs
-    const allCandlesRef        = useRef<Candle[]>([]);
-    const isFetchingMoreRef    = useRef(false);
-    const hasMoreRef           = useRef(false);
-    const symbolRef            = useRef(symbol);
-    const timeframeRef         = useRef(timeframe);
-    const chartTypeRef         = useRef(chartType);
-    const overlaysRef          = useRef(overlays);
+    const allCandlesRef = useRef<Candle[]>([]);
+    const isFetchingMoreRef = useRef(false);
+    const hasMoreRef = useRef(false);
+    const symbolRef = useRef(symbol);
+    const timeframeRef = useRef(timeframe);
+    const chartTypeRef = useRef(chartType);
+    const overlaysRef = useRef(overlays);
 
-    const [loading, setLoading]         = useState(false);
+    const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
-    const [error, setError]             = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => { symbolRef.current     = symbol;     }, [symbol]);
-    useEffect(() => { timeframeRef.current  = timeframe;  }, [timeframe]);
-    useEffect(() => { chartTypeRef.current  = chartType;  }, [chartType]);
-    useEffect(() => { overlaysRef.current   = overlays;   }, [overlays]);
+    useEffect(() => { symbolRef.current = symbol; }, [symbol]);
+    useEffect(() => { timeframeRef.current = timeframe; }, [timeframe]);
+    useEffect(() => { chartTypeRef.current = chartType; }, [chartType]);
+    useEffect(() => { overlaysRef.current = overlays; }, [overlays]);
 
     // Create chart once
     useEffect(() => {
@@ -129,22 +129,22 @@ export default function PriceChart({
                 }
             },
             rightPriceScale: { borderColor: "#1f1f1f" },
-            timeScale:        { borderColor: "#1f1f1f" },
-            width:  containerRef.current.clientWidth,
+            timeScale: { borderColor: "#1f1f1f" },
+            width: containerRef.current.clientWidth,
             height: containerRef.current.clientHeight || 300,
             handleScroll: true,
-            handleScale:  true,
+            handleScale: true,
         });
 
         const series = chart.addSeries(CandlestickSeries, {
-            upColor:      "#00d68f",
-            downColor:    "#ff4757",
+            upColor: "#00d68f",
+            downColor: "#ff4757",
             borderVisible: false,
-            wickUpColor:   "#00d68f",
+            wickUpColor: "#00d68f",
             wickDownColor: "#ff4757",
         });
 
-        chartRef.current  = chart;
+        chartRef.current = chart;
         seriesRef.current = series;
 
         // Crosshair hover → feed OHLC overlay in ChartPanel
@@ -204,7 +204,7 @@ export default function PriceChart({
                     if (prevRange) {
                         chart.timeScale().setVisibleLogicalRange({
                             from: prevRange.from + candles.length,
-                            to:   prevRange.to   + candles.length,
+                            to: prevRange.to + candles.length,
                         });
                     }
                 })
@@ -216,7 +216,7 @@ export default function PriceChart({
         const ro = new ResizeObserver(() => {
             if (!containerRef.current) return;
             chart.applyOptions({
-                width:  containerRef.current.clientWidth,
+                width: containerRef.current.clientWidth,
                 height: containerRef.current.clientHeight,
             });
         });
@@ -229,8 +229,8 @@ export default function PriceChart({
     useEffect(() => {
         if (!seriesRef.current) return;
 
-        allCandlesRef.current    = [];
-        hasMoreRef.current       = false;
+        allCandlesRef.current = [];
+        hasMoreRef.current = false;
         isFetchingMoreRef.current = false;
 
         setLoading(true);
@@ -239,7 +239,7 @@ export default function PriceChart({
         apiFetch<OHLCVResponse>(`/ohlcv/${symbol}?timeframe=${timeframe}`)
             .then(({ candles, has_more }) => {
                 allCandlesRef.current = candles;
-                hasMoreRef.current    = has_more;
+                hasMoreRef.current = has_more;
                 const displayData = chartTypeRef.current === "LINE"
                     ? candles.map((c) => ({ time: c.time, value: c.close }))
                     : candles;
@@ -280,10 +280,10 @@ export default function PriceChart({
 
         // Remove existing main series and overlay series
         if (seriesRef.current) {
-            try { chart.removeSeries(seriesRef.current); } catch {}
+            try { chart.removeSeries(seriesRef.current); } catch { }
         }
         for (const s of overlaySeriesRef.current) {
-            try { chart.removeSeries(s); } catch {}
+            try { chart.removeSeries(s); } catch { }
         }
         overlaySeriesRef.current = [];
 
@@ -329,7 +329,7 @@ export default function PriceChart({
         if (!chart) return;
 
         for (const s of overlaySeriesRef.current) {
-            try { chart.removeSeries(s); } catch {}
+            try { chart.removeSeries(s); } catch { }
         }
         overlaySeriesRef.current = [];
 
@@ -339,9 +339,9 @@ export default function PriceChart({
         }
 
         if (overlays.bb) {
-            addLine(overlays.bb.upper,  BB_COLORS.upper,  true);
+            addLine(overlays.bb.upper, BB_COLORS.upper, true);
             addLine(overlays.bb.middle, BB_COLORS.middle);
-            addLine(overlays.bb.lower,  BB_COLORS.lower,  true);
+            addLine(overlays.bb.lower, BB_COLORS.lower, true);
         }
 
         if (overlays.ichimoku) {
@@ -352,7 +352,7 @@ export default function PriceChart({
     }, [overlays]);
 
     return (
-        <div style={{ position: "relative", width: "100%", height: "100%" }}>
+        <div style={{ position: "relative", width: "100%", flex: 1, minHeight: 0 }}>
             <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
 
             {loading && (

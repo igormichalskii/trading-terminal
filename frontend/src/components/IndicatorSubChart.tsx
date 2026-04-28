@@ -95,7 +95,7 @@ export default function IndicatorSubChart({ label, series, refLines }: Props) {
     }, [series]);
 
     return (
-        <div className="mt-2">
+        <div className="mt-2" style={{ height: 140, flexShrink: 0}}>
             <div className="text-xs text-gray-500 mb-1 px-1">{label}</div>
             <div ref={containerRef} />
         </div>

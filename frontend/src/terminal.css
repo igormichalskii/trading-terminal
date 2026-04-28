@@ -74,12 +74,13 @@
 /* ── Main grid ── */
 .t-main-grid {
   display: grid;
-  grid-template-columns: 240px 1fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-columns: 240px 1fr var(--right-panel-width, 0px) 48px;
+  grid-template-rows: 1fr;
   gap: 1px;
   background: var(--border);
   flex: 1;
   min-height: 0;
+  transition: grid-template-columns 0.2s ease;
 }
 
 /* ── Panels ── */
@@ -108,6 +109,41 @@
   color: var(--text-dim);
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.t-right-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.t-right-sidebar {
+  width: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  gap: 4px;
+}
+
+.t-right-sidebar button {
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.t-right-sidebar button:hover {
+  color: var(--text);
+  border-color: var(--accent);
 }
 
 .t-icon-btn {
@@ -151,12 +187,14 @@
 }
 
 /* ── Chart panel ── */
-.t-chart-panel { display: flex; flex-direction: column; }
+.t-chart-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 
 .t-chart-viewport {
   flex: 1;
   position: relative;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .t-chart-overlay-stats {

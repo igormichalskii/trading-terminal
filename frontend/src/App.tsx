@@ -3,15 +3,17 @@ import type { OverlayData } from "./components/PriceChart";
 import TopBar from "./components/TopBar";
 import WatchlistSidebar from "./components/WatchlistSidebar";
 import ChartPanel from "./components/ChartPanel";
-import IndicatorsPanel from "./components/IndicatorsPanel";
 import StatusBar from "./components/StatusBar";
 import AuthModal from "./components/AuthModal";
 import MobileGate from "./components/MobileGate";
 import AIAssistant from "./components/AIAssistant";
 import EarningsCalendar from "./components/EarningsCalendar";
 import PortfolioOptimizer from "./components/PortfolioOptimizer";
+import RightSidebar from "./components/RightSidebar";
+import RightPanel from "./components/RightPanel";
 import { apiFetch } from "./lib/api";
 import { useAuthStore } from "./store/authStore";
+import IndicatorSubChart from "./components/IndicatorSubChart";
 import "./terminal.css";
 
 interface Candle {
@@ -34,16 +36,16 @@ interface IndicatorResponse {
         };
         vwap?: { time: string | number; value: number }[];
         ichimoku?: {
-            tenkan:   { time: string | number; value: number }[];
-            kijun:    { time: string | number; value: number }[];
+            tenkan: { time: string | number; value: number }[];
+            kijun: { time: string | number; value: number }[];
             senkou_a: { time: string | number; value: number }[];
             senkou_b: { time: string | number; value: number }[];
-            chikou:   { time: string | number; value: number }[];
+            chikou: { time: string | number; value: number }[];
         };
-        rsi?:  { time: string | number; value: number }[];
+        rsi?: { time: string | number; value: number }[];
         macd?: {
-            macd:      { time: string | number; value: number }[];
-            signal:    { time: string | number; value: number }[];
+            macd: { time: string | number; value: number }[];
+            signal: { time: string | number; value: number }[];
             histogram: { time: string | number; value: number }[];
         };
         stoch?: {
@@ -55,22 +57,50 @@ interface IndicatorResponse {
     };
 }
 
+function buildSubSeries(id: string, ind: any) {
+    if (id === "rsi" && ind.rsi) return [{ data: ind.rsi, color: "#f59e0b" }];
+    if (id === "macd" && ind.macd) return [
+        { data: ind.macd.macd, color: "#3b82f6" },
+        { data: ind.macd.signal, color: "#f59e0b" },
+        { data: ind.macd.histogram, color: "#22c55e", type: "histogram" as const },
+    ];
+    if (id === "stoch" && ind.stoch) return [
+        { data: ind.stoch.k, color: "#3b82f6" },
+        { data: ind.stoch.d, color: "#f59e0b" },
+    ];
+    if (id === "atr" && ind.atr) return [{ data: ind.atr, color: "#a855f7" }];
+    if (id === "obv" && ind.obv) return [{ data: ind.obv, color: "#06b6d4" }];
+    return [];
+}
+
+function buildRefLines(id: string) {
+    if (id === "rsi") return [{ value: 70, color: "#ef444466" }, { value: 30, color: "#22c55e66" }];
+    if (id === "stoch") return [{ value: 80, color: "#ef444466" }, { value: 20, color: "#22c55e66" }];
+    return undefined;
+}
+
 
 export default function App() {
     const { user, loading: authLoading, init, signOut } = useAuthStore();
-    const [showAuth, setShowAuth]         = useState(false);
-    const [symbol, setSymbol]             = useState(() => localStorage.getItem("symbol") ?? "AAPL");
-    const [timeframe, setTimeframe]       = useState(() => localStorage.getItem("timeframe") ?? "1M");
-    const [stats, setStats]               = useState<Candle | null>(null);
-    const [candles, setCandles]           = useState<Candle[]>([]);
+    const [showAuth, setShowAuth] = useState(false);
+    const [symbol, setSymbol] = useState(() => localStorage.getItem("symbol") ?? "AAPL");
+    const [timeframe, setTimeframe] = useState(() => localStorage.getItem("timeframe") ?? "1M");
+    const [stats, setStats] = useState<Candle | null>(null);
+    const [candles, setCandles] = useState<Candle[]>([]);
     const [activeIndicators, setActiveIndicators] = useState<Set<string>>(() => {
         const saved = localStorage.getItem("indicators");
         return saved ? new Set(JSON.parse(saved)) : new Set();
     });
-    const [overlays, setOverlays]         = useState<OverlayData>({});
-    const [page, setPage]                 = useState<"chart" | "earnings" | "portfolio">("chart");
+    const [activeSubCharts, setActiveSubCharts] = useState<Set<string>>(() => {
+        const saved = localStorage.getItem("subCharts");
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+    });
+    const [rightPanel, setRightPanel] = useState<string | null>(null);
+    const [overlays, setOverlays] = useState<OverlayData>({});
+    const [page, setPage] = useState<"chart" | "earnings" | "portfolio">("chart");
     const [watchlistSymbols, setWatchlistSymbols] = useState<string[]>([]);
-    const [showAI, setShowAI]             = useState(false);
+    const [showAI, setShowAI] = useState(false);
+    const [subChartData, setSubChartData] = useState<any>({});
 
     const isNarrow = useSyncExternalStore(
         (cb) => { window.addEventListener("resize", cb); return () => window.removeEventListener("resize", cb); },
@@ -86,9 +116,24 @@ export default function App() {
     useEffect(() => {
         localStorage.setItem("indicators", JSON.stringify(Array.from(activeIndicators)));
     }, [activeIndicators]);
+    useEffect(() => {
+        localStorage.setItem("subCharts", JSON.stringify(Array.from(activeSubCharts)));
+    }, [activeSubCharts]);
 
     const toggleIndicator = useCallback((id: string) => {
         setActiveIndicators((prev) => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
+    }, []);
+
+    const toggleRightPanel = useCallback((panel: string) => {
+        setRightPanel((prev) => prev === panel ? null : panel);
+    }, []);
+
+    const toggleSubChart = useCallback((id: string) => {
+        setActiveSubCharts((prev) => {
             const next = new Set(prev);
             next.has(id) ? next.delete(id) : next.add(id);
             return next;
@@ -106,10 +151,10 @@ export default function App() {
         )
             .then(({ indicators }) => {
                 const newOverlays: OverlayData = {};
-                if (indicators.sma)      newOverlays.sma = indicators.sma;
-                if (indicators.ema)      newOverlays.ema = indicators.ema;
-                if (indicators.bb)       newOverlays.bb  = indicators.bb;
-                if (indicators.vwap)     newOverlays.vwap = indicators.vwap;
+                if (indicators.sma) newOverlays.sma = indicators.sma;
+                if (indicators.ema) newOverlays.ema = indicators.ema;
+                if (indicators.bb) newOverlays.bb = indicators.bb;
+                if (indicators.vwap) newOverlays.vwap = indicators.vwap;
                 if (indicators.ichimoku) newOverlays.ichimoku = indicators.ichimoku;
                 setOverlays(newOverlays);
             })
@@ -133,7 +178,13 @@ export default function App() {
             />
 
             {/* Terminal grid — always mounted so chart never reloads on page switch */}
-            <div className="t-main-grid" style={{ display: page === "chart" ? undefined : "none" }}>
+            <div
+                className="t-main-grid"
+                style={{
+                    display: page === "chart" ? undefined : "none",
+                    "--right-panel-width": rightPanel ? "320px" : "0px",
+                } as React.CSSProperties}
+            >
                 {/* Left: watchlist (spans both rows) */}
                 <WatchlistSidebar
                     user={user}
@@ -143,28 +194,49 @@ export default function App() {
                 />
 
                 {/* Center top: chart */}
-                <ChartPanel
-                    symbol={symbol}
-                    timeframe={timeframe}
-                    overlays={overlays}
-                    activeIndicators={activeIndicators}
-                    onToggleIndicator={toggleIndicator}
-                    onStatsChange={setStats}
-                    onCandlesChange={setCandles}
-                    onTimeframeChange={setTimeframe}
-                    stats={stats}
-                    candles={candles}
-                />
+                <div style={{ display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden", flex: 1 }}>
+                    <ChartPanel
+                        symbol={symbol}
+                        timeframe={timeframe}
+                        overlays={overlays}
+                        activeIndicators={activeIndicators}
+                        onToggleIndicator={toggleIndicator}
+                        onStatsChange={setStats}
+                        onCandlesChange={setCandles}
+                        onTimeframeChange={setTimeframe}
+                        stats={stats}
+                        candles={candles}
+                    />
+
+                    {activeSubCharts.size > 0 && (
+                        <div style={{ overflowY: "auto", flexShrink: 0, maxHeight: "45%" }}>
+                            {Array.from(activeSubCharts).map((id) => (
+                                <IndicatorSubChart
+                                    key={id}
+                                    label={id.toUpperCase()}
+                                    series={buildSubSeries(id, subChartData)}
+                                    refLines={buildRefLines(id)}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+
 
                 {/* Right top: order book — hidden (requires paid data feed) */}
                 {/* <OrderBook lastPrice={stats?.close ?? null} /> */}
 
                 {/* Bottom center+right: indicators panel */}
-                <IndicatorsPanel
+                <RightPanel
                     symbol={symbol}
                     timeframe={timeframe}
                     lastClose={stats?.close ?? null}
+                    activePanel={rightPanel}
+                    activeSubCharts={activeSubCharts}
+                    onToggleSubChart={toggleSubChart}
+                    onDataReady={(ind) => setSubChartData(ind)}
                 />
+                <RightSidebar activePanel={rightPanel} onToggle={toggleRightPanel} />
             </div>
 
             {/* Full-page views — always mounted so state survives page switches */}
