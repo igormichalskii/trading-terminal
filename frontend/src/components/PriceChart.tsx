@@ -33,7 +33,12 @@ export interface HoverCandle {
 export interface OverlayData {
     sma?: Point[];
     ema?: Point[];
+    wma?: Point[];
+    dema?: Point[];
+    tema?: Point[];
     bb?: { upper: Point[]; middle: Point[]; lower: Point[] };
+    kc?: { upper: Point[]; middle: Point[]; lower: Point[] };
+    dc?: { upper: Point[]; middle: Point[]; lower: Point[] };
     vwap?: Point[];
     ichimoku?: {
         tenkan: Point[];
@@ -58,9 +63,14 @@ const OVERLAY_SERIES = [
     { key: "sma", color: "#3b82f6" },  // accent blue — matches mockup SMA line
     { key: "ema", color: "#a78bfa" },  // purple
     { key: "vwap", color: "#00b4d8" },  // cyan
+    { key: "wma", color: "#ef4444" },
+    { key: "dema", color: "#3b82f6" },
+    { key: "tema", color: "#00d68f" },
 ];
 
 const BB_COLORS = { upper: "#5a5a5a", middle: "#5a5a5a", lower: "#5a5a5a" };
+const KC_COLORS = { upper: "#6a6a6a", middle: "#6a6a6a", lower: "#6a6a6a" };
+const DC_COLORS = { upper: "#7a7a7a", middle: "#7a7a7a", lower: "#7a7a7a" };
 
 const ICHIMOKU_COLORS = {
     tenkan: "#ef4444",
@@ -314,6 +324,16 @@ export default function PriceChart({
                 addLine(ov.bb.middle, BB_COLORS.middle);
                 addLine(ov.bb.lower, BB_COLORS.lower, true);
             }
+            if (ov.kc) {
+                addLine(ov.kc.upper, KC_COLORS.upper, true);
+                addLine(ov.kc.middle, KC_COLORS.middle);
+                addLine(ov.kc.lower, KC_COLORS.lower, true);
+            }
+            if (ov.dc) {
+                addLine(ov.dc.upper, DC_COLORS.upper, true);
+                addLine(ov.dc.middle, DC_COLORS.middle);
+                addLine(ov.dc.lower, DC_COLORS.lower, true);
+            }
             if (ov.ichimoku) {
                 for (const [key, color] of Object.entries(ICHIMOKU_COLORS)) {
                     addLine((ov.ichimoku as any)[key], color);
@@ -342,6 +362,18 @@ export default function PriceChart({
             addLine(overlays.bb.upper, BB_COLORS.upper, true);
             addLine(overlays.bb.middle, BB_COLORS.middle);
             addLine(overlays.bb.lower, BB_COLORS.lower, true);
+        }
+
+        if (overlays.kc) {
+            addLine(overlays.kc.upper, KC_COLORS.upper, true);
+            addLine(overlays.kc.middle, KC_COLORS.middle);
+            addLine(overlays.kc.lower, KC_COLORS.lower, true);
+        }
+
+        if (overlays.dc) {
+            addLine(overlays.dc.upper, DC_COLORS.upper, true);
+            addLine(overlays.dc.middle, DC_COLORS.middle);
+            addLine(overlays.dc.lower, DC_COLORS.lower, true);
         }
 
         if (overlays.ichimoku) {

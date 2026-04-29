@@ -1,4 +1,5 @@
 const PANELS = [
+    { id: "watchlist", label: "WL" },
     { id: "indicators", label: "IND" },
     { id: "news", label: "NEWS" },
     { id: "predictions", label: "PRED" },

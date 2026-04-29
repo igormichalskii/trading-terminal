@@ -1,0 +1,1008 @@
+{
+  "$schema": "https://example.com/schemas/indicator-registry.v1.json",
+  "version": "1.0.0",
+  "description": "Registry of price-chart overlay indicators (share Y-axis with price).",
+  "fieldDefinitions": {
+    "id": "Stable, lowercase, snake_case unique identifier.",
+    "name": "Human-readable display name.",
+    "category": "Top-level grouping for UI menus.",
+    "subcategory": "Optional finer grouping within a category.",
+    "overlay": "Always true in this registry; kept for forward-compat with non-overlay indicators.",
+    "renderType": "How the indicator draws on the chart: line | multi_line | band | channel | cloud | dots | shapes | levels | ladder | candles | bricks | zones | profile | fan | pitchfork | zigzag",
+    "inputs": "Array of parameter definitions: { key, label, type, default, min?, max?, options? }.",
+    "outputs": "Array of plotted series: { key, label, style? }.",
+    "sources": "Allowed price source inputs: open | high | low | close | hl2 | hlc3 | ohlc4 | volume.",
+    "notes": "Implementation caveats, edge cases, or platform conventions."
+  },
+  "categories": [
+    {
+      "id": "moving_averages",
+      "label": "Moving Averages",
+      "indicators": [
+        {
+          "id": "sma",
+          "name": "Simple Moving Average",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 20, "min": 1 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "sma", "label": "SMA" }]
+        },
+        {
+          "id": "ema",
+          "name": "Exponential Moving Average",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 20, "min": 1 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "ema", "label": "EMA" }]
+        },
+        {
+          "id": "wma",
+          "name": "Weighted Moving Average",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 20, "min": 1 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "wma", "label": "WMA" }]
+        },
+        {
+          "id": "hma",
+          "name": "Hull Moving Average",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 16, "min": 2 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "hma", "label": "HMA" }]
+        },
+        {
+          "id": "vwma",
+          "name": "Volume Weighted Moving Average",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 20, "min": 1 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "vwma", "label": "VWMA" }],
+          "notes": "Requires volume data; degrades to SMA if volume is unavailable."
+        },
+        {
+          "id": "dema",
+          "name": "Double Exponential Moving Average",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 20, "min": 1 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "dema", "label": "DEMA" }]
+        },
+        {
+          "id": "tema",
+          "name": "Triple Exponential Moving Average",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 20, "min": 1 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "tema", "label": "TEMA" }]
+        },
+        {
+          "id": "kama",
+          "name": "Kaufman Adaptive Moving Average",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Efficiency Length", "type": "int", "default": 10, "min": 2 },
+            { "key": "fastLength", "label": "Fast EMA", "type": "int", "default": 2, "min": 1 },
+            { "key": "slowLength", "label": "Slow EMA", "type": "int", "default": 30, "min": 2 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "kama", "label": "KAMA" }]
+        },
+        {
+          "id": "alma",
+          "name": "Arnaud Legoux Moving Average",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 9, "min": 2 },
+            { "key": "offset", "label": "Offset", "type": "float", "default": 0.85, "min": 0, "max": 1 },
+            { "key": "sigma", "label": "Sigma", "type": "float", "default": 6, "min": 0.1 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "alma", "label": "ALMA" }]
+        },
+        {
+          "id": "zlema",
+          "name": "Zero Lag Exponential Moving Average",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 20, "min": 1 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "zlema", "label": "ZLEMA" }]
+        },
+        {
+          "id": "lsma",
+          "name": "Least Squares Moving Average",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 25, "min": 2 },
+            { "key": "offset", "label": "Offset", "type": "int", "default": 0 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "lsma", "label": "LSMA" }],
+          "notes": "Also known as Linear Regression Curve."
+        },
+        {
+          "id": "trima",
+          "name": "Triangular Moving Average",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 20, "min": 1 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "trima", "label": "TRIMA" }]
+        },
+        {
+          "id": "t3",
+          "name": "Tillson T3",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 8, "min": 2 },
+            { "key": "volumeFactor", "label": "Volume Factor", "type": "float", "default": 0.7, "min": 0, "max": 1 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "t3", "label": "T3" }]
+        },
+        {
+          "id": "mcginley",
+          "name": "McGinley Dynamic",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 14, "min": 1 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "mcginley", "label": "McGinley" }]
+        },
+        {
+          "id": "vidya",
+          "name": "Variable Index Dynamic Average",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 9, "min": 2 },
+            { "key": "histLength", "label": "History Length", "type": "int", "default": 30, "min": 2 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "vidya", "label": "VIDYA" }]
+        },
+        {
+          "id": "frama",
+          "name": "Fractal Adaptive Moving Average",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 16, "min": 4 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "frama", "label": "FRAMA" }],
+          "notes": "Length should be even."
+        },
+        {
+          "id": "jma",
+          "name": "Jurik Moving Average",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 14, "min": 2 },
+            { "key": "phase", "label": "Phase", "type": "float", "default": 50, "min": -100, "max": 100 },
+            { "key": "power", "label": "Power", "type": "float", "default": 2 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "jma", "label": "JMA" }]
+        },
+        {
+          "id": "gmma",
+          "name": "Guppy Multiple Moving Average",
+          "renderType": "multi_line",
+          "inputs": [
+            { "key": "shortLengths", "label": "Short EMAs", "type": "intArray", "default": [3, 5, 8, 10, 12, 15] },
+            { "key": "longLengths", "label": "Long EMAs", "type": "intArray", "default": [30, 35, 40, 45, 50, 60] },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [
+            { "key": "short", "label": "Short Group" },
+            { "key": "long", "label": "Long Group" }
+          ]
+        },
+        {
+          "id": "dma",
+          "name": "Displaced Moving Average",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 20, "min": 1 },
+            { "key": "displacement", "label": "Displacement", "type": "int", "default": 5 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "dma", "label": "DMA" }]
+        }
+      ]
+    },
+    {
+      "id": "volume_anchored",
+      "label": "Volume-Anchored",
+      "indicators": [
+        {
+          "id": "vwap",
+          "name": "VWAP",
+          "renderType": "line",
+          "inputs": [
+            { "key": "anchor", "label": "Anchor", "type": "enum", "default": "session",
+              "options": ["session", "week", "month", "quarter", "year", "earnings"] },
+            { "key": "showBands", "label": "Show Std Dev Bands", "type": "bool", "default": false },
+            { "key": "bandMultipliers", "label": "Band Multipliers", "type": "floatArray", "default": [1, 2, 3] }
+          ],
+          "outputs": [
+            { "key": "vwap", "label": "VWAP" },
+            { "key": "upperBands", "label": "Upper Bands" },
+            { "key": "lowerBands", "label": "Lower Bands" }
+          ],
+          "notes": "Requires volume; resets at the chosen anchor boundary."
+        },
+        {
+          "id": "anchored_vwap",
+          "name": "Anchored VWAP",
+          "renderType": "line",
+          "inputs": [
+            { "key": "anchorTime", "label": "Anchor Time", "type": "datetime", "default": null }
+          ],
+          "outputs": [{ "key": "avwap", "label": "AVWAP" }],
+          "notes": "User-placed anchor; supports multiple instances per chart."
+        }
+      ]
+    },
+    {
+      "id": "bands_channels",
+      "label": "Bands & Channels",
+      "indicators": [
+        {
+          "id": "bollinger_bands",
+          "name": "Bollinger Bands",
+          "renderType": "band",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 20, "min": 2 },
+            { "key": "stdDev", "label": "Std Deviations", "type": "float", "default": 2, "min": 0.1 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" },
+            { "key": "maType", "label": "Basis MA Type", "type": "enum", "default": "sma", "options": ["sma", "ema", "wma", "vwma"] }
+          ],
+          "outputs": [
+            { "key": "upper", "label": "Upper Band" },
+            { "key": "basis", "label": "Basis" },
+            { "key": "lower", "label": "Lower Band" }
+          ]
+        },
+        {
+          "id": "keltner_channels",
+          "name": "Keltner Channels",
+          "renderType": "band",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 20, "min": 2 },
+            { "key": "atrLength", "label": "ATR Length", "type": "int", "default": 10, "min": 1 },
+            { "key": "multiplier", "label": "Multiplier", "type": "float", "default": 2, "min": 0.1 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [
+            { "key": "upper", "label": "Upper" },
+            { "key": "basis", "label": "Basis" },
+            { "key": "lower", "label": "Lower" }
+          ]
+        },
+        {
+          "id": "donchian_channels",
+          "name": "Donchian Channels",
+          "renderType": "band",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 20, "min": 2 }
+          ],
+          "outputs": [
+            { "key": "upper", "label": "Upper" },
+            { "key": "basis", "label": "Basis" },
+            { "key": "lower", "label": "Lower" }
+          ]
+        },
+        {
+          "id": "price_channel",
+          "name": "Price Channel",
+          "renderType": "band",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 20, "min": 2 }
+          ],
+          "outputs": [
+            { "key": "upper", "label": "Upper" },
+            { "key": "lower", "label": "Lower" }
+          ]
+        },
+        {
+          "id": "envelope",
+          "name": "Envelope",
+          "renderType": "band",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 20, "min": 2 },
+            { "key": "percent", "label": "Percent", "type": "float", "default": 5, "min": 0.01 },
+            { "key": "maType", "label": "MA Type", "type": "enum", "default": "sma", "options": ["sma", "ema", "wma"] }
+          ],
+          "outputs": [
+            { "key": "upper", "label": "Upper" },
+            { "key": "basis", "label": "Basis" },
+            { "key": "lower", "label": "Lower" }
+          ]
+        },
+        {
+          "id": "starc_bands",
+          "name": "STARC Bands",
+          "renderType": "band",
+          "inputs": [
+            { "key": "length", "label": "MA Length", "type": "int", "default": 5, "min": 2 },
+            { "key": "atrLength", "label": "ATR Length", "type": "int", "default": 15, "min": 1 },
+            { "key": "multiplier", "label": "Multiplier", "type": "float", "default": 2, "min": 0.1 }
+          ],
+          "outputs": [
+            { "key": "upper", "label": "Upper" },
+            { "key": "basis", "label": "Basis" },
+            { "key": "lower", "label": "Lower" }
+          ]
+        },
+        {
+          "id": "acceleration_bands",
+          "name": "Acceleration Bands",
+          "renderType": "band",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 20, "min": 2 },
+            { "key": "factor", "label": "Factor", "type": "float", "default": 0.001 }
+          ],
+          "outputs": [
+            { "key": "upper", "label": "Upper" },
+            { "key": "basis", "label": "Basis" },
+            { "key": "lower", "label": "Lower" }
+          ]
+        },
+        {
+          "id": "linear_regression_channel",
+          "name": "Linear Regression Channel",
+          "renderType": "channel",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 100, "min": 2 },
+            { "key": "deviations", "label": "Deviations", "type": "float", "default": 2 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [
+            { "key": "upper", "label": "Upper" },
+            { "key": "basis", "label": "Regression Line" },
+            { "key": "lower", "label": "Lower" }
+          ]
+        },
+        {
+          "id": "standard_error_bands",
+          "name": "Standard Error Bands",
+          "renderType": "band",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 21, "min": 2 },
+            { "key": "errors", "label": "Errors", "type": "float", "default": 2 },
+            { "key": "smoothLength", "label": "Smoothing", "type": "int", "default": 3 }
+          ],
+          "outputs": [
+            { "key": "upper", "label": "Upper" },
+            { "key": "basis", "label": "Basis" },
+            { "key": "lower", "label": "Lower" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trend_momentum",
+      "label": "Trend & Momentum",
+      "indicators": [
+        {
+          "id": "parabolic_sar",
+          "name": "Parabolic SAR",
+          "renderType": "dots",
+          "inputs": [
+            { "key": "step", "label": "Start", "type": "float", "default": 0.02, "min": 0.001 },
+            { "key": "increment", "label": "Increment", "type": "float", "default": 0.02 },
+            { "key": "maximum", "label": "Maximum", "type": "float", "default": 0.2 }
+          ],
+          "outputs": [{ "key": "sar", "label": "SAR" }]
+        },
+        {
+          "id": "supertrend",
+          "name": "SuperTrend",
+          "renderType": "line",
+          "inputs": [
+            { "key": "atrLength", "label": "ATR Length", "type": "int", "default": 10, "min": 1 },
+            { "key": "multiplier", "label": "Multiplier", "type": "float", "default": 3, "min": 0.1 }
+          ],
+          "outputs": [
+            { "key": "supertrend", "label": "SuperTrend" },
+            { "key": "direction", "label": "Direction", "style": "hidden" }
+          ]
+        },
+        {
+          "id": "ichimoku",
+          "name": "Ichimoku Kinko Hyo",
+          "renderType": "cloud",
+          "inputs": [
+            { "key": "tenkanLength", "label": "Tenkan", "type": "int", "default": 9, "min": 1 },
+            { "key": "kijunLength", "label": "Kijun", "type": "int", "default": 26, "min": 1 },
+            { "key": "senkouBLength", "label": "Senkou B", "type": "int", "default": 52, "min": 1 },
+            { "key": "displacement", "label": "Displacement", "type": "int", "default": 26 }
+          ],
+          "outputs": [
+            { "key": "tenkan", "label": "Tenkan-sen" },
+            { "key": "kijun", "label": "Kijun-sen" },
+            { "key": "senkouA", "label": "Senkou A" },
+            { "key": "senkouB", "label": "Senkou B" },
+            { "key": "chikou", "label": "Chikou" },
+            { "key": "kumo", "label": "Kumo (Cloud)" }
+          ]
+        },
+        {
+          "id": "zigzag",
+          "name": "ZigZag",
+          "renderType": "zigzag",
+          "inputs": [
+            { "key": "deviation", "label": "Deviation %", "type": "float", "default": 5, "min": 0.1 },
+            { "key": "depth", "label": "Depth", "type": "int", "default": 10, "min": 2 }
+          ],
+          "outputs": [{ "key": "zigzag", "label": "ZigZag" }]
+        },
+        {
+          "id": "heikin_ashi",
+          "name": "Heikin Ashi",
+          "renderType": "candles",
+          "inputs": [],
+          "outputs": [{ "key": "ha", "label": "HA Candles" }],
+          "notes": "Alternative candle calculation; commonly exposed as a chart-type toggle rather than a standard indicator."
+        },
+        {
+          "id": "renko",
+          "name": "Renko",
+          "renderType": "bricks",
+          "inputs": [
+            { "key": "boxSize", "label": "Box Size", "type": "float", "default": null },
+            { "key": "boxSizeMethod", "label": "Method", "type": "enum", "default": "atr", "options": ["atr", "fixed", "percent"] },
+            { "key": "atrLength", "label": "ATR Length", "type": "int", "default": 14 }
+          ],
+          "outputs": [{ "key": "renko", "label": "Renko" }],
+          "notes": "Alternative chart type; X-axis is no longer time-uniform."
+        },
+        {
+          "id": "linear_regression_line",
+          "name": "Linear Regression Line",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 100, "min": 2 },
+            { "key": "source", "label": "Source", "type": "source", "default": "close" }
+          ],
+          "outputs": [{ "key": "lr", "label": "Linear Regression" }]
+        },
+        {
+          "id": "auto_trendlines",
+          "name": "Auto Trend Lines",
+          "renderType": "shapes",
+          "inputs": [
+            { "key": "lookback", "label": "Lookback", "type": "int", "default": 100, "min": 10 },
+            { "key": "minPivots", "label": "Min Pivots", "type": "int", "default": 2 }
+          ],
+          "outputs": [{ "key": "trendlines", "label": "Trend Lines" }]
+        },
+        {
+          "id": "andrews_pitchfork",
+          "name": "Andrews' Pitchfork",
+          "renderType": "pitchfork",
+          "inputs": [
+            { "key": "p1", "label": "Pivot 1", "type": "point" },
+            { "key": "p2", "label": "Pivot 2", "type": "point" },
+            { "key": "p3", "label": "Pivot 3", "type": "point" },
+            { "key": "variant", "label": "Variant", "type": "enum", "default": "standard", "options": ["standard", "schiff", "modified_schiff"] }
+          ],
+          "outputs": [{ "key": "pitchfork", "label": "Pitchfork" }],
+          "notes": "Typically a drawing tool with auto-detection variants."
+        },
+        {
+          "id": "chandelier_exit",
+          "name": "Chandelier Exit",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 22, "min": 1 },
+            { "key": "atrMultiplier", "label": "ATR Multiplier", "type": "float", "default": 3 }
+          ],
+          "outputs": [
+            { "key": "long", "label": "Long Stop" },
+            { "key": "short", "label": "Short Stop" }
+          ]
+        },
+        {
+          "id": "atr_trailing_stop",
+          "name": "ATR Trailing Stop",
+          "renderType": "line",
+          "inputs": [
+            { "key": "atrLength", "label": "ATR Length", "type": "int", "default": 14, "min": 1 },
+            { "key": "multiplier", "label": "Multiplier", "type": "float", "default": 3 }
+          ],
+          "outputs": [{ "key": "stop", "label": "Trailing Stop" }]
+        },
+        {
+          "id": "hilo_activator",
+          "name": "HiLo Activator",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 3, "min": 1 }
+          ],
+          "outputs": [{ "key": "hilo", "label": "HiLo" }]
+        },
+        {
+          "id": "vortex_bands",
+          "name": "Vortex Bands",
+          "renderType": "band",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 14 },
+            { "key": "multiplier", "label": "Multiplier", "type": "float", "default": 2 }
+          ],
+          "outputs": [
+            { "key": "upper", "label": "Upper" },
+            { "key": "lower", "label": "Lower" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pivots_sr",
+      "label": "Pivots & Support/Resistance",
+      "indicators": [
+        {
+          "id": "pivot_points_standard",
+          "name": "Pivot Points (Standard)",
+          "renderType": "levels",
+          "inputs": [
+            { "key": "anchor", "label": "Anchor", "type": "enum", "default": "daily",
+              "options": ["daily", "weekly", "monthly", "quarterly", "yearly"] },
+            { "key": "levels", "label": "Levels", "type": "int", "default": 3, "min": 1, "max": 5 }
+          ],
+          "outputs": [
+            { "key": "p", "label": "P" },
+            { "key": "r", "label": "R1..Rn" },
+            { "key": "s", "label": "S1..Sn" }
+          ]
+        },
+        {
+          "id": "pivot_points_camarilla",
+          "name": "Camarilla Pivots",
+          "renderType": "levels",
+          "inputs": [
+            { "key": "anchor", "label": "Anchor", "type": "enum", "default": "daily",
+              "options": ["daily", "weekly", "monthly"] }
+          ],
+          "outputs": [
+            { "key": "h", "label": "H1..H4" },
+            { "key": "l", "label": "L1..L4" }
+          ]
+        },
+        {
+          "id": "pivot_points_woodie",
+          "name": "Woodie Pivots",
+          "renderType": "levels",
+          "inputs": [
+            { "key": "anchor", "label": "Anchor", "type": "enum", "default": "daily",
+              "options": ["daily", "weekly", "monthly"] }
+          ],
+          "outputs": [
+            { "key": "p", "label": "P" },
+            { "key": "r", "label": "R1..R4" },
+            { "key": "s", "label": "S1..S4" }
+          ]
+        },
+        {
+          "id": "pivot_points_fibonacci",
+          "name": "Fibonacci Pivots",
+          "renderType": "levels",
+          "inputs": [
+            { "key": "anchor", "label": "Anchor", "type": "enum", "default": "daily",
+              "options": ["daily", "weekly", "monthly"] }
+          ],
+          "outputs": [
+            { "key": "p", "label": "P" },
+            { "key": "r", "label": "R1..R3" },
+            { "key": "s", "label": "S1..S3" }
+          ]
+        },
+        {
+          "id": "pivot_points_demark",
+          "name": "DeMark Pivots",
+          "renderType": "levels",
+          "inputs": [
+            { "key": "anchor", "label": "Anchor", "type": "enum", "default": "daily",
+              "options": ["daily", "weekly", "monthly"] }
+          ],
+          "outputs": [
+            { "key": "p", "label": "P" },
+            { "key": "r1", "label": "R1" },
+            { "key": "s1", "label": "S1" }
+          ]
+        },
+        {
+          "id": "fib_retracement",
+          "name": "Fibonacci Retracement",
+          "renderType": "levels",
+          "inputs": [
+            { "key": "p1", "label": "Start", "type": "point" },
+            { "key": "p2", "label": "End", "type": "point" },
+            { "key": "levels", "label": "Levels", "type": "floatArray",
+              "default": [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1] }
+          ],
+          "outputs": [{ "key": "fib", "label": "Fib Levels" }]
+        },
+        {
+          "id": "fib_extension",
+          "name": "Fibonacci Extension",
+          "renderType": "levels",
+          "inputs": [
+            { "key": "p1", "label": "P1", "type": "point" },
+            { "key": "p2", "label": "P2", "type": "point" },
+            { "key": "p3", "label": "P3", "type": "point" },
+            { "key": "levels", "label": "Levels", "type": "floatArray",
+              "default": [0, 0.382, 0.618, 1, 1.272, 1.618, 2.618] }
+          ],
+          "outputs": [{ "key": "fib", "label": "Fib Extensions" }]
+        },
+        {
+          "id": "fib_time_zones",
+          "name": "Fibonacci Time Zones",
+          "renderType": "levels",
+          "inputs": [
+            { "key": "anchor", "label": "Anchor Time", "type": "datetime" }
+          ],
+          "outputs": [{ "key": "tz", "label": "Time Zones" }]
+        },
+        {
+          "id": "gann",
+          "name": "Gann Tools",
+          "renderType": "fan",
+          "inputs": [
+            { "key": "tool", "label": "Tool", "type": "enum", "default": "fan",
+              "options": ["fan", "lines", "box", "square"] },
+            { "key": "p1", "label": "P1", "type": "point" },
+            { "key": "p2", "label": "P2", "type": "point" }
+          ],
+          "outputs": [{ "key": "gann", "label": "Gann" }]
+        },
+        {
+          "id": "murrey_math",
+          "name": "Murrey Math Lines",
+          "renderType": "levels",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 64 }
+          ],
+          "outputs": [{ "key": "mml", "label": "Murrey Levels" }]
+        },
+        {
+          "id": "auto_sr",
+          "name": "Auto Support/Resistance",
+          "renderType": "levels",
+          "inputs": [
+            { "key": "lookback", "label": "Lookback", "type": "int", "default": 200, "min": 20 },
+            { "key": "strength", "label": "Pivot Strength", "type": "int", "default": 5, "min": 1 },
+            { "key": "maxLevels", "label": "Max Levels", "type": "int", "default": 6 }
+          ],
+          "outputs": [{ "key": "levels", "label": "S/R Levels" }]
+        },
+        {
+          "id": "volume_profile",
+          "name": "Volume Profile",
+          "renderType": "profile",
+          "inputs": [
+            { "key": "mode", "label": "Mode", "type": "enum", "default": "visible",
+              "options": ["visible", "fixed_range", "session", "period"] },
+            { "key": "rows", "label": "Row Count", "type": "int", "default": 24, "min": 5 },
+            { "key": "valueAreaPct", "label": "Value Area %", "type": "float", "default": 70 }
+          ],
+          "outputs": [
+            { "key": "profile", "label": "Profile" },
+            { "key": "poc", "label": "POC" },
+            { "key": "vah", "label": "VAH" },
+            { "key": "val", "label": "VAL" }
+          ],
+          "notes": "Often rendered as a horizontal histogram on the right margin rather than a true overlay."
+        },
+        {
+          "id": "market_profile",
+          "name": "Market Profile / TPO",
+          "renderType": "profile",
+          "inputs": [
+            { "key": "tickSize", "label": "Tick Size", "type": "float" },
+            { "key": "session", "label": "Session", "type": "enum", "default": "rth", "options": ["rth", "eth", "custom"] }
+          ],
+          "outputs": [
+            { "key": "tpo", "label": "TPO" },
+            { "key": "poc", "label": "POC" },
+            { "key": "vah", "label": "VAH" },
+            { "key": "val", "label": "VAL" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "price_action",
+      "label": "Price Action / Patterns",
+      "indicators": [
+        {
+          "id": "fractals",
+          "name": "Fractals (Bill Williams)",
+          "renderType": "shapes",
+          "inputs": [
+            { "key": "periods", "label": "Periods", "type": "int", "default": 2, "min": 1 }
+          ],
+          "outputs": [
+            { "key": "up", "label": "Up Fractal" },
+            { "key": "down", "label": "Down Fractal" }
+          ]
+        },
+        {
+          "id": "swing_points",
+          "name": "Swing High/Low",
+          "renderType": "shapes",
+          "inputs": [
+            { "key": "leftBars", "label": "Left Bars", "type": "int", "default": 5 },
+            { "key": "rightBars", "label": "Right Bars", "type": "int", "default": 5 }
+          ],
+          "outputs": [
+            { "key": "high", "label": "Swing High" },
+            { "key": "low", "label": "Swing Low" }
+          ]
+        },
+        {
+          "id": "order_blocks",
+          "name": "Order Blocks",
+          "renderType": "zones",
+          "inputs": [
+            { "key": "lookback", "label": "Lookback", "type": "int", "default": 50 },
+            { "key": "showBullish", "label": "Bullish OB", "type": "bool", "default": true },
+            { "key": "showBearish", "label": "Bearish OB", "type": "bool", "default": true }
+          ],
+          "outputs": [{ "key": "ob", "label": "Order Blocks" }]
+        },
+        {
+          "id": "fair_value_gaps",
+          "name": "Fair Value Gaps",
+          "renderType": "zones",
+          "inputs": [
+            { "key": "minSize", "label": "Min Size (ATR x)", "type": "float", "default": 0 },
+            { "key": "extend", "label": "Extend Right", "type": "bool", "default": true },
+            { "key": "fillOnTouch", "label": "Mitigate on Touch", "type": "bool", "default": true }
+          ],
+          "outputs": [{ "key": "fvg", "label": "FVG" }]
+        },
+        {
+          "id": "structure_breaks",
+          "name": "Break of Structure / CHoCH",
+          "renderType": "shapes",
+          "inputs": [
+            { "key": "swingLength", "label": "Swing Length", "type": "int", "default": 10 }
+          ],
+          "outputs": [
+            { "key": "bos", "label": "BOS" },
+            { "key": "choch", "label": "CHoCH" }
+          ]
+        },
+        {
+          "id": "liquidity_zones",
+          "name": "Liquidity Zones / Sweeps",
+          "renderType": "zones",
+          "inputs": [
+            { "key": "lookback", "label": "Lookback", "type": "int", "default": 100 },
+            { "key": "showSweeps", "label": "Show Sweeps", "type": "bool", "default": true }
+          ],
+          "outputs": [
+            { "key": "zones", "label": "Liquidity" },
+            { "key": "sweeps", "label": "Sweeps" }
+          ]
+        },
+        {
+          "id": "supply_demand",
+          "name": "Supply & Demand Zones",
+          "renderType": "zones",
+          "inputs": [
+            { "key": "lookback", "label": "Lookback", "type": "int", "default": 100 },
+            { "key": "strength", "label": "Strength", "type": "int", "default": 3 }
+          ],
+          "outputs": [
+            { "key": "supply", "label": "Supply" },
+            { "key": "demand", "label": "Demand" }
+          ]
+        },
+        {
+          "id": "harmonic_patterns",
+          "name": "Harmonic Patterns",
+          "renderType": "shapes",
+          "inputs": [
+            { "key": "patterns", "label": "Patterns", "type": "stringArray",
+              "default": ["gartley", "bat", "butterfly", "crab", "shark", "cypher"] },
+            { "key": "tolerance", "label": "Tolerance %", "type": "float", "default": 5 }
+          ],
+          "outputs": [{ "key": "harmonics", "label": "Harmonics" }]
+        },
+        {
+          "id": "elliott_wave",
+          "name": "Elliott Wave (Auto)",
+          "renderType": "shapes",
+          "inputs": [
+            { "key": "degree", "label": "Wave Degree", "type": "enum", "default": "intermediate",
+              "options": ["minute", "minor", "intermediate", "primary"] }
+          ],
+          "outputs": [{ "key": "waves", "label": "Waves" }]
+        },
+        {
+          "id": "candlestick_patterns",
+          "name": "Candlestick Patterns",
+          "renderType": "shapes",
+          "inputs": [
+            { "key": "patterns", "label": "Patterns", "type": "stringArray",
+              "default": ["engulfing", "doji", "hammer", "shooting_star", "morning_star",
+                          "evening_star", "harami", "piercing", "dark_cloud_cover", "marubozu"] }
+          ],
+          "outputs": [{ "key": "patterns", "label": "Patterns" }]
+        }
+      ]
+    },
+    {
+      "id": "bill_williams",
+      "label": "Bill Williams",
+      "indicators": [
+        {
+          "id": "alligator",
+          "name": "Alligator",
+          "renderType": "multi_line",
+          "inputs": [
+            { "key": "jawLength", "label": "Jaw", "type": "int", "default": 13 },
+            { "key": "jawOffset", "label": "Jaw Offset", "type": "int", "default": 8 },
+            { "key": "teethLength", "label": "Teeth", "type": "int", "default": 8 },
+            { "key": "teethOffset", "label": "Teeth Offset", "type": "int", "default": 5 },
+            { "key": "lipsLength", "label": "Lips", "type": "int", "default": 5 },
+            { "key": "lipsOffset", "label": "Lips Offset", "type": "int", "default": 3 }
+          ],
+          "outputs": [
+            { "key": "jaw", "label": "Jaw" },
+            { "key": "teeth", "label": "Teeth" },
+            { "key": "lips", "label": "Lips" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "session_levels",
+      "label": "Session & Reference Levels",
+      "indicators": [
+        {
+          "id": "prev_period_levels",
+          "name": "Previous Period High/Low",
+          "renderType": "levels",
+          "inputs": [
+            { "key": "period", "label": "Period", "type": "enum", "default": "day",
+              "options": ["day", "week", "month", "quarter", "year"] },
+            { "key": "showHigh", "label": "Show High", "type": "bool", "default": true },
+            { "key": "showLow", "label": "Show Low", "type": "bool", "default": true },
+            { "key": "showClose", "label": "Show Close", "type": "bool", "default": false }
+          ],
+          "outputs": [
+            { "key": "high", "label": "Prev High" },
+            { "key": "low", "label": "Prev Low" },
+            { "key": "close", "label": "Prev Close" }
+          ]
+        },
+        {
+          "id": "opening_range",
+          "name": "Opening Range",
+          "renderType": "zones",
+          "inputs": [
+            { "key": "minutes", "label": "Range Minutes", "type": "int", "default": 30, "min": 1 },
+            { "key": "session", "label": "Session", "type": "enum", "default": "rth", "options": ["rth", "eth"] },
+            { "key": "extend", "label": "Extend Right", "type": "bool", "default": true }
+          ],
+          "outputs": [
+            { "key": "high", "label": "ORH" },
+            { "key": "low", "label": "ORL" }
+          ]
+        },
+        {
+          "id": "session_levels",
+          "name": "Session High/Low",
+          "renderType": "levels",
+          "inputs": [
+            { "key": "session", "label": "Session", "type": "enum", "default": "current", "options": ["current", "previous"] }
+          ],
+          "outputs": [
+            { "key": "high", "label": "Session High" },
+            { "key": "low", "label": "Session Low" }
+          ]
+        },
+        {
+          "id": "premarket_levels",
+          "name": "Pre-market High/Low",
+          "renderType": "levels",
+          "inputs": [
+            { "key": "extend", "label": "Extend Right", "type": "bool", "default": true }
+          ],
+          "outputs": [
+            { "key": "high", "label": "PMH" },
+            { "key": "low", "label": "PML" }
+          ]
+        },
+        {
+          "id": "average_daily_range",
+          "name": "Average Daily Range Projection",
+          "renderType": "levels",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 14 },
+            { "key": "anchor", "label": "Anchor", "type": "enum", "default": "open",
+              "options": ["open", "prev_close", "midpoint"] }
+          ],
+          "outputs": [
+            { "key": "upper", "label": "ADR Upper" },
+            { "key": "lower", "label": "ADR Lower" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "misc_overlays",
+      "label": "Misc Overlays",
+      "indicators": [
+        {
+          "id": "volatility_stop",
+          "name": "Volatility Stop",
+          "renderType": "line",
+          "inputs": [
+            { "key": "length", "label": "Length", "type": "int", "default": 20 },
+            { "key": "multiplier", "label": "Multiplier", "type": "float", "default": 2 }
+          ],
+          "outputs": [{ "key": "stop", "label": "Volatility Stop" }]
+        },
+        {
+          "id": "custom_price_band",
+          "name": "Custom Price Band",
+          "renderType": "band",
+          "inputs": [
+            { "key": "basisPrice", "label": "Basis Price", "type": "float" },
+            { "key": "percentAbove", "label": "% Above", "type": "float", "default": 5 },
+            { "key": "percentBelow", "label": "% Below", "type": "float", "default": 5 }
+          ],
+          "outputs": [
+            { "key": "upper", "label": "Upper" },
+            { "key": "basis", "label": "Basis" },
+            { "key": "lower", "label": "Lower" }
+          ]
+        },
+        {
+          "id": "median_price",
+          "name": "Median Price",
+          "renderType": "line",
+          "inputs": [],
+          "outputs": [{ "key": "median", "label": "Median (HL/2)" }]
+        },
+        {
+          "id": "typical_price",
+          "name": "Typical Price",
+          "renderType": "line",
+          "inputs": [],
+          "outputs": [{ "key": "typical", "label": "Typical (HLC/3)" }]
+        },
+        {
+          "id": "weighted_close",
+          "name": "Weighted Close",
+          "renderType": "line",
+          "inputs": [],
+          "outputs": [{ "key": "wc", "label": "Weighted Close (HLCC/4)" }]
+        }
+      ]
+    }
+  ]
+}

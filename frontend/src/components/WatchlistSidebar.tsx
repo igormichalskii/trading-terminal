@@ -151,9 +151,9 @@ export default function WatchlistSidebar({ user, activeSymbol, onSelect, onSymbo
     return (
         <div className="t-panel t-watchlist">
             <div className="t-panel-header">
-                <span className="t-panel-title">WATCHLIST · MKT MOVERS</span>
-                <div style={{ display: "flex", gap: 2 }}>
-                    <button className="t-icon-btn" title="Add symbol" onClick={user ? openAdd : undefined} style={{ opacity: user ? 1 : 0.4 }}>+</button>
+                <span className="t-panel-title">WATCHLIST</span>
+                <div style={{ display: "flex" }}>
+                    <button className="t-icon-btn" title="Add symbol" onClick={user ? openAdd : undefined} style={{ opacity: user ? 1 : 0.4 }}>{addOpen ? "-" : "+"}</button>
                 </div>
             </div>
 

@@ -74,7 +74,7 @@
 /* ── Main grid ── */
 .t-main-grid {
   display: grid;
-  grid-template-columns: 240px 1fr var(--right-panel-width, 0px) 48px;
+  grid-template-columns: 1fr var(--right-panel-width, 0px) 48px;
   grid-template-rows: 1fr;
   gap: 1px;
   background: var(--border);

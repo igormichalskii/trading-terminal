@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 import numpy as np
 import pandas as pd
+import pandas_ta as ta
 import scipy.optimize as sco
 from sklearn.ensemble import RandomForestClassifier
 import httpx
@@ -169,6 +170,15 @@ def compute_indicators(candles: list[dict], requested: set[str]) -> dict:
     if "ema" in requested:
         result["ema"] = _points(times, close.ewm(span=20, adjust=False).mean())
 
+    if "wma" in requested:
+        result["wma"] = _points(times, ta.wma(close, length=20))
+    
+    if "dema" in requested:
+        result["dema"] = _points(times, ta.dema(close, length=20))
+
+    if "tema" in requested:
+        result["tema"] = _points(times, ta.tema(close, length=20))
+
     if "bb" in requested:
         mid = close.rolling(20).mean()
         std = close.rolling(20).std()
@@ -176,6 +186,29 @@ def compute_indicators(candles: list[dict], requested: set[str]) -> dict:
             "upper": _points(times, mid + 2 * std),
             "middle": _points(times, mid),
             "lower": _points(times, mid - 2 * std),
+        }
+    
+    if "kc" in requested:
+        mid = close.ewm(span=20, adjust=False).mean()
+        prev_close = close.shift(1)
+        tr = pd.concat([
+            high - low,
+            (high - prev_close).abs(),
+            (low - prev_close).abs(),
+        ], axis=1).max(axis=1)
+        result["kc"] = {
+            "upper": _points(times, mid + (2 * tr.rolling(10).mean())),
+            "middle": _points(times, mid),
+            "lower": _points(times, mid - (2 * tr.rolling(10).mean())),
+        }
+
+    if "dc" in requested:
+        upper = high.rolling(20).max()
+        lower = low.rolling(20).min()
+        result["dc"] = {
+            "upper": _points(times, upper),
+            "middle": _points(times, (upper + lower) / 2),
+            "lower": _points(times, lower),
         }
 
     if "vwap" in requested:

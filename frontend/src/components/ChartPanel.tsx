@@ -32,6 +32,7 @@ interface Props {
     onStatsChange: (c: Candle | null) => void;
     onCandlesChange: (c: Candle[]) => void;
     onTimeframeChange: (tf: string) => void;
+    onOpenLibrary: () => void;
     stats: Candle | null;
     candles: Candle[];
 }
@@ -56,6 +57,7 @@ export default function ChartPanel({
     onStatsChange,
     onCandlesChange,
     onTimeframeChange,
+    onOpenLibrary,
     stats,
     candles,
 }: Props) {
@@ -177,7 +179,12 @@ export default function ChartPanel({
                         {label}
                     </button>
                 ))}
-                <button className="t-tool-btn" title="Add more indicators">+ ADD</button>
+                <button 
+                    className="t-tool-btn" title="Add more indicators"
+                    onClick={onOpenLibrary}
+                >
+                    INDICATORS
+                </button>
             </div>
 
             {/* Chart viewport */}

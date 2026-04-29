@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
+import WatchlistSidebar from "./WatchlistSidebar";
+import type { User } from "@supabase/supabase-js";
+import NewsFeed from "./NewsFeed";
+import MLPrediction from "./MLPrediction";
 
 const NAME_TO_SUBCHART_ID: Record<string, string> = {
     "RSI (14)": "rsi",
@@ -10,12 +14,15 @@ const NAME_TO_SUBCHART_ID: Record<string, string> = {
 };
 
 interface Props {
+    user: User | null;
     symbol: string,
     timeframe: string,
     lastClose: number | null,
     activePanel: string | null;
     activeSubCharts: Set<string>;
     onToggleSubChart: (id: string) => void;
+    onSelect: (symbol: string) => void;
+    onSymbolsChange?: (symbols: string[]) => void;
     onDataReady?: (indicators: IndicatorResponse["indicators"]) => void;
 }
 
@@ -123,12 +130,15 @@ function buildCells(ind: IndicatorResponse["indicators"], close: number): Indica
 
 
 export default function RightPanel({
+    user,
     symbol,
     timeframe,
     lastClose,
     activePanel,
     activeSubCharts,
     onToggleSubChart,
+    onSelect,
+    onSymbolsChange,
     onDataReady,
 }: Props) {
     const [cells, setCells] = useState<IndicatorCell[]>([]);
@@ -150,47 +160,65 @@ export default function RightPanel({
         <div className="t-panel t-right-panel">
             {activePanel && (
                 <>
-                    <div style={{
-                        padding: "12px 14px", borderBottom: "1px solid var(--border)",
-                        fontFamily: "var(--font-mono)", fontSize: 11
-                    }}>
-                        {activePanel.toUpperCase()}
-                    </div>
+                    {activePanel !== "watchlist" && (
+                        <div style={{
+                            padding: "12px 14px", borderBottom: "1px solid var(--border)",
+                            fontFamily: "var(--font-mono)", fontSize: 11
+                        }}>
+                            {activePanel.toUpperCase()}
+                        </div>
+                    )}
                     <div style={{ flex: 1, overflowY: "auto" }}>
-                        {activePanel === "indicators" && (
-                            <div>
-                                {cells.length === 0 ? (
-                                    <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-dim)" }}>
-                                        {lastClose ? "Loading…" : "Load a symbol to see signals."}
-                                    </div>
-                                ) : cells.map((cell) => {
-                                    const subchartId = NAME_TO_SUBCHART_ID[cell.name] ?? null;
-                                    return (
-                                        <div key={cell.name} className="t-ind-cell">
-                                            <div>
-                                                <div className="t-ind-name">{cell.name}</div>
-                                                <div className="t-ind-value" style={{ color: sigColor(cell.signal) }}>{cell.value}</div>
-                                            </div>
-                                            <div>
-                                                <div className={`t-ind-signal t-sig-${cell.signal.toLowerCase()}`}>● {cell.signal}</div>
-                                                <div className="t-mini-bar">
-                                                    <div className="t-mini-bar-fill" style={{ width: `${cell.bar}%`, background: sigColor(cell.signal) }} />
-                                                </div>
-                                                {subchartId && (
-                                                    <button onClick={() => onToggleSubChart(subchartId)}
-                                                        style={{
-                                                            marginTop: 4, background: "none", border: "1px solid var(--border-bright)", color: activeSubCharts.has(subchartId) ? "var(--accent)" :
-                                                                "var(--text-dim)", fontFamily: "var(--font-mono)", fontSize: 9, padding: "2px 6px", cursor: "pointer"
-                                                        }}>
-                                                        {activeSubCharts.has(subchartId) ? "CHART ●" : "CHART"}
-                                                    </button>
-                                                )}
-                                            </div>
+                        <div style={{ display: activePanel === "indicators" ? undefined : "none" }}>
+                            {cells.length === 0 ? (
+                                <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-dim)" }}>
+                                    {lastClose ? "Loading…" : "Load a symbol to see signals."}
+                                </div>
+                            ) : cells.map((cell) => {
+                                const subchartId = NAME_TO_SUBCHART_ID[cell.name] ?? null;
+                                return (
+                                    <div key={cell.name} className="t-ind-cell">
+                                        <div>
+                                            <div className="t-ind-name">{cell.name}</div>
+                                            <div className="t-ind-value" style={{ color: sigColor(cell.signal) }}>{cell.value}</div>
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        )}
+                                        <div>
+                                            <div className={`t-ind-signal t-sig-${cell.signal.toLowerCase()}`}>● {cell.signal}</div>
+                                            <div className="t-mini-bar">
+                                                <div className="t-mini-bar-fill" style={{ width: `${cell.bar}%`, background: sigColor(cell.signal) }} />
+                                            </div>
+                                            {subchartId && (
+                                                <button onClick={() => onToggleSubChart(subchartId)}
+                                                    style={{
+                                                        marginTop: 4, background: "none", border: "1px solid var(--border-bright)", color: activeSubCharts.has(subchartId) ? "var(--accent)" :
+                                                            "var(--text-dim)", fontFamily: "var(--font-mono)", fontSize: 9, padding: "2px 6px", cursor: "pointer"
+                                                    }}>
+                                                    {activeSubCharts.has(subchartId) ? "CHART ●" : "CHART"}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div style={{ display: activePanel === "watchlist" ? undefined : "none" }}>
+                            <WatchlistSidebar
+                                user={user}
+                                activeSymbol={symbol}
+                                onSelect={onSelect}
+                                onSymbolsChange={onSymbolsChange}
+                            />
+                        </div>
+                        <div style={{ display: activePanel === "news" ? undefined : "none" }}>
+                            <NewsFeed
+                                symbol={symbol}
+                            />
+                        </div>
+                        <div style={{ display: activePanel === "predictions" ? undefined : "none" }}>
+                            <MLPrediction
+                                symbol={symbol}
+                            />
+                        </div>
                     </div>
                 </>
             )}

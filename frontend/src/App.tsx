@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import type { OverlayData } from "./components/PriceChart";
 import TopBar from "./components/TopBar";
-import WatchlistSidebar from "./components/WatchlistSidebar";
 import ChartPanel from "./components/ChartPanel";
 import StatusBar from "./components/StatusBar";
 import AuthModal from "./components/AuthModal";
@@ -15,6 +14,7 @@ import { apiFetch } from "./lib/api";
 import { useAuthStore } from "./store/authStore";
 import IndicatorSubChart from "./components/IndicatorSubChart";
 import "./terminal.css";
+import IndicatorsLibrary from "./components/IndicatorsLibrary";
 
 interface Candle {
     time: string | number;
@@ -29,11 +29,24 @@ interface IndicatorResponse {
     indicators: {
         sma?: { time: string | number; value: number }[];
         ema?: { time: string | number; value: number }[];
+        wma?: { time: string | number; value: number }[];
+        dema?: { time: string | number; value: number }[];
+        tema?: { time: string | number; value: number }[];
         bb?: {
             upper: { time: string | number; value: number }[];
             middle: { time: string | number; value: number }[];
             lower: { time: string | number; value: number }[];
         };
+        kc?: {
+            upper: { time: string | number; value: number }[];
+            middle: { time: string | number; value: number }[];
+            lower: { time: string | number; value: number }[];
+        };
+        dc?: {
+            upper: { time: string | number; value: number }[];
+            middle: { time: string | number; value: number }[];
+            lower: { time: string | number; value: number }[];
+        }
         vwap?: { time: string | number; value: number }[];
         ichimoku?: {
             tenkan: { time: string | number; value: number }[];
@@ -91,6 +104,10 @@ export default function App() {
         const saved = localStorage.getItem("indicators");
         return saved ? new Set(JSON.parse(saved)) : new Set();
     });
+    const [pinnedIndicators, setPinnedIndicators] = useState<Set<string>>(() => {
+        const saved = localStorage.getItem("pinnedInd");
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+    })
     const [activeSubCharts, setActiveSubCharts] = useState<Set<string>>(() => {
         const saved = localStorage.getItem("subCharts");
         return saved ? new Set(JSON.parse(saved)) : new Set();
@@ -101,11 +118,13 @@ export default function App() {
     const [watchlistSymbols, setWatchlistSymbols] = useState<string[]>([]);
     const [showAI, setShowAI] = useState(false);
     const [subChartData, setSubChartData] = useState<any>({});
+    const [showLibrary, setShowLibrary] = useState<boolean>(false);
 
     const isNarrow = useSyncExternalStore(
         (cb) => { window.addEventListener("resize", cb); return () => window.removeEventListener("resize", cb); },
         () => window.innerWidth < 768,
     );
+
 
     useEffect(() => { init(); }, []);
     useEffect(() => {
@@ -117,6 +136,9 @@ export default function App() {
         localStorage.setItem("indicators", JSON.stringify(Array.from(activeIndicators)));
     }, [activeIndicators]);
     useEffect(() => {
+        localStorage.setItem("pinnedInd", JSON.stringify(Array.from(pinnedIndicators)));
+    }, [pinnedIndicators]);
+    useEffect(() => {
         localStorage.setItem("subCharts", JSON.stringify(Array.from(activeSubCharts)));
     }, [activeSubCharts]);
 
@@ -126,6 +148,22 @@ export default function App() {
             next.has(id) ? next.delete(id) : next.add(id);
             return next;
         });
+    }, []);
+
+    const onPin = useCallback((id: string) => {
+        setPinnedIndicators((prev) => {
+            const next = new Set(prev);
+            next.add(id);
+            return next;
+        });
+    }, []);
+
+    const onUnpin = useCallback((id: string) => {
+        setPinnedIndicators((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+        })
     }, []);
 
     const toggleRightPanel = useCallback((panel: string) => {
@@ -153,7 +191,12 @@ export default function App() {
                 const newOverlays: OverlayData = {};
                 if (indicators.sma) newOverlays.sma = indicators.sma;
                 if (indicators.ema) newOverlays.ema = indicators.ema;
+                if (indicators.wma) newOverlays.wma = indicators.wma;
+                if (indicators.dema) newOverlays.dema = indicators.dema;
+                if (indicators.tema) newOverlays.tema = indicators.tema;
                 if (indicators.bb) newOverlays.bb = indicators.bb;
+                if (indicators.kc) newOverlays.kc = indicators.kc;
+                if (indicators.dc) newOverlays.dc = indicators.dc;
                 if (indicators.vwap) newOverlays.vwap = indicators.vwap;
                 if (indicators.ichimoku) newOverlays.ichimoku = indicators.ichimoku;
                 setOverlays(newOverlays);
@@ -185,13 +228,6 @@ export default function App() {
                     "--right-panel-width": rightPanel ? "320px" : "0px",
                 } as React.CSSProperties}
             >
-                {/* Left: watchlist (spans both rows) */}
-                <WatchlistSidebar
-                    user={user}
-                    activeSymbol={symbol}
-                    onSelect={setSymbol}
-                    onSymbolsChange={setWatchlistSymbols}
-                />
 
                 {/* Center top: chart */}
                 <div style={{ display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden", flex: 1 }}>
@@ -204,6 +240,7 @@ export default function App() {
                         onStatsChange={setStats}
                         onCandlesChange={setCandles}
                         onTimeframeChange={setTimeframe}
+                        onOpenLibrary={() => setShowLibrary(true)}
                         stats={stats}
                         candles={candles}
                     />
@@ -228,12 +265,15 @@ export default function App() {
 
                 {/* Bottom center+right: indicators panel */}
                 <RightPanel
+                    user={user}
                     symbol={symbol}
                     timeframe={timeframe}
                     lastClose={stats?.close ?? null}
                     activePanel={rightPanel}
                     activeSubCharts={activeSubCharts}
                     onToggleSubChart={toggleSubChart}
+                    onSelect={setSymbol}
+                    onSymbolsChange={setWatchlistSymbols}
                     onDataReady={(ind: IndicatorResponse["indicators"]) => setSubChartData(ind)}
                 />
                 <RightSidebar activePanel={rightPanel} onToggle={toggleRightPanel} />
@@ -272,6 +312,14 @@ export default function App() {
             />
 
             {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+            <IndicatorsLibrary 
+                user={user}
+                pinnedIndicators={pinnedIndicators}
+                isOpen={showLibrary}
+                onPin={onPin}
+                onUnpin={onUnpin}
+                onClose={() => setShowLibrary(false)}
+            />
         </div>
     );
 }
