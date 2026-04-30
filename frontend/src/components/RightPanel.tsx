@@ -23,13 +23,19 @@ interface IndicatorResponse {
     indicators: {
         sma?: Point[];
         ema?: Point[];
+        wma?: Point[];
+        dema?: Point[];
+        tema?: Point[];
         vwap?: Point[];
         rsi?: Point[];
         atr?: Point[];
         obv?: Point[];
         bb?: { upper: Point[]; middle: Point[]; lower: Point[] };
+        kc?: { upper: Point[]; middle: Point[]; lower: Point[] };
+        dc?: { upper: Point[]; middle: Point[]; lower: Point[] };
         macd?: { macd: Point[]; signal: Point[]; histogram: Point[] };
         stoch?: { k: Point[]; d: Point[] };
+        ichimoku?: { tenkan: Point[]; kijun: Point[]; senkou_a: Point[]; senkou_b: Point[]; chikou: Point[] }
     };
 }
 
@@ -86,12 +92,49 @@ function buildCells(ind: IndicatorResponse["indicators"], close: number): Pinned
         cells.push({ name: "EMA (20)", value: v.toFixed(2), signal: s, bar: clamp(50 + dev * 10) });
     }
 
+    if (ind.wma) {
+        const v = last(ind.wma)?.value ?? close;
+        const dev = ((close - v) / v) * 100;
+        const s: Signal = dev > 0.5 ? "BUY" : dev < -0.5 ? "SELL" : "HOLD";
+        cells.push({ name: "WMA (20)", value: v.toFixed(2), signal: s, bar: clamp(50 + dev * 10) });
+    }
+
+    if (ind.dema) {
+        const v = last(ind.dema)?.value ?? close;
+        const dev = ((close - v) / v) * 100;
+        const s: Signal = dev > 0.5 ? "BUY" : dev < -0.5 ? "SELL" : "HOLD";
+        cells.push({ name: "DEMA (20)", value: v.toFixed(2), signal: s, bar: clamp(50 + dev * 10) });
+    }
+
+    if (ind.tema) {
+        const v = last(ind.tema)?.value ?? close;
+        const dev = ((close - v) / v) * 100;
+        const s: Signal = dev > 0.5 ? "BUY" : dev < -0.5 ? "SELL" : "HOLD";
+        cells.push({ name: "TEMA (20)", value: v.toFixed(2), signal: s, bar: clamp(50 + dev * 10) });
+    }
+
     if (ind.bb) {
         const upper = last(ind.bb.upper)?.value ?? close;
         const lower = last(ind.bb.lower)?.value ?? close;
         const pos = upper !== lower ? ((close - lower) / (upper - lower)) * 100 : 50;
         const s: Signal = pos > 80 ? "SELL" : pos < 20 ? "BUY" : "HOLD";
         cells.push({ name: "BOLLINGER", value: pos > 75 ? "UPPER" : pos < 25 ? "LOWER" : "MIDDLE", signal: s, bar: clamp(pos) });
+    }
+
+    if (ind.kc) {
+        const upper = last(ind.kc.upper)?.value ?? close;
+        const lower = last(ind.kc.lower)?.value ?? close;
+        const pos = upper !== lower ? ((close - lower) / (upper - lower)) * 100 : 50;
+        const s: Signal = pos > 80 ? "SELL" : pos < 20 ? "BUY" : "HOLD";
+        cells.push({ name: "KELTNER", value: pos > 75 ? "UPPER" : pos < 25 ? "LOWER" : "MIDDLE", signal: s, bar: clamp(pos) });
+    }
+
+    if (ind.dc) {
+        const upper = last(ind.dc.upper)?.value ?? close;
+        const lower = last(ind.dc.lower)?.value ?? close;
+        const pos = upper !== lower ? ((close - lower) / (upper - lower)) * 100 : 50;
+        const s: Signal = pos > 80 ? "SELL" : pos < 20 ? "BUY" : "HOLD";
+        cells.push({ name: "DONCHIAN", value: pos > 75 ? "UPPER" : pos < 25 ? "LOWER" : "MIDDLE", signal: s, bar: clamp(pos) });
     }
 
     if (ind.atr) {
@@ -114,6 +157,28 @@ function buildCells(ind: IndicatorResponse["indicators"], close: number): Pinned
         const dev = ((close - v) / v) * 100;
         const s: Signal = dev > 0.5 ? "BUY" : dev < -0.5 ? "SELL" : "HOLD";
         cells.push({ name: "VWAP", value: v.toFixed(2), signal: s, bar: clamp(50 + dev * 10) });
+    }
+
+    if (ind.ichimoku) {
+        const tenkan = last(ind.ichimoku.tenkan)?.value ?? close;
+        const kijun = last(ind.ichimoku.kijun)?.value ?? close;
+        const sa = last(ind.ichimoku.senkou_a)?.value ?? close;
+        const sb = last(ind.ichimoku.senkou_b)?.value ?? close;
+        const cloudTop = Math.max(sa, sb);
+        const cloudBottom = Math.min(sa, sb);
+
+        let score = 0;
+        if (close > cloudTop) score += 1;
+        else if (close < cloudBottom) score -= 1;
+        if (tenkan > kijun) score += 1;
+        else if (tenkan < kijun) score -= 1;
+        if (sa > sb) score += 1;
+        else if (sa < sb) score -= 1;
+
+        const s: Signal = score >= 2 ? "BUY" : score <= -2 ? "SELL" : "HOLD";
+        const value = close > cloudTop ? "ABOVE CLOUD" : close < cloudBottom ? "BELOW CLOUD" : "IN CLOUD";
+        const bar = close > cloudTop ? clamp(60 + score * 10) : close < cloudBottom ? clamp(40 + score * 10) : 50;
+        cells.push({ name: "ICHIMOKU", value, signal: s, bar });
     }
 
     return cells;
