@@ -117,7 +117,7 @@ export default function App() {
     const [page, setPage] = useState<"chart" | "earnings" | "portfolio">("chart");
     const [watchlistSymbols, setWatchlistSymbols] = useState<string[]>([]);
     const [showAI, setShowAI] = useState(false);
-    const [subChartData, setSubChartData] = useState<any>({});
+    // const [subChartData, setSubChartData] = useState<any>({});
     const [showLibrary, setShowLibrary] = useState<boolean>(false);
 
     const isNarrow = useSyncExternalStore(
@@ -170,13 +170,13 @@ export default function App() {
         setRightPanel((prev) => prev === panel ? null : panel);
     }, []);
 
-    const toggleSubChart = useCallback((id: string) => {
-        setActiveSubCharts((prev) => {
-            const next = new Set(prev);
-            next.has(id) ? next.delete(id) : next.add(id);
-            return next;
-        });
-    }, []);
+    // const toggleSubChart = useCallback((id: string) => {
+    //     setActiveSubCharts((prev) => {
+    //         const next = new Set(prev);
+    //         next.has(id) ? next.delete(id) : next.add(id);
+    //         return next;
+    //     });
+    // }, []);
 
     useEffect(() => {
         if (activeIndicators.size === 0) { setOverlays({}); return; }
