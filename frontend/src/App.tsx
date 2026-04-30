@@ -108,10 +108,10 @@ export default function App() {
         const saved = localStorage.getItem("pinnedInd");
         return saved ? new Set(JSON.parse(saved)) : new Set();
     })
-    const [activeSubCharts, setActiveSubCharts] = useState<Set<string>>(() => {
-        const saved = localStorage.getItem("subCharts");
-        return saved ? new Set(JSON.parse(saved)) : new Set();
-    });
+    // const [activeSubCharts, setActiveSubCharts] = useState<Set<string>>(() => {
+    //     const saved = localStorage.getItem("subCharts");
+    //     return saved ? new Set(JSON.parse(saved)) : new Set();
+    // });
     const [rightPanel, setRightPanel] = useState<string | null>(null);
     const [overlays, setOverlays] = useState<OverlayData>({});
     const [page, setPage] = useState<"chart" | "earnings" | "portfolio">("chart");
@@ -138,9 +138,9 @@ export default function App() {
     useEffect(() => {
         localStorage.setItem("pinnedInd", JSON.stringify(Array.from(pinnedIndicators)));
     }, [pinnedIndicators]);
-    useEffect(() => {
-        localStorage.setItem("subCharts", JSON.stringify(Array.from(activeSubCharts)));
-    }, [activeSubCharts]);
+    // useEffect(() => {
+    //     localStorage.setItem("subCharts", JSON.stringify(Array.from(activeSubCharts)));
+    // }, [activeSubCharts]);
 
     const toggleIndicator = useCallback((id: string) => {
         setActiveIndicators((prev) => {
@@ -245,7 +245,7 @@ export default function App() {
                         candles={candles}
                     />
 
-                    {activeSubCharts.size > 0 && (
+                    {/* {activeSubCharts.size > 0 && (
                         <div style={{ overflowY: "auto", flexShrink: 0, maxHeight: "45%" }}>
                             {Array.from(activeSubCharts).map((id) => (
                                 <IndicatorSubChart
@@ -256,7 +256,7 @@ export default function App() {
                                 />
                             ))}
                         </div>
-                    )}
+                    )} */}
                 </div>
 
 
