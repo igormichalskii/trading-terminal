@@ -5,22 +5,13 @@ import type { User } from "@supabase/supabase-js";
 import NewsFeed from "./NewsFeed";
 import MLPrediction from "./MLPrediction";
 
-const NAME_TO_SUBCHART_ID: Record<string, string> = {
-    "RSI (14)": "rsi",
-    "MACD": "macd",
-    "STOCH %K": "stoch",
-    "ATR (14)": "atr",
-    "OBV": "obv",
-};
-
 interface Props {
     user: User | null;
     symbol: string,
     timeframe: string,
     lastClose: number | null,
     activePanel: string | null;
-    activeSubCharts: Set<string>;
-    onToggleSubChart: (id: string) => void;
+    pinnedIndicators: Set<string>;
     onSelect: (symbol: string) => void;
     onSymbolsChange?: (symbols: string[]) => void;
     onDataReady?: (indicators: IndicatorResponse["indicators"]) => void;
@@ -44,7 +35,7 @@ interface IndicatorResponse {
 
 type Signal = "BUY" | "HOLD" | "SELL";
 
-interface IndicatorCell {
+interface PinnedIndicatorCell {
     name: string;
     value: string;
     signal: Signal;
@@ -59,8 +50,8 @@ function sigColor(s: Signal) {
 
 function clamp(v: number, lo = 0, hi = 100) { return Math.min(hi, Math.max(lo, v)); }
 
-function buildCells(ind: IndicatorResponse["indicators"], close: number): IndicatorCell[] {
-    const cells: IndicatorCell[] = [];
+function buildCells(ind: IndicatorResponse["indicators"], close: number): PinnedIndicatorCell[] {
+    const cells: PinnedIndicatorCell[] = [];
 
     if (ind.rsi) {
         const v = last(ind.rsi)?.value ?? 50;
@@ -135,24 +126,24 @@ export default function RightPanel({
     timeframe,
     lastClose,
     activePanel,
-    activeSubCharts,
-    onToggleSubChart,
+    pinnedIndicators,
     onSelect,
     onSymbolsChange,
     onDataReady,
 }: Props) {
-    const [cells, setCells] = useState<IndicatorCell[]>([]);
+    const [cells, setCells] = useState<PinnedIndicatorCell[]>([]);
 
     useEffect(() => {
-        if (!lastClose) return;
-        const all = "sma,ema,bb,vwap,rsi,macd,stoch,atr,obv";
-        apiFetch<IndicatorResponse>(`/indicators/${symbol}?timeframe=${timeframe}&indicators=${all}`)
+        setCells([]);
+        if (!lastClose || pinnedIndicators.size === 0) return;
+        const ip = Array.from(pinnedIndicators).join(",")
+        apiFetch<IndicatorResponse>(`/indicators/${symbol}?timeframe=${timeframe}&indicators=${ip}`)
             .then(({ indicators }) => {
                 setCells(buildCells(indicators, lastClose));
                 onDataReady?.(indicators);
             })
             .catch(() => { });
-    }, [symbol, timeframe, lastClose]);
+    }, [symbol, timeframe, lastClose, pinnedIndicators]);
 
     // if (!activePanel) return null;
 
@@ -175,7 +166,6 @@ export default function RightPanel({
                                     {lastClose ? "Loading…" : "Load a symbol to see signals."}
                                 </div>
                             ) : cells.map((cell) => {
-                                const subchartId = NAME_TO_SUBCHART_ID[cell.name] ?? null;
                                 return (
                                     <div key={cell.name} className="t-ind-cell">
                                         <div>
@@ -187,15 +177,6 @@ export default function RightPanel({
                                             <div className="t-mini-bar">
                                                 <div className="t-mini-bar-fill" style={{ width: `${cell.bar}%`, background: sigColor(cell.signal) }} />
                                             </div>
-                                            {subchartId && (
-                                                <button onClick={() => onToggleSubChart(subchartId)}
-                                                    style={{
-                                                        marginTop: 4, background: "none", border: "1px solid var(--border-bright)", color: activeSubCharts.has(subchartId) ? "var(--accent)" :
-                                                            "var(--text-dim)", fontFamily: "var(--font-mono)", fontSize: 9, padding: "2px 6px", cursor: "pointer"
-                                                    }}>
-                                                    {activeSubCharts.has(subchartId) ? "CHART ●" : "CHART"}
-                                                </button>
-                                            )}
                                         </div>
                                     </div>
                                 );

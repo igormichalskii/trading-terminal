@@ -1,15 +1,21 @@
 import type { User } from "@supabase/supabase-js";
 
 const INDICATORS = [
-    { id: "sma", label: "SMA" },
-    { id: "ema", label: "EMA" },
-    { id: "bb", label: "BB" },
-    { id: "vwap", label: "VWAP" },
-    { id: "wma", label: "WMA" },
-    { id: "dema", label: "DEMA" },
-    { id: "tema", label: "TEMA" },
-    { id: "kc", label: "KC" },
-    { id: "dc", label: "DC" },
+    { id: "sma", label: "SMA", fullName: "Simple Moving Average" },
+    { id: "ema", label: "EMA", fullName: "Exponential Moving Average" },
+    { id: "bb", label: "BB", fullName: "Bollinger Bands" },
+    { id: "vwap", label: "VWAP", fullName: "Volume-Weighted Average Price" },
+    { id: "wma", label: "WMA", fullName: "Weighted Moving Average" },
+    { id: "dema", label: "DEMA", fullName: "Double Exponential Moving Average" },
+    { id: "tema", label: "TEMA", fullName: "Triple Exponential Moving Average" },
+    { id: "kc", label: "KC", fullName: "Keltner Channel" },
+    { id: "dc", label: "DC", fullName: "Donchian Channels" },
+    { id: "rsi", label: "RSI", fullName: "Relative Strength Index" },
+    { id: "macd", label: "MACD", fullName: "Moving Average Convergence Divergence" },
+    { id: "stoch", label: "STOCH", fullName: "Stochastic Oscillator" },
+    { id: "atr", label: "ATR", fullName: "Average True Range" },
+    { id: "obv", label: "OBV", fullName: "On-Balance Volume" },
+    { id: "ichimoku", label: "ICHIMOKU", fullName: "Ichimoku" },
 ]
 
 interface Props {
@@ -54,7 +60,7 @@ export default function IndicatorsLibrary({
                             style={{ display: "flex", justifyContent: "space-between"}}                            
                         >
                             <span>
-                                {indicator.label}
+                                {indicator.fullName}
                             </span>
                             {user === null ? (
                                 <span

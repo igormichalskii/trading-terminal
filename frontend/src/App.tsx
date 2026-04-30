@@ -270,11 +270,9 @@ export default function App() {
                     timeframe={timeframe}
                     lastClose={stats?.close ?? null}
                     activePanel={rightPanel}
-                    activeSubCharts={activeSubCharts}
-                    onToggleSubChart={toggleSubChart}
+                    pinnedIndicators={pinnedIndicators}
                     onSelect={setSymbol}
                     onSymbolsChange={setWatchlistSymbols}
-                    onDataReady={(ind: IndicatorResponse["indicators"]) => setSubChartData(ind)}
                 />
                 <RightSidebar activePanel={rightPanel} onToggle={toggleRightPanel} />
             </div>
