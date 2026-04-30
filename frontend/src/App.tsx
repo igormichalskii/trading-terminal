@@ -236,6 +236,7 @@ export default function App() {
                         timeframe={timeframe}
                         overlays={overlays}
                         activeIndicators={activeIndicators}
+                        pinnedIndicators={pinnedIndicators}
                         onToggleIndicator={toggleIndicator}
                         onStatsChange={setStats}
                         onCandlesChange={setCandles}

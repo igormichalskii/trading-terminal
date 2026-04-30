@@ -6,14 +6,6 @@ import "../terminal.css";
 const TIMEFRAMES = ["1D", "1W", "1M", "3M", "6M", "1Y", "5Y", "ALL"] as const;
 type TF = typeof TIMEFRAMES[number];
 
-// Overlay indicator keys that can be toggled from the toolbar
-const OVERLAY_TOGGLES = [
-    { id: "sma",  label: "SMA" },
-    { id: "ema",  label: "EMA" },
-    { id: "bb",   label: "BOLL" },
-    { id: "vwap", label: "VWAP" },
-] as const;
-
 interface Candle {
     time: string | number;
     open: number;
@@ -28,6 +20,7 @@ interface Props {
     timeframe: string;
     overlays: OverlayData;
     activeIndicators: Set<string>;
+    pinnedIndicators: Set<string>;
     onToggleIndicator: (id: string) => void;
     onStatsChange: (c: Candle | null) => void;
     onCandlesChange: (c: Candle[]) => void;
@@ -53,6 +46,7 @@ export default function ChartPanel({
     timeframe,
     overlays,
     activeIndicators,
+    pinnedIndicators,
     onToggleIndicator,
     onStatsChange,
     onCandlesChange,
@@ -170,13 +164,13 @@ export default function ChartPanel({
                 <div style={{ width: 1, height: 18, background: "var(--border-bright)", margin: "0 4px" }} />
 
                 {/* Indicator overlay toggles */}
-                {OVERLAY_TOGGLES.map(({ id, label }) => (
+                {Array.from(pinnedIndicators).map((ind) => (
                     <button
-                        key={id}
-                        className={"t-tool-btn" + (activeIndicators.has(id) ? " active" : "")}
-                        onClick={() => onToggleIndicator(id)}
+                        key={ind}
+                        className={"t-tool-btn" + (activeIndicators.has(ind) ? " active" : "")}
+                        onClick={() => onToggleIndicator(ind)}
                     >
-                        {label}
+                        {ind.toUpperCase()}
                     </button>
                 ))}
                 <button 
