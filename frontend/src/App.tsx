@@ -164,6 +164,11 @@ export default function App() {
             next.delete(id);
             return next;
         })
+        setActiveIndicators((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+        })
     }, []);
 
     const toggleRightPanel = useCallback((panel: string) => {

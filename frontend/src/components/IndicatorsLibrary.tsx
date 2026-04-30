@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { User } from "@supabase/supabase-js";
 
 const INDICATORS = [
@@ -35,7 +36,8 @@ export default function IndicatorsLibrary({
     onUnpin,
     onClose,
 }: Props) {
-    
+    const [closeHover, setCloseHover] = useState(false);
+
     return (
         <div
             style={{ position: "fixed", inset: 0, zIndex: 50, display: isOpen ? "flex" : "none", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.7)" }}
@@ -46,11 +48,21 @@ export default function IndicatorsLibrary({
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
-                    <div style={{ width: 14, height: 14, background: "var(--accent)", clipPath: "polygon(0 0, 100% 0, 100% 50%, 50% 50%, 50% 100%, 0 100%)", flexShrink: 0 }} />
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, color: "var(--text)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                        indicators
-                    </span>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 14, height: 14, background: "var(--accent)", clipPath: "polygon(0 0, 100% 0, 100% 50%, 50% 50%, 50% 100%, 0 100%)", flexShrink: 0 }} />
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, color: "var(--text)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                            indicators
+                        </span>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        onMouseEnter={() => setCloseHover(true)}
+                        onMouseLeave={() => setCloseHover(false)}
+                        style={{ background: "none", border: "none", cursor: "pointer", color: closeHover ? "var(--down)" : "var(--text-dim)", fontFamily: "var(--font-mono)", fontSize: 14, lineHeight: 1, padding: "2px 4px", marginLeft: "auto", transition: "color 0.15s" }}
+                    >
+                        ✕
+                    </button>
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>

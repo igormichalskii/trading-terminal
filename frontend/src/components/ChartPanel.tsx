@@ -164,7 +164,7 @@ export default function ChartPanel({
                 <div style={{ width: 1, height: 18, background: "var(--border-bright)", margin: "0 4px" }} />
 
                 {/* Indicator overlay toggles */}
-                {Array.from(pinnedIndicators).map((ind) => (
+                {Array.from(pinnedIndicators).sort((a, b) => b.localeCompare(a)).map((ind) => (
                     <button
                         key={ind}
                         className={"t-tool-btn" + (activeIndicators.has(ind) ? " active" : "")}
