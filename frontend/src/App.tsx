@@ -12,7 +12,7 @@ import RightSidebar from "./components/RightSidebar";
 import RightPanel from "./components/RightPanel";
 import { apiFetch } from "./lib/api";
 import { useAuthStore } from "./store/authStore";
-import IndicatorSubChart from "./components/IndicatorSubChart";
+// import IndicatorSubChart from "./components/IndicatorSubChart";
 import "./terminal.css";
 import IndicatorsLibrary from "./components/IndicatorsLibrary";
 
@@ -70,27 +70,27 @@ interface IndicatorResponse {
     };
 }
 
-function buildSubSeries(id: string, ind: any) {
-    if (id === "rsi" && ind.rsi) return [{ data: ind.rsi, color: "#f59e0b" }];
-    if (id === "macd" && ind.macd) return [
-        { data: ind.macd.macd, color: "#3b82f6" },
-        { data: ind.macd.signal, color: "#f59e0b" },
-        { data: ind.macd.histogram, color: "#22c55e", type: "histogram" as const },
-    ];
-    if (id === "stoch" && ind.stoch) return [
-        { data: ind.stoch.k, color: "#3b82f6" },
-        { data: ind.stoch.d, color: "#f59e0b" },
-    ];
-    if (id === "atr" && ind.atr) return [{ data: ind.atr, color: "#a855f7" }];
-    if (id === "obv" && ind.obv) return [{ data: ind.obv, color: "#06b6d4" }];
-    return [];
-}
+// function buildSubSeries(id: string, ind: any) {
+//     if (id === "rsi" && ind.rsi) return [{ data: ind.rsi, color: "#f59e0b" }];
+//     if (id === "macd" && ind.macd) return [
+//         { data: ind.macd.macd, color: "#3b82f6" },
+//         { data: ind.macd.signal, color: "#f59e0b" },
+//         { data: ind.macd.histogram, color: "#22c55e", type: "histogram" as const },
+//     ];
+//     if (id === "stoch" && ind.stoch) return [
+//         { data: ind.stoch.k, color: "#3b82f6" },
+//         { data: ind.stoch.d, color: "#f59e0b" },
+//     ];
+//     if (id === "atr" && ind.atr) return [{ data: ind.atr, color: "#a855f7" }];
+//     if (id === "obv" && ind.obv) return [{ data: ind.obv, color: "#06b6d4" }];
+//     return [];
+// }
 
-function buildRefLines(id: string) {
-    if (id === "rsi") return [{ value: 70, color: "#ef444466" }, { value: 30, color: "#22c55e66" }];
-    if (id === "stoch") return [{ value: 80, color: "#ef444466" }, { value: 20, color: "#22c55e66" }];
-    return undefined;
-}
+// function buildRefLines(id: string) {
+//     if (id === "rsi") return [{ value: 70, color: "#ef444466" }, { value: 30, color: "#22c55e66" }];
+//     if (id === "stoch") return [{ value: 80, color: "#ef444466" }, { value: 20, color: "#22c55e66" }];
+//     return undefined;
+// }
 
 
 export default function App() {
