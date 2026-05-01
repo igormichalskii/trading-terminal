@@ -159,7 +159,7 @@ export default function App() {
             return next;
         });
         if (user) {
-            supabase.from("pinned_indicators").insert({ user_id: user.id, indicator_id: id });
+            supabase.from("pinned_indicators").insert({ user_id: user.id, indicator_id: id }).then(({error}) => { if (error) console.error("pin insert failed: ", error)});
         }
     }, [user]);
 
@@ -237,8 +237,10 @@ export default function App() {
         supabase
             .from("pinned_indicators")
             .select("indicator_id")
+            .eq("user_id", user.id)
             .order("created_at", { ascending: true })
-            .then(({ data }) => {
+            .then(({ data, error }) => {
+                if (error) console.error("pin fetch failed:", error);
                 if (!data || data.length === 0) {
                     setPinnedIndicators(new Set());
                     return;
