@@ -16,6 +16,7 @@ import IndicatorSubChart from "./components/IndicatorSubChart";
 import "./terminal.css";
 import IndicatorsLibrary from "./components/IndicatorsLibrary";
 import { supabase } from "./lib/supabase";
+import { INDICATORS } from "./components/IndicatorsLibrary";
 
 interface Candle {
     time: string | number;
@@ -158,21 +159,31 @@ export default function App() {
             return next;
         });
         if (user) {
-            supabase.from("pinned_indicators").insert({ user_id: user.id, indicator_id: id});
+            supabase.from("pinned_indicators").insert({ user_id: user.id, indicator_id: id });
         }
     }, [user]);
 
     const onUnpin = useCallback((id: string) => {
+        const meta = INDICATORS.find((i) => i.id === id);
+        if (meta?.type === "overlay") {
+            setActiveIndicators((prev) => {
+                const next = new Set(prev);
+                next.delete(id);
+                return next;
+            })
+        } else {
+            setActiveSubCharts((prev) => {
+                const next = new Set(prev);
+                next.delete(id);
+                return next;
+            })
+        }
         setPinnedIndicators((prev) => {
             const next = new Set(prev);
             next.delete(id);
             return next;
         })
-        setActiveIndicators((prev) => {
-            const next = new Set(prev);
-            next.delete(id);
-            return next;
-        })
+
         if (user) {
             supabase.from("pinned_indicators").delete().eq("user_id", user.id).eq("indicator_id", id);
         }
