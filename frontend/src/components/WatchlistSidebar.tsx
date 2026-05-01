@@ -92,13 +92,6 @@ export default function WatchlistSidebar({ user, activeSymbol, onSelect, onSymbo
             });
     }, [user?.id]);
 
-    const openAdd = () => {
-        setAddOpen(true);
-        setAddInput("");
-        setAddErr(null);
-        setTimeout(() => addInputRef.current?.focus(), 0);
-    };
-
     const addSymbol = async () => {
         const symbol = addInput.trim().toUpperCase();
         const fmtErr = tickerError(symbol);
@@ -140,20 +133,40 @@ export default function WatchlistSidebar({ user, activeSymbol, onSelect, onSymbo
         });
     };
 
+    const toggleIndicator = () => {
+        if (addOpen) {
+            setAddOpen(false);
+            setAddInput("");
+            setAddErr(null);
+        } else {
+            setAddOpen(true);
+            setAddInput("");
+            setAddErr(null);
+            setTimeout(() => addInputRef.current?.focus(), 0);
+        }
+    }
+
     const sorted = tab === "GAIN"
         ? [...items].sort((a, b) => b.chg - a.chg)
         : tab === "LOSE"
-        ? [...items].sort((a, b) => a.chg - b.chg)
-        : tab === "VOL"
-        ? [...items].sort((a, b) => b.price * Math.abs(b.chg) - a.price * Math.abs(a.chg))
-        : items;
+            ? [...items].sort((a, b) => a.chg - b.chg)
+            : tab === "VOL"
+                ? [...items].sort((a, b) => b.price * Math.abs(b.chg) - a.price * Math.abs(a.chg))
+                : items;
 
     return (
         <div className="t-panel t-watchlist">
             <div className="t-panel-header">
                 <span className="t-panel-title">WATCHLIST</span>
                 <div style={{ display: "flex" }}>
-                    <button className="t-icon-btn" title="Add symbol" onClick={user ? openAdd : undefined} style={{ opacity: user ? 1 : 0.4 }}>{addOpen ? "-" : "+"}</button>
+                    <button
+                        className="t-icon-btn"
+                        title="Add symbol"
+                        onClick={ user ? toggleIndicator : undefined }
+                        style={{ opacity: user ? 1 : 0.4 }}
+                    >
+                        {addOpen ? "-" : "+"}
+                    </button>
                 </div>
             </div>
 

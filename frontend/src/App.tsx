@@ -12,9 +12,10 @@ import RightSidebar from "./components/RightSidebar";
 import RightPanel from "./components/RightPanel";
 import { apiFetch } from "./lib/api";
 import { useAuthStore } from "./store/authStore";
-// import IndicatorSubChart from "./components/IndicatorSubChart";
+import IndicatorSubChart from "./components/IndicatorSubChart";
 import "./terminal.css";
 import IndicatorsLibrary from "./components/IndicatorsLibrary";
+import { supabase } from "./lib/supabase";
 
 interface Candle {
     time: string | number;
@@ -70,27 +71,27 @@ interface IndicatorResponse {
     };
 }
 
-// function buildSubSeries(id: string, ind: any) {
-//     if (id === "rsi" && ind.rsi) return [{ data: ind.rsi, color: "#f59e0b" }];
-//     if (id === "macd" && ind.macd) return [
-//         { data: ind.macd.macd, color: "#3b82f6" },
-//         { data: ind.macd.signal, color: "#f59e0b" },
-//         { data: ind.macd.histogram, color: "#22c55e", type: "histogram" as const },
-//     ];
-//     if (id === "stoch" && ind.stoch) return [
-//         { data: ind.stoch.k, color: "#3b82f6" },
-//         { data: ind.stoch.d, color: "#f59e0b" },
-//     ];
-//     if (id === "atr" && ind.atr) return [{ data: ind.atr, color: "#a855f7" }];
-//     if (id === "obv" && ind.obv) return [{ data: ind.obv, color: "#06b6d4" }];
-//     return [];
-// }
+function buildSubSeries(id: string, ind: any) {
+    if (id === "rsi" && ind.rsi) return [{ data: ind.rsi, color: "#f59e0b" }];
+    if (id === "macd" && ind.macd) return [
+        { data: ind.macd.macd, color: "#3b82f6" },
+        { data: ind.macd.signal, color: "#f59e0b" },
+        { data: ind.macd.histogram, color: "#22c55e", type: "histogram" as const },
+    ];
+    if (id === "stoch" && ind.stoch) return [
+        { data: ind.stoch.k, color: "#3b82f6" },
+        { data: ind.stoch.d, color: "#f59e0b" },
+    ];
+    if (id === "atr" && ind.atr) return [{ data: ind.atr, color: "#a855f7" }];
+    if (id === "obv" && ind.obv) return [{ data: ind.obv, color: "#06b6d4" }];
+    return [];
+}
 
-// function buildRefLines(id: string) {
-//     if (id === "rsi") return [{ value: 70, color: "#ef444466" }, { value: 30, color: "#22c55e66" }];
-//     if (id === "stoch") return [{ value: 80, color: "#ef444466" }, { value: 20, color: "#22c55e66" }];
-//     return undefined;
-// }
+function buildRefLines(id: string) {
+    if (id === "rsi") return [{ value: 70, color: "#ef444466" }, { value: 30, color: "#22c55e66" }];
+    if (id === "stoch") return [{ value: 80, color: "#ef444466" }, { value: 20, color: "#22c55e66" }];
+    return undefined;
+}
 
 
 export default function App() {
@@ -108,16 +109,16 @@ export default function App() {
         const saved = localStorage.getItem("pinnedInd");
         return saved ? new Set(JSON.parse(saved)) : new Set();
     })
-    // const [activeSubCharts, setActiveSubCharts] = useState<Set<string>>(() => {
-    //     const saved = localStorage.getItem("subCharts");
-    //     return saved ? new Set(JSON.parse(saved)) : new Set();
-    // });
+    const [activeSubCharts, setActiveSubCharts] = useState<Set<string>>(() => {
+        const saved = localStorage.getItem("subCharts");
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+    });
     const [rightPanel, setRightPanel] = useState<string | null>(null);
     const [overlays, setOverlays] = useState<OverlayData>({});
     const [page, setPage] = useState<"chart" | "earnings" | "portfolio">("chart");
     const [watchlistSymbols, setWatchlistSymbols] = useState<string[]>([]);
     const [showAI, setShowAI] = useState(false);
-    // const [subChartData, setSubChartData] = useState<any>({});
+    const [subChartData, setSubChartData] = useState<any>({});
     const [showLibrary, setShowLibrary] = useState<boolean>(false);
 
     const isNarrow = useSyncExternalStore(
@@ -138,9 +139,9 @@ export default function App() {
     useEffect(() => {
         localStorage.setItem("pinnedInd", JSON.stringify(Array.from(pinnedIndicators)));
     }, [pinnedIndicators]);
-    // useEffect(() => {
-    //     localStorage.setItem("subCharts", JSON.stringify(Array.from(activeSubCharts)));
-    // }, [activeSubCharts]);
+    useEffect(() => {
+        localStorage.setItem("subCharts", JSON.stringify(Array.from(activeSubCharts)));
+    }, [activeSubCharts]);
 
     const toggleIndicator = useCallback((id: string) => {
         setActiveIndicators((prev) => {
@@ -156,7 +157,10 @@ export default function App() {
             next.add(id);
             return next;
         });
-    }, []);
+        if (user) {
+            supabase.from("pinned_indicators").insert({ user_id: user.id, indicator_id: id});
+        }
+    }, [user]);
 
     const onUnpin = useCallback((id: string) => {
         setPinnedIndicators((prev) => {
@@ -169,19 +173,22 @@ export default function App() {
             next.delete(id);
             return next;
         })
-    }, []);
+        if (user) {
+            supabase.from("pinned_indicators").delete().eq("user_id", user.id).eq("indicator_id", id);
+        }
+    }, [user]);
 
     const toggleRightPanel = useCallback((panel: string) => {
         setRightPanel((prev) => prev === panel ? null : panel);
     }, []);
 
-    // const toggleSubChart = useCallback((id: string) => {
-    //     setActiveSubCharts((prev) => {
-    //         const next = new Set(prev);
-    //         next.has(id) ? next.delete(id) : next.add(id);
-    //         return next;
-    //     });
-    // }, []);
+    const toggleSubChart = useCallback((id: string) => {
+        setActiveSubCharts((prev) => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
+    }, []);
 
     useEffect(() => {
         if (activeIndicators.size === 0) { setOverlays({}); return; }
@@ -210,6 +217,25 @@ export default function App() {
         return () => controller.abort();
     }, [symbol, timeframe, activeIndicators, candles[0]?.time]);
 
+    useEffect(() => {
+        if (!user) {
+            setPinnedIndicators(new Set());
+            return;
+        }
+
+        supabase
+            .from("pinned_indicators")
+            .select("indicator_id")
+            .order("created_at", { ascending: true })
+            .then(({ data }) => {
+                if (!data || data.length === 0) {
+                    setPinnedIndicators(new Set());
+                    return;
+                }
+                setPinnedIndicators(new Set(data.map((row) => row.indicator_id)));
+            })
+
+    }, [user?.id]);
     if (isNarrow) return <MobileGate />;
 
     return (
@@ -241,8 +267,10 @@ export default function App() {
                         timeframe={timeframe}
                         overlays={overlays}
                         activeIndicators={activeIndicators}
+                        activeSubCharts={activeSubCharts}
                         pinnedIndicators={pinnedIndicators}
                         onToggleIndicator={toggleIndicator}
+                        onToggleSubChart={toggleSubChart}
                         onStatsChange={setStats}
                         onCandlesChange={setCandles}
                         onTimeframeChange={setTimeframe}
@@ -251,7 +279,7 @@ export default function App() {
                         candles={candles}
                     />
 
-                    {/* {activeSubCharts.size > 0 && (
+                    {activeSubCharts.size > 0 && (
                         <div style={{ overflowY: "auto", flexShrink: 0, maxHeight: "45%" }}>
                             {Array.from(activeSubCharts).map((id) => (
                                 <IndicatorSubChart
@@ -262,7 +290,7 @@ export default function App() {
                                 />
                             ))}
                         </div>
-                    )} */}
+                    )}
                 </div>
 
 
@@ -279,6 +307,7 @@ export default function App() {
                     pinnedIndicators={pinnedIndicators}
                     onSelect={setSymbol}
                     onSymbolsChange={setWatchlistSymbols}
+                    onDataReady={(ind) => setSubChartData(ind)}
                 />
                 <RightSidebar activePanel={rightPanel} onToggle={toggleRightPanel} />
             </div>
@@ -316,7 +345,7 @@ export default function App() {
             />
 
             {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
-            <IndicatorsLibrary 
+            <IndicatorsLibrary
                 user={user}
                 pinnedIndicators={pinnedIndicators}
                 isOpen={showLibrary}

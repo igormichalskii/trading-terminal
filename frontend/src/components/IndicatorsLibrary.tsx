@@ -1,22 +1,22 @@
 import { useState } from "react";
 import type { User } from "@supabase/supabase-js";
 
-const INDICATORS = [
-    { id: "sma", label: "SMA", fullName: "Simple Moving Average" },
-    { id: "ema", label: "EMA", fullName: "Exponential Moving Average" },
-    { id: "bb", label: "BB", fullName: "Bollinger Bands" },
-    { id: "vwap", label: "VWAP", fullName: "Volume-Weighted Average Price" },
-    { id: "wma", label: "WMA", fullName: "Weighted Moving Average" },
-    { id: "dema", label: "DEMA", fullName: "Double Exponential Moving Average" },
-    { id: "tema", label: "TEMA", fullName: "Triple Exponential Moving Average" },
-    { id: "kc", label: "KC", fullName: "Keltner Channel" },
-    { id: "dc", label: "DC", fullName: "Donchian Channels" },
-    { id: "rsi", label: "RSI", fullName: "Relative Strength Index" },
-    { id: "macd", label: "MACD", fullName: "Moving Average Convergence Divergence" },
-    { id: "stoch", label: "STOCH", fullName: "Stochastic Oscillator" },
-    { id: "atr", label: "ATR", fullName: "Average True Range" },
-    { id: "obv", label: "OBV", fullName: "On-Balance Volume" },
-    { id: "ichimoku", label: "ICHIMOKU", fullName: "Ichimoku" },
+export const INDICATORS = [
+    { id: "sma", label: "SMA", type: "overlay", fullName: "Simple Moving Average" },
+    { id: "ema", label: "EMA", type: "overlay", fullName: "Exponential Moving Average" },
+    { id: "bb", label: "BB", type: "overlay", fullName: "Bollinger Bands" },
+    { id: "vwap", label: "VWAP", type: "overlay", fullName: "Volume-Weighted Average Price" },
+    { id: "wma", label: "WMA", type: "overlay", fullName: "Weighted Moving Average" },
+    { id: "dema", label: "DEMA", type: "overlay", fullName: "Double Exponential Moving Average" },
+    { id: "tema", label: "TEMA", type: "overlay", fullName: "Triple Exponential Moving Average" },
+    { id: "kc", label: "KC", type: "overlay", fullName: "Keltner Channel" },
+    { id: "dc", label: "DC", type: "overlay", fullName: "Donchian Channels" },
+    { id: "rsi", label: "RSI", type: "oscillator", fullName: "Relative Strength Index" },
+    { id: "macd", label: "MACD", type: "oscillator", fullName: "Moving Average Convergence Divergence" },
+    { id: "stoch", label: "STOCH", type: "oscillator", fullName: "Stochastic Oscillator" },
+    { id: "atr", label: "ATR", type: "oscillator", fullName: "Average True Range" },
+    { id: "obv", label: "OBV", type: "oscillator", fullName: "On-Balance Volume" },
+    { id: "ichimoku", label: "ICHIMOKU", type: "overlay", fullName: "Ichimoku" },
 ]
 
 interface Props {

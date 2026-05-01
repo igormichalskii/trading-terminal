@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import PriceChart from "./PriceChart";
 import type { OverlayData, HoverCandle } from "./PriceChart";
+import { INDICATORS } from "./IndicatorsLibrary";
 import "../terminal.css";
 
 const TIMEFRAMES = ["1D", "1W", "1M", "3M", "6M", "1Y", "5Y", "ALL"] as const;
@@ -20,8 +21,10 @@ interface Props {
     timeframe: string;
     overlays: OverlayData;
     activeIndicators: Set<string>;
+    activeSubCharts: Set<string>;
     pinnedIndicators: Set<string>;
     onToggleIndicator: (id: string) => void;
+    onToggleSubChart: (id: string) => void;
     onStatsChange: (c: Candle | null) => void;
     onCandlesChange: (c: Candle[]) => void;
     onTimeframeChange: (tf: string) => void;
@@ -46,8 +49,10 @@ export default function ChartPanel({
     timeframe,
     overlays,
     activeIndicators,
+    activeSubCharts,
     pinnedIndicators,
     onToggleIndicator,
+    onToggleSubChart,
     onStatsChange,
     onCandlesChange,
     onTimeframeChange,
@@ -56,7 +61,7 @@ export default function ChartPanel({
     candles,
 }: Props) {
     const [hover, setHover] = useState<HoverCandle | null>(null);
-    const [chartType, setChartType] = useState<"CANDLE" | "LINE">(() => 
+    const [chartType, setChartType] = useState<"CANDLE" | "LINE">(() =>
         (localStorage.getItem("chartType") as "CANDLE" | "LINE") ?? "CANDLE"
     );
 
@@ -79,7 +84,7 @@ export default function ChartPanel({
 
     const isUp = priceChange !== null ? priceChange >= 0 : true;
     const priceColor = isUp ? "var(--up)" : "var(--down)";
-    const priceBg    = isUp ? "var(--up-bg)" : "var(--down-bg)";
+    const priceBg = isUp ? "var(--up-bg)" : "var(--down-bg)";
 
     // OHLC overlay line
     const ohlcDisplay = hover ?? stats;
@@ -164,16 +169,33 @@ export default function ChartPanel({
                 <div style={{ width: 1, height: 18, background: "var(--border-bright)", margin: "0 4px" }} />
 
                 {/* Indicator overlay toggles */}
-                {Array.from(pinnedIndicators).sort((a, b) => b.localeCompare(a)).map((ind) => (
-                    <button
-                        key={ind}
-                        className={"t-tool-btn" + (activeIndicators.has(ind) ? " active" : "")}
-                        onClick={() => onToggleIndicator(ind)}
-                    >
-                        {ind.toUpperCase()}
-                    </button>
-                ))}
-                <button 
+                {Array.from(pinnedIndicators).sort((a, b) => b.localeCompare(a)).map((ind) => {
+                    const meta = INDICATORS.find((i) => i.id === ind);
+                    if (meta?.type === "overlay") {
+                        return (
+                            <button
+                                key={ind}
+                                className={"t-tool-btn" + (activeIndicators.has(ind) ? " active" : "")}
+                                onClick={() => onToggleIndicator(ind)}
+                            >
+                                {ind.toUpperCase()}
+                            </button>
+                        )
+                    } else {
+                        return (
+                            <button
+                                key={ind}
+                                className={"t-tool-btn" + (activeSubCharts.has(ind) ? " active" : "")}
+                                onClick={() => onToggleSubChart(ind)}
+                                style={{ border: "1px solid #e70c0c"}}
+                            >
+                                {ind.toUpperCase()}
+                            </button>
+                        )
+                    }
+
+                })}
+                <button
                     className="t-tool-btn" title="Add more indicators"
                     onClick={onOpenLibrary}
                 >
