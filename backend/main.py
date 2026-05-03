@@ -178,6 +178,44 @@ def compute_indicators(candles: list[dict], requested: set[str]) -> dict:
 
     if "tema" in requested:
         result["tema"] = _points(times, ta.tema(close, length=20))
+    
+    if "hma" in requested:
+        result['hma'] = _points(times, ta.hma(close, length=16))
+
+    if "kama" in requested:
+        result['kama'] = _points(times, ta.kama(close, length=10))
+
+    if "alma" in requested:
+        result['alma'] = _points(times, ta.alma(close, length=9))
+
+    if "zlema" in requested:
+        result['zlema'] = _points(times, ta.zlma(close, length=20))
+
+    if "lsma" in requested:
+        result['lsma'] = _points(times, ta.linreg(close, length=25))
+
+    if "trima" in requested:
+        result['trima'] = _points(times, ta.trima(close, length=20))
+
+    if 't3' in requested:
+        result['t3'] = _points(times, ta.t3(close, length=8))
+
+    if 'vidya' in requested:
+        result['vidya'] = _points(times, ta.vidya(close, length=9))
+
+    if 'vwma' in requested:
+        result['vwma'] = _points(times, (close * volume).rolling(20).sum() / volume.rolling(20).sum())
+
+    if 'mcginley' in requested:
+        md = pd.Series(np.nan, index=close.index)
+        md.iloc[0] = close.iloc[0]
+        for i in range(1, len(close)):
+            prev, curr = md.iloc[i-1], close.iloc[i]
+            if pd.notna(prev) and prev > 0 and curr > 0:
+                md.iloc[i] = prev + (curr - prev) / (14* (curr / prev) ** 4)
+            else:
+                md.iloc[i] = curr
+        result['mcginley'] = _points(times, md)
 
     if "bb" in requested:
         mid = close.rolling(20).mean()

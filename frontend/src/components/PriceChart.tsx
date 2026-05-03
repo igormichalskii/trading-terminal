@@ -36,6 +36,16 @@ export interface OverlayData {
     wma?: Point[];
     dema?: Point[];
     tema?: Point[];
+    hma?: Point[];
+    vwma?: Point[];
+    kama?: Point[];
+    alma?: Point[];
+    zlema?: Point[];
+    lsma?: Point[];
+    trima?: Point[];
+    t3?: Point[];
+    mcginley?: Point[];
+    vidya?: Point[];
     bb?: { upper: Point[]; middle: Point[]; lower: Point[] };
     kc?: { upper: Point[]; middle: Point[]; lower: Point[] };
     dc?: { upper: Point[]; middle: Point[]; lower: Point[] };
@@ -60,12 +70,22 @@ interface Props {
 }
 
 const OVERLAY_SERIES = [
-    { key: "sma", color: "#3b82f6" },  // accent blue — matches mockup SMA line
-    { key: "ema", color: "#a78bfa" },  // purple
-    { key: "vwap", color: "#00b4d8" },  // cyan
-    { key: "wma", color: "#ef4444" },
-    { key: "dema", color: "#3b82f6" },
-    { key: "tema", color: "#00d68f" },
+    { key: "sma",      color: "#3b82f6" },
+    { key: "ema",      color: "#a78bfa" },
+    { key: "vwap",     color: "#00b4d8" },
+    { key: "wma",      color: "#ef4444" },
+    { key: "dema",     color: "#3b82f6" },
+    { key: "tema",     color: "#00d68f" },
+    { key: "hma",      color: "#f97316" },
+    { key: "vwma",     color: "#14b8a6" },
+    { key: "kama",     color: "#ec4899" },
+    { key: "alma",     color: "#84cc16" },
+    { key: "zlema",    color: "#6366f1" },
+    { key: "lsma",     color: "#f59e0b" },
+    { key: "trima",    color: "#0ea5e9" },
+    { key: "t3",       color: "#f43f5e" },
+    { key: "mcginley", color: "#10b981" },
+    { key: "vidya",    color: "#8b5cf6" },
 ];
 
 const BB_COLORS = { upper: "#5a5a5a", middle: "#5a5a5a", lower: "#5a5a5a" };

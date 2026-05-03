@@ -26,6 +26,16 @@ interface IndicatorResponse {
         wma?: Point[];
         dema?: Point[];
         tema?: Point[];
+        hma?: Point[];
+        vwma?: Point[];
+        kama?: Point[];
+        alma?: Point[];
+        zlema?: Point[];
+        lsma?: Point[];
+        trima?: Point[];
+        t3?: Point[];
+        mcginley?: Point[];
+        vidya?: Point[];
         vwap?: Point[];
         rsi?: Point[];
         atr?: Point[];
@@ -158,6 +168,26 @@ function buildCells(ind: IndicatorResponse["indicators"], close: number): Pinned
         const s: Signal = dev > 0.5 ? "BUY" : dev < -0.5 ? "SELL" : "HOLD";
         cells.push({ name: "VWAP", value: v.toFixed(2), signal: s, bar: clamp(50 + dev * 10) });
     }
+
+    const maCell = (key: keyof typeof ind, name: string) => {
+        const arr = ind[key] as Point[] | undefined;
+        if (!arr) return;
+        const v = last(arr)?.value ?? close;
+        const dev = ((close - v) / v) * 100;
+        const s: Signal = dev > 0.5 ? "BUY" : dev < -0.5 ? "SELL" : "HOLD";
+        cells.push({ name, value: v.toFixed(2), signal: s, bar: clamp(50 + dev * 10) });
+    };
+
+    maCell("hma",      "HMA (16)");
+    maCell("vwma",     "VWMA (20)");
+    maCell("kama",     "KAMA (10)");
+    maCell("alma",     "ALMA (9)");
+    maCell("zlema",    "ZLEMA (20)");
+    maCell("lsma",     "LSMA (25)");
+    maCell("trima",    "TRIMA (20)");
+    maCell("t3",       "T3 (8)");
+    maCell("mcginley", "MCGINLEY (14)");
+    maCell("vidya",    "VIDYA (9)");
 
     if (ind.ichimoku) {
         const tenkan = last(ind.ichimoku.tenkan)?.value ?? close;
