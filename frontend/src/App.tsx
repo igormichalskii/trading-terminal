@@ -195,7 +195,7 @@ export default function App() {
         })
 
         if (user) {
-            supabase.from("pinned_indicators").delete().eq("user_id", user.id).eq("indicator_id", id);
+            supabase.from("pinned_indicators").delete().eq("user_id", user.id).eq("indicator_id", id).then(({error}) => { if (error) console.error("unpin delete failed:", error) });
         }
     }, [user]);
 
@@ -227,6 +227,16 @@ export default function App() {
                 if (indicators.wma) newOverlays.wma = indicators.wma;
                 if (indicators.dema) newOverlays.dema = indicators.dema;
                 if (indicators.tema) newOverlays.tema = indicators.tema;
+                if (indicators.hma) newOverlays.hma = indicators.hma;
+                if (indicators.vwma) newOverlays.vwma = indicators.vwma;
+                if (indicators.kama) newOverlays.kama = indicators.kama;
+                if (indicators.alma) newOverlays.alma = indicators.alma;
+                if (indicators.zlema) newOverlays.zlema = indicators.zlema;
+                if (indicators.lsma) newOverlays.lsma = indicators.lsma;
+                if (indicators.trima) newOverlays.trima = indicators.trima;
+                if (indicators.t3) newOverlays.t3 = indicators.t3;
+                if (indicators.mcginley) newOverlays.mcginley = indicators.mcginley;
+                if (indicators.vidya) newOverlays.vidya = indicators.vidya;
                 if (indicators.bb) newOverlays.bb = indicators.bb;
                 if (indicators.kc) newOverlays.kc = indicators.kc;
                 if (indicators.dc) newOverlays.dc = indicators.dc;
