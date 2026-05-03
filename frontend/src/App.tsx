@@ -34,6 +34,16 @@ interface IndicatorResponse {
         wma?: { time: string | number; value: number }[];
         dema?: { time: string | number; value: number }[];
         tema?: { time: string | number; value: number }[];
+        hma?: { time: string | number; value: number }[];
+        vwma?: { time: string | number; value: number }[];
+        kama?: { time: string | number; value: number }[];
+        alma?: { time: string | number; value: number }[];
+        zlema?: { time: string | number; value: number }[];
+        lsma?: { time: string | number; value: number }[];
+        trima?: { time: string | number; value: number }[];
+        t3?: { time: string | number; value: number }[];
+        mcginley?: { time: string | number; value: number }[];
+        vidya?: { time: string | number; value: number }[];
         bb?: {
             upper: { time: string | number; value: number }[];
             middle: { time: string | number; value: number }[];
