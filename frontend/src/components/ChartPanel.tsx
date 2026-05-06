@@ -37,7 +37,6 @@ interface Props {
     candles: Candle[];
     setActiveTool: (activeTool: DrawingTool) => void;
     addDrawing: (drawing: Drawing) => void;
-    removeDrawing: (id: string) => void;
 }
 
 function fmtVol(v: number): string {
@@ -68,7 +67,6 @@ export default function ChartPanel({
     onOpenLibrary,
     setActiveTool,
     addDrawing,
-    removeDrawing,
     stats,
     candles,
 }: Props) {
