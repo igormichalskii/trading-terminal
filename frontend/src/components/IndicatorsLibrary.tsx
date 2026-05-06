@@ -48,6 +48,8 @@ export default function IndicatorsLibrary({
 }: Props) {
     const [closeHover, setCloseHover] = useState(false);
     const [hoveredId, setHoveredId] = useState<string | null>(null);
+    const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0});
+    const tooltipAbove = tooltipPos.y > window.innerHeight - 200;
 
     return (
         <div
@@ -80,7 +82,7 @@ export default function IndicatorsLibrary({
                     {INDICATORS.map((indicator) => (
                         <div
                             key={indicator.id}
-                            style={{ display: "flex", alignItems: "center", gap: 8, position: "relative", minHeight: 28}}
+                            style={{ display: "flex", alignItems: "center", gap: 8, position: "relative", minHeight: 28 }}
                         >
                             {user === null ? (
                                 <span
@@ -105,7 +107,11 @@ export default function IndicatorsLibrary({
                                 {indicator.fullName}
                             </span>
                             <button
-                                onMouseEnter={() => setHoveredId(indicator.id)}
+                                onMouseEnter={(e) => {
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    setHoveredId(indicator.id);
+                                    setTooltipPos({ x: rect.left - 228, y: rect.top });
+                                }}
                                 onMouseLeave={() => setHoveredId(null)}
                                 style={{ background: "none", border: "none", cursor: "pointer", color: hoveredId === indicator.id ? "var(--accent)" : "var(--text-muted)", fontFamily: "var(--font-mono)", fontSize: 12, flexShrink: 0, width: 20, padding: 0, transition: "color 0.15s" }}
                             >
@@ -114,9 +120,10 @@ export default function IndicatorsLibrary({
                             {hoveredId === indicator.id && (
                                 <div
                                     style={{
-                                        position: "absolute",
-                                        right: "28px",
-                                        top: 0,
+                                        position: "fixed",
+                                        left: tooltipPos.x,
+                                        top: tooltipAbove ? undefined : tooltipPos.y,
+                                        bottom: tooltipAbove ? window.innerHeight - tooltipPos.y - 24 : undefined,
                                         width: 220,
                                         background: "var(--panel)",
                                         border: "1px solid var(--border-bright)",
@@ -127,7 +134,7 @@ export default function IndicatorsLibrary({
                                         lineHeight: 1.5,
                                         zIndex: 100,
                                     }}>
-                                        {indicator.description}
+                                    {indicator.description}
                                 </div>
                             )}
                         </div>

@@ -17,6 +17,8 @@ import "./terminal.css";
 import IndicatorsLibrary from "./components/IndicatorsLibrary";
 import { supabase } from "./lib/supabase";
 import { INDICATORS } from "./components/IndicatorsLibrary";
+import useDrawings from "./lib/useDrawings";
+import type { DrawingTool } from "./lib/drawings";
 
 interface Candle {
     time: string | number;
@@ -110,6 +112,8 @@ export default function App() {
     const [showAuth, setShowAuth] = useState(false);
     const [symbol, setSymbol] = useState(() => localStorage.getItem("symbol") ?? "AAPL");
     const [timeframe, setTimeframe] = useState(() => localStorage.getItem("timeframe") ?? "1M");
+    const { drawings, addDrawing, removeDrawing } = useDrawings({ user, symbol, timeframe });
+    const [activeTool, setActiveTool] = useState<DrawingTool>(null);
     const [stats, setStats] = useState<Candle | null>(null);
     const [candles, setCandles] = useState<Candle[]>([]);
     const [activeIndicators, setActiveIndicators] = useState<Set<string>>(() => {
@@ -302,12 +306,17 @@ export default function App() {
                         activeIndicators={activeIndicators}
                         activeSubCharts={activeSubCharts}
                         pinnedIndicators={pinnedIndicators}
+                        activeTool={activeTool}
+                        drawings={drawings}
                         onToggleIndicator={toggleIndicator}
                         onToggleSubChart={toggleSubChart}
                         onStatsChange={setStats}
                         onCandlesChange={setCandles}
                         onTimeframeChange={setTimeframe}
                         onOpenLibrary={() => setShowLibrary(true)}
+                        setActiveTool={setActiveTool}
+                        addDrawing={addDrawing}
+                        removeDrawing={removeDrawing}
                         stats={stats}
                         candles={candles}
                     />

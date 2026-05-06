@@ -3,6 +3,8 @@ import PriceChart from "./PriceChart";
 import type { OverlayData, HoverCandle } from "./PriceChart";
 import { INDICATORS } from "./IndicatorsLibrary";
 import "../terminal.css";
+import type { Drawing, DrawingTool } from "../lib/drawings";
+import DrawingToolbar from "./DrawingToolbar";
 
 const TIMEFRAMES = ["1D", "1W", "1M", "3M", "6M", "1Y", "5Y", "ALL"] as const;
 type TF = typeof TIMEFRAMES[number];
@@ -23,6 +25,8 @@ interface Props {
     activeIndicators: Set<string>;
     activeSubCharts: Set<string>;
     pinnedIndicators: Set<string>;
+    drawings: Drawing[];
+    activeTool: DrawingTool;
     onToggleIndicator: (id: string) => void;
     onToggleSubChart: (id: string) => void;
     onStatsChange: (c: Candle | null) => void;
@@ -31,6 +35,9 @@ interface Props {
     onOpenLibrary: () => void;
     stats: Candle | null;
     candles: Candle[];
+    setActiveTool: (activeTool: DrawingTool) => void;
+    addDrawing: (drawing: Drawing) => void;
+    removeDrawing: (id: string) => void;
 }
 
 function fmtVol(v: number): string {
@@ -51,12 +58,17 @@ export default function ChartPanel({
     activeIndicators,
     activeSubCharts,
     pinnedIndicators,
+    drawings,
+    activeTool,
     onToggleIndicator,
     onToggleSubChart,
     onStatsChange,
     onCandlesChange,
     onTimeframeChange,
     onOpenLibrary,
+    setActiveTool,
+    addDrawing,
+    removeDrawing,
     stats,
     candles,
 }: Props) {
@@ -220,11 +232,15 @@ export default function ChartPanel({
                     timeframe={timeframe}
                     chartType={chartType}
                     overlays={overlays}
+                    drawings={drawings}
                     onStatsChange={onStatsChange}
                     onCandlesChange={onCandlesChange}
                     onHoverChange={setHover}
+                    activeTool={activeTool}
+                    addDrawing={addDrawing}
                 />
             </div>
+            <DrawingToolbar activeTool={activeTool} onToolChange={setActiveTool} />
         </div>
     );
 }

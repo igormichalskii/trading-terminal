@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
 import { apiFetch } from "../lib/api";
+import type { Drawing, DrawingTool, HorizontalLineDrawing } from "../lib/drawings";
+import { HorizontalLinePrimitive } from "../lib/primitives/HorizontalLinePrimitive";
+import { COLOR_PALETTE, generateId, toDrawingPoint } from "../lib/drawingUtils";
 
 interface Candle {
     time: string | number;
@@ -64,28 +67,31 @@ interface Props {
     timeframe: string;
     chartType: "CANDLE" | "LINE";
     overlays: OverlayData;
+    drawings: Drawing[];
     onStatsChange: (candle: Candle | null) => void;
     onCandlesChange?: (candles: Candle[]) => void;
     onHoverChange?: (data: HoverCandle | null) => void;
+    activeTool: DrawingTool;
+    addDrawing: (drawing: Drawing) => void;
 }
 
 const OVERLAY_SERIES = [
-    { key: "sma",      color: "#3b82f6" },
-    { key: "ema",      color: "#a78bfa" },
-    { key: "vwap",     color: "#00b4d8" },
-    { key: "wma",      color: "#ef4444" },
-    { key: "dema",     color: "#3b82f6" },
-    { key: "tema",     color: "#00d68f" },
-    { key: "hma",      color: "#f97316" },
-    { key: "vwma",     color: "#14b8a6" },
-    { key: "kama",     color: "#ec4899" },
-    { key: "alma",     color: "#84cc16" },
-    { key: "zlema",    color: "#6366f1" },
-    { key: "lsma",     color: "#f59e0b" },
-    { key: "trima",    color: "#0ea5e9" },
-    { key: "t3",       color: "#f43f5e" },
+    { key: "sma", color: "#3b82f6" },
+    { key: "ema", color: "#a78bfa" },
+    { key: "vwap", color: "#00b4d8" },
+    { key: "wma", color: "#ef4444" },
+    { key: "dema", color: "#3b82f6" },
+    { key: "tema", color: "#00d68f" },
+    { key: "hma", color: "#f97316" },
+    { key: "vwma", color: "#14b8a6" },
+    { key: "kama", color: "#ec4899" },
+    { key: "alma", color: "#84cc16" },
+    { key: "zlema", color: "#6366f1" },
+    { key: "lsma", color: "#f59e0b" },
+    { key: "trima", color: "#0ea5e9" },
+    { key: "t3", color: "#f43f5e" },
     { key: "mcginley", color: "#10b981" },
-    { key: "vidya",    color: "#8b5cf6" },
+    { key: "vidya", color: "#8b5cf6" },
 ];
 
 const BB_COLORS = { upper: "#5a5a5a", middle: "#5a5a5a", lower: "#5a5a5a" };
@@ -106,10 +112,11 @@ function timeToISO(time: string | number): string {
 }
 
 export default function PriceChart({
-    symbol, timeframe, chartType, overlays,
-    onStatsChange, onCandlesChange, onHoverChange,
+    symbol, timeframe, chartType, overlays, drawings,
+    onStatsChange, onCandlesChange, onHoverChange, activeTool, addDrawing,
 }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
+    const primitiveMapRef = useRef<Map<string, HorizontalLinePrimitive>>(new Map());
     const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
     const seriesRef = useRef<any>(null);
     const overlaySeriesRef = useRef<any[]>([]);
@@ -254,6 +261,7 @@ export default function PriceChart({
 
         return () => { ro.disconnect(); chart.remove(); };
     }, []);
+
 
     // Reload data on symbol / timeframe change
     useEffect(() => {
@@ -403,9 +411,38 @@ export default function PriceChart({
         }
     }, [overlays]);
 
+    useEffect(() => {
+        const chart = chartRef.current;
+        if (!chart) return;
+        for (const drawing of drawings) {
+            if (!primitiveMapRef.current.has(drawing.id)) {
+                const primitive = new HorizontalLinePrimitive(drawing as HorizontalLineDrawing, seriesRef);
+                chart.panes()[0].attachPrimitive(primitive)
+                primitiveMapRef.current.set(drawing.id, primitive);
+            }
+        }
+        for (const [id, primitive] of primitiveMapRef.current) {
+            if (!drawings.find((d) => d.id === id)) {
+                chartRef.current?.panes()[0].detachPrimitive(primitive);
+                primitiveMapRef.current.delete(id);
+            }
+        }
+    }, [drawings]);
+
+
+
     return (
         <div style={{ position: "relative", width: "100%", flex: 1, minHeight: 0 }}>
-            <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
+            <div 
+            ref={containerRef} 
+            style={{ width: "100%", height: "100%" }} 
+            onClick={(e) => {
+                if (activeTool !== "horizontal_line") return;
+                const rect = containerRef.current!.getBoundingClientRect();
+                const point = toDrawingPoint(e.clientX- rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+                if (!point) return;
+                addDrawing({ id: generateId(), type: "horizontal_line", price: point.price, color: COLOR_PALETTE[0], lineWidth: 1 });
+            }}/>
 
             {loading && (
                 <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(17,17,17,0.7)" }}>
