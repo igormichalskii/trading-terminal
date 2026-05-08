@@ -112,7 +112,7 @@ export default function App() {
     const [showAuth, setShowAuth] = useState(false);
     const [symbol, setSymbol] = useState(() => localStorage.getItem("symbol") ?? "AAPL");
     const [timeframe, setTimeframe] = useState(() => localStorage.getItem("timeframe") ?? "1M");
-    const { drawings, addDrawing } = useDrawings({ user, symbol, timeframe });
+    const { drawings, addDrawing, removeDrawing } = useDrawings({ user, symbol, timeframe });
     const [activeTool, setActiveTool] = useState<DrawingTool>(null);
     const [stats, setStats] = useState<Candle | null>(null);
     const [candles, setCandles] = useState<Candle[]>([]);
@@ -135,6 +135,7 @@ export default function App() {
     const [showAI, setShowAI] = useState(false);
     const [subChartData, setSubChartData] = useState<any>({});
     const [showLibrary, setShowLibrary] = useState<boolean>(false);
+    const [selectedDrawingId, setSelectedDrawingId] = useState<string | null>(null);
 
     const isNarrow = useSyncExternalStore(
         (cb) => { window.addEventListener("resize", cb); return () => window.removeEventListener("resize", cb); },
@@ -318,6 +319,9 @@ export default function App() {
                         addDrawing={addDrawing}
                         stats={stats}
                         candles={candles}
+                        selectedDrawingId={selectedDrawingId}
+                        onSelectDrawing={setSelectedDrawingId}
+                        removeDrawing={removeDrawing}
                     />
 
                     {activeSubCharts.size > 0 && (

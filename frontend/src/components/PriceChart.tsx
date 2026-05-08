@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
 import { apiFetch } from "../lib/api";
-import type { Drawing, DrawingTool, HorizontalLineDrawing } from "../lib/drawings";
+import { type DrawingPoint, type Drawing, type DrawingTool, type HorizontalLineDrawing, type TrendLineDrawing } from "../lib/drawings";
 import { HorizontalLinePrimitive } from "../lib/primitives/HorizontalLinePrimitive";
 import { COLOR_PALETTE, generateId, toDrawingPoint } from "../lib/drawingUtils";
+import { TrendLinePrimitive } from "../lib/primitives/TrendLinePrimitive";
 
 interface Candle {
     time: string | number;
@@ -68,11 +69,14 @@ interface Props {
     chartType: "CANDLE" | "LINE";
     overlays: OverlayData;
     drawings: Drawing[];
+    selectedDrawingId: string | null;
     onStatsChange: (candle: Candle | null) => void;
     onCandlesChange?: (candles: Candle[]) => void;
     onHoverChange?: (data: HoverCandle | null) => void;
+    onSelectDrawing: (id: string | null) => void;
     activeTool: DrawingTool;
     addDrawing: (drawing: Drawing) => void;
+    removeDrawing: (id: string) => void;
 }
 
 const OVERLAY_SERIES = [
@@ -112,14 +116,15 @@ function timeToISO(time: string | number): string {
 }
 
 export default function PriceChart({
-    symbol, timeframe, chartType, overlays, drawings,
-    onStatsChange, onCandlesChange, onHoverChange, activeTool, addDrawing,
+    symbol, timeframe, chartType, overlays, drawings, selectedDrawingId,
+    onStatsChange, onCandlesChange, onHoverChange, onSelectDrawing, activeTool, addDrawing, removeDrawing,
 }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const primitiveMapRef = useRef<Map<string, HorizontalLinePrimitive>>(new Map());
+    const primitiveMapRef = useRef<Map<string, HorizontalLinePrimitive | TrendLinePrimitive>>(new Map());
     const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
     const seriesRef = useRef<any>(null);
     const overlaySeriesRef = useRef<any[]>([]);
+    const inProgressRef = useRef<DrawingPoint | null>(null);
 
     // Pagination refs
     const allCandlesRef = useRef<Candle[]>([]);
@@ -299,18 +304,6 @@ export default function PriceChart({
             .finally(() => setLoading(false));
     }, [symbol, timeframe]);
 
-    const addLine = (data: Point[], color: string, dashed = false) => {
-        const chart = chartRef.current;
-        if (!chart || !data?.length) return;
-        const s = chart.addSeries(LineSeries, {
-            color, lineWidth: 1,
-            lineStyle: dashed ? 1 : 0,
-            priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
-        });
-        s.setData(data as any);
-        overlaySeriesRef.current.push(s);
-    };
-
     // Switch between candlestick and line series when chartType changes
     useEffect(() => {
         const chart = chartRef.current;
@@ -415,11 +408,26 @@ export default function PriceChart({
         const chart = chartRef.current;
         if (!chart) return;
         for (const drawing of drawings) {
-            if (!primitiveMapRef.current.has(drawing.id)) {
-                const primitive = new HorizontalLinePrimitive(drawing as HorizontalLineDrawing, seriesRef);
-                chart.panes()[0].attachPrimitive(primitive)
-                primitiveMapRef.current.set(drawing.id, primitive);
+            if (drawing.type === "horizontal_line") {
+                if (!primitiveMapRef.current.has(drawing.id)) {
+                    const primitive = new HorizontalLinePrimitive(drawing as HorizontalLineDrawing, seriesRef, drawing.id === selectedDrawingId);
+                    chart.panes()[0].attachPrimitive(primitive)
+                    primitiveMapRef.current.set(drawing.id, primitive);
+                } else {
+                    const primitive = primitiveMapRef.current.get(drawing.id)!;
+                    (primitive as HorizontalLinePrimitive).update(drawing as HorizontalLineDrawing, drawing.id === selectedDrawingId);
+                }
+            } else if (drawing.type === "trend_line") {
+                if (!primitiveMapRef.current.has(drawing.id)) {
+                    const primitive = new TrendLinePrimitive(drawing as TrendLineDrawing, seriesRef, drawing.id === selectedDrawingId, chartRef);
+                    chart.panes()[0].attachPrimitive(primitive);
+                    primitiveMapRef.current.set(drawing.id, primitive);
+                } else {
+                    const primitive = primitiveMapRef.current.get(drawing.id)!;
+                    (primitive as TrendLinePrimitive).update(drawing as TrendLineDrawing, drawing.id === selectedDrawingId);
+                }
             }
+
         }
         for (const [id, primitive] of primitiveMapRef.current) {
             if (!drawings.find((d) => d.id === id)) {
@@ -427,22 +435,95 @@ export default function PriceChart({
                 primitiveMapRef.current.delete(id);
             }
         }
-    }, [drawings]);
+    }, [drawings, selectedDrawingId]);
 
+    useEffect(() => {
+        function handleKeyDown(e: KeyboardEvent) {
+            if (e.key === "Delete" && selectedDrawingId) {
+                removeDrawing(selectedDrawingId);
+                onSelectDrawing(null);
+            }
+        }
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [selectedDrawingId, removeDrawing, onSelectDrawing])
 
+    const addLine = (data: Point[], color: string, dashed = false) => {
+        const chart = chartRef.current;
+        if (!chart || !data?.length) return;
+        const s = chart.addSeries(LineSeries, {
+            color, lineWidth: 1,
+            lineStyle: dashed ? 1 : 0,
+            priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
+        });
+        s.setData(data as any);
+        overlaySeriesRef.current.push(s);
+    };
 
     return (
         <div style={{ position: "relative", width: "100%", flex: 1, minHeight: 0 }}>
-            <div 
-            ref={containerRef} 
-            style={{ width: "100%", height: "100%" }} 
-            onClick={(e) => {
-                if (activeTool !== "horizontal_line") return;
-                const rect = containerRef.current!.getBoundingClientRect();
-                const point = toDrawingPoint(e.clientX- rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
-                if (!point) return;
-                addDrawing({ id: generateId(), type: "horizontal_line", price: point.price, color: COLOR_PALETTE[0], lineWidth: 1 });
-            }}/>
+            <div
+                ref={containerRef}
+                style={{ width: "100%", height: "100%" }}
+                onClick={(e) => {
+                    if (activeTool === "horizontal_line") {
+                        const rect = containerRef.current!.getBoundingClientRect();
+                        const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+                        if (!point) return;
+                        addDrawing({ id: generateId(), type: "horizontal_line", price: point.price, color: COLOR_PALETTE[0], lineWidth: 1 });
+                    } else if (activeTool === "trend_line") {
+                        const rect = containerRef.current!.getBoundingClientRect();
+                        const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+                        if (!point) return;
+                        if (!inProgressRef.current) {
+                            inProgressRef.current = point;
+                        } else {
+                            const p1 = inProgressRef.current;
+                            inProgressRef.current = null;
+                            addDrawing({ id: generateId(), type: "trend_line", p1: p1, p2: point, color: COLOR_PALETTE[1], lineWidth: 1 });
+                        }
+                    } else if (activeTool === null) {
+                        const rect = containerRef.current!.getBoundingClientRect();
+                        let found = null;
+                        for (const d of drawings.filter(d => d.type === "horizontal_line")) {
+                            const lineY = seriesRef.current?.priceToCoordinate(d.price);
+                            if (lineY == null) continue;
+                            const clickY = e.clientY - rect.top;
+                            if (Math.abs(clickY - lineY) < 5) { found = d.id; break; }
+                        }
+
+                        if (!found) {
+                            for (const d of drawings.filter(d => d.type === "trend_line")) {
+                                const x1 = chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
+                                const y1 = seriesRef.current?.priceToCoordinate(d.p1.price);
+                                const x2 = chartRef.current?.timeScale().timeToCoordinate(d.p2.time as any);
+                                const y2 = seriesRef.current.priceToCoordinate(d.p2.price);
+                                if (
+                                    x1 === null ||
+                                    x1 === undefined ||
+                                    y1 === null ||
+                                    y1 === undefined ||
+                                    x2 === null ||
+                                    x2 === undefined ||
+                                    y2 === null ||
+                                    y2 === undefined
+                                ) continue;
+                                const cx = e.clientX - rect.left;
+                                const cy = e.clientY - rect.top;
+                                const dx = x2 - x1;
+                                const dy = y2 - y1;
+                                const len2 = dx*dx + dy*dy;
+                                const t = Math.max(0, Math.min(1, ((cx - x1)*dx + (cy - y1)*dy) / len2));
+                                const nearX = x1 + t*dx;
+                                const nearY = y1 + t*dy;
+                                const dist = Math.sqrt((cx-nearX)**2 + (cy-nearY)**2);
+                                if (dist < 5) { found = d.id; break; }
+                            }
+                        }
+                        onSelectDrawing(found);
+                    }
+
+                }} />
 
             {loading && (
                 <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(17,17,17,0.7)" }}>

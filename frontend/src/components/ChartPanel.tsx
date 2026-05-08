@@ -37,6 +37,9 @@ interface Props {
     candles: Candle[];
     setActiveTool: (activeTool: DrawingTool) => void;
     addDrawing: (drawing: Drawing) => void;
+    selectedDrawingId: string | null;
+    onSelectDrawing: (id: string | null) => void;
+    removeDrawing: (id: string) => void;
 }
 
 function fmtVol(v: number): string {
@@ -59,16 +62,20 @@ export default function ChartPanel({
     pinnedIndicators,
     drawings,
     activeTool,
+    selectedDrawingId,
+    stats,
+    candles,
     onToggleIndicator,
     onToggleSubChart,
     onStatsChange,
     onCandlesChange,
     onTimeframeChange,
     onOpenLibrary,
+    onSelectDrawing,
     setActiveTool,
     addDrawing,
-    stats,
-    candles,
+    removeDrawing,
+
 }: Props) {
     const [hover, setHover] = useState<HoverCandle | null>(null);
     const [chartType, setChartType] = useState<"CANDLE" | "LINE">(() =>
@@ -197,7 +204,7 @@ export default function ChartPanel({
                                 key={ind}
                                 className={"t-tool-btn" + (activeSubCharts.has(ind) ? " active" : "")}
                                 onClick={() => onToggleSubChart(ind)}
-                                style={{ border: "1px solid #e70c0c"}}
+                                style={{ border: "1px solid #e70c0c" }}
                             >
                                 {ind.toUpperCase()}
                             </button>
@@ -231,11 +238,14 @@ export default function ChartPanel({
                     chartType={chartType}
                     overlays={overlays}
                     drawings={drawings}
+                    selectedDrawingId={selectedDrawingId}
                     onStatsChange={onStatsChange}
                     onCandlesChange={onCandlesChange}
+                    onSelectDrawing={onSelectDrawing}
                     onHoverChange={setHover}
                     activeTool={activeTool}
                     addDrawing={addDrawing}
+                    removeDrawing={removeDrawing}
                 />
             </div>
             <DrawingToolbar activeTool={activeTool} onToolChange={setActiveTool} />
