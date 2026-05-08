@@ -1,6 +1,7 @@
 export interface DrawingPoint {
     time: number;
     price: number;
+    logical?: number;
 }
 
 export interface HorizontalLineDrawing {

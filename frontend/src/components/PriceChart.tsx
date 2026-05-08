@@ -440,7 +440,7 @@ export default function PriceChart({
                 }
             } else if (drawing.type === "fib_retracement") {
                 if (!primitiveMapRef.current.has(drawing.id)) {
-                    const primitive = new FibRetracementPrimitive(drawing as FibRetracementDrawing, seriesRef, drawing.id === selectedDrawingId);
+                    const primitive = new FibRetracementPrimitive(drawing as FibRetracementDrawing, seriesRef, chartRef, drawing.id === selectedDrawingId);
                     chart.panes()[0].attachPrimitive(primitive);
                     primitiveMapRef.current.set(drawing.id, primitive);
                 } else {
@@ -541,9 +541,13 @@ export default function PriceChart({
 
                         if (!found) {
                             for (const d of drawings.filter(d => d.type === "trend_line")) {
-                                const x1 = chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
+                                const x1 = d.p1.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p1.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
                                 const y1 = seriesRef.current?.priceToCoordinate(d.p1.price);
-                                const x2 = chartRef.current?.timeScale().timeToCoordinate(d.p2.time as any);
+                                const x2 = d.p2.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p2.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p2.time as any);
                                 const y2 = seriesRef.current.priceToCoordinate(d.p2.price);
                                 if (
                                     x1 === null ||
@@ -570,9 +574,13 @@ export default function PriceChart({
 
                         if (!found) {
                             for (const d of drawings.filter(d => d.type === "rectangle")) {
-                                const x1 = chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
+                                const x1 = d.p1.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p1.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
                                 const y1 = seriesRef.current?.priceToCoordinate(d.p1.price);
-                                const x2 = chartRef.current?.timeScale().timeToCoordinate(d.p2.time as any);
+                                const x2 = d.p1.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p2.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p2.time as any);
                                 const y2 = seriesRef.current?.priceToCoordinate(d.p2.price);
                                 if (
                                     x1 === null ||

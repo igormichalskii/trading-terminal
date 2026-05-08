@@ -21,9 +21,13 @@ class TrendLineRenderer implements IPrimitivePaneRenderer {
             verticalPixelRatio: number;
             horizontalPixelRatio: number;
         }) => {
-            const x1 = this._chartRef.current?.timeScale().timeToCoordinate(this._drawing.p1.time as any);
+            const x1 = this._drawing.p1.logical != null
+                ? this._chartRef.current?.timeScale().logicalToCoordinate(this._drawing.p1.logical as any)
+                : this._chartRef.current?.timeScale().timeToCoordinate(this._drawing.p1.time as any);
             const y1 = this._seriesRef.current?.priceToCoordinate(this._drawing.p1.price);
-            const x2 = this._chartRef.current?.timeScale().timeToCoordinate(this._drawing.p2.time as any);
+            const x2 = this._drawing.p2.logical != null
+                ? this._chartRef.current?.timeScale().logicalToCoordinate(this._drawing.p2.logical as any)
+                : this._chartRef.current?.timeScale().timeToCoordinate(this._drawing.p2.time as any);
             const y2 = this._seriesRef.current?.priceToCoordinate(this._drawing.p2.price);
             if (
                 x1 === null ||
