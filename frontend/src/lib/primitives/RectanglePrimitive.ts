@@ -1,18 +1,18 @@
-import type { IPanePrimitivePaneView, IPrimitivePaneRenderer, IPanePrimitive } from "lightweight-charts";
-import type { TrendLineDrawing } from "../drawings";
+import type { IPanePrimitive, IPanePrimitivePaneView, IPrimitivePaneRenderer } from "lightweight-charts";
+import type { RectangleDrawing } from "../drawings";
 import type React from "react";
 
-class TrendLineRenderer implements IPrimitivePaneRenderer {
-    private _drawing: TrendLineDrawing;
+class RectangleRenderer implements IPrimitivePaneRenderer {
+    private _drawing: RectangleDrawing;
     private _seriesRef: React.RefObject<any>;
-    private _isSelected: boolean;
     private _chartRef: React.RefObject<any>;
+    private _isSelected: boolean;
 
-    constructor(drawing: TrendLineDrawing, seriesRef: React.RefObject<any>, isSelected: boolean, chartRef: React.RefObject<any>) {
+    constructor(drawing: RectangleDrawing, seriesRef: React.RefObject<any>, chartRef: React.RefObject<any>, isSelected: boolean) {
         this._drawing = drawing;
         this._seriesRef = seriesRef;
-        this._isSelected = isSelected;
         this._chartRef = chartRef;
+        this._isSelected = isSelected;
     }
 
     draw(target: any): void {
@@ -28,7 +28,7 @@ class TrendLineRenderer implements IPrimitivePaneRenderer {
             if (
                 x1 === null ||
                 x1 === undefined ||
-                y1 === null || 
+                y1 === null ||
                 y1 === undefined ||
                 x2 === null ||
                 x2 === undefined ||
@@ -39,47 +39,49 @@ class TrendLineRenderer implements IPrimitivePaneRenderer {
             const y1Px = Math.round(y1 * verticalPixelRatio);
             const x2Px = Math.round(x2 * horizontalPixelRatio);
             const y2Px = Math.round(y2 * verticalPixelRatio);
+            context.globalAlpha = this._drawing.fillOpacity;
+            context.fillStyle = this._drawing.color;
+            context.fillRect(x1Px, y1Px, x2Px - x1Px, y2Px - y1Px);
+            context.globalAlpha = 1;
             context.strokeStyle = this._drawing.color;
-            context.lineWidth = (this._isSelected ? this._drawing.lineWidth + 1 : this._drawing.lineWidth) * verticalPixelRatio;
-            context.beginPath();
+            context.lineWidth = (this._isSelected ? 2 : 1) * verticalPixelRatio;
             context.setLineDash(this._isSelected ? [5,3] : []);
-            context.moveTo(x1Px, y1Px);
-            context.lineTo(x2Px, y2Px);
-            context.stroke();
+            context.strokeRect(x1Px, y1Px, x2Px - x1Px, y2Px - y1Px);
+
         })
     }
 }
 
-class TrendPaneView implements IPanePrimitivePaneView {
-    private _drawing: TrendLineDrawing;
+class RectanglePaneView implements IPanePrimitivePaneView {
+    private _drawing: RectangleDrawing;
     private _seriesRef: React.RefObject<any>;
-    private _isSelected: boolean;
     private _chartRef: React.RefObject<any>;
+    private _isSelected: boolean;
 
-    constructor(drawing: TrendLineDrawing, seriesRef: React.RefObject<any>, isSelected: boolean, chartRef: React.RefObject<any>) {
+    constructor(drawing: RectangleDrawing, seriesRef: React.RefObject<any>, chartRef: React.RefObject<any>, isSelected: boolean) {
         this._drawing = drawing;
         this._seriesRef = seriesRef;
-        this._isSelected = isSelected;
         this._chartRef = chartRef;
+        this._isSelected = isSelected;
     }
 
     renderer(): IPrimitivePaneRenderer {
-        return new TrendLineRenderer(this._drawing, this._seriesRef, this._isSelected, this._chartRef);
+        return new RectangleRenderer(this._drawing, this._seriesRef, this._chartRef, this._isSelected);
     }
 }
 
-export class TrendLinePrimitive implements IPanePrimitive {
-    private _drawing: TrendLineDrawing;
+export class RectanglePrimitive implements IPanePrimitive {
+    private _drawing: RectangleDrawing;
     private _seriesRef: React.RefObject<any>;
-    private _isSelected: boolean;
     private _chartRef: React.RefObject<any>;
+    private _isSelected: boolean;
     private _requestUpdate?: () => void;
 
-    constructor(drawing: TrendLineDrawing, seriesRef: React.RefObject<any>, isSelected: boolean, chartRef: React.RefObject<any>) {
+    constructor(drawing: RectangleDrawing, seriesRef: React.RefObject<any>, chartRef: React.RefObject<any>, isSelected: boolean) {
         this._drawing = drawing;
         this._seriesRef = seriesRef;
-        this._isSelected = isSelected;
         this._chartRef = chartRef;
+        this._isSelected = isSelected;
     }
 
     attached({ requestUpdate }: { requestUpdate: () => void }): void {
@@ -88,13 +90,12 @@ export class TrendLinePrimitive implements IPanePrimitive {
     }
 
     paneViews() {
-        return [new TrendPaneView(this._drawing, this._seriesRef, this._isSelected, this._chartRef)]
+        return [new RectanglePaneView(this._drawing, this._seriesRef, this._chartRef, this._isSelected)]
     }
 
-    update(drawing: TrendLineDrawing, isSelected: boolean) {
+    update(drawing: RectangleDrawing, isSelected: boolean) {
         this._drawing = drawing;
         this._isSelected = isSelected;
         this._requestUpdate?.();
     }
-
 }

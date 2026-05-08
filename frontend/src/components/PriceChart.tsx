@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
 import { apiFetch } from "../lib/api";
-import { type DrawingPoint, type Drawing, type DrawingTool, type HorizontalLineDrawing, type TrendLineDrawing } from "../lib/drawings";
+import { type DrawingPoint, type Drawing, type DrawingTool, type HorizontalLineDrawing, type TrendLineDrawing, type RectangleDrawing, type FibRetracementDrawing } from "../lib/drawings";
 import { HorizontalLinePrimitive } from "../lib/primitives/HorizontalLinePrimitive";
 import { COLOR_PALETTE, generateId, toDrawingPoint } from "../lib/drawingUtils";
 import { TrendLinePrimitive } from "../lib/primitives/TrendLinePrimitive";
+import { RectanglePrimitive } from "../lib/primitives/RectanglePrimitive";
+import { FibRetracementPrimitive } from "../lib/primitives/FibRetracementPrimitive";
 
 interface Candle {
     time: string | number;
@@ -74,6 +76,7 @@ interface Props {
     onCandlesChange?: (candles: Candle[]) => void;
     onHoverChange?: (data: HoverCandle | null) => void;
     onSelectDrawing: (id: string | null) => void;
+    onToolChange: (tool: DrawingTool) => void;
     activeTool: DrawingTool;
     addDrawing: (drawing: Drawing) => void;
     removeDrawing: (id: string) => void;
@@ -117,10 +120,10 @@ function timeToISO(time: string | number): string {
 
 export default function PriceChart({
     symbol, timeframe, chartType, overlays, drawings, selectedDrawingId,
-    onStatsChange, onCandlesChange, onHoverChange, onSelectDrawing, activeTool, addDrawing, removeDrawing,
+    onStatsChange, onCandlesChange, onHoverChange, onSelectDrawing, onToolChange, activeTool, addDrawing, removeDrawing,
 }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const primitiveMapRef = useRef<Map<string, HorizontalLinePrimitive | TrendLinePrimitive>>(new Map());
+    const primitiveMapRef = useRef<Map<string, HorizontalLinePrimitive | TrendLinePrimitive | RectanglePrimitive | FibRetracementPrimitive>>(new Map());
     const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
     const seriesRef = useRef<any>(null);
     const overlaySeriesRef = useRef<any[]>([]);
@@ -426,6 +429,24 @@ export default function PriceChart({
                     const primitive = primitiveMapRef.current.get(drawing.id)!;
                     (primitive as TrendLinePrimitive).update(drawing as TrendLineDrawing, drawing.id === selectedDrawingId);
                 }
+            } else if (drawing.type === "rectangle") {
+                if (!primitiveMapRef.current.has(drawing.id)) {
+                    const primitive = new RectanglePrimitive(drawing as RectangleDrawing, seriesRef, chartRef, drawing.id === selectedDrawingId);
+                    chart.panes()[0].attachPrimitive(primitive);
+                    primitiveMapRef.current.set(drawing.id, primitive);
+                } else {
+                    const primitive = primitiveMapRef.current.get(drawing.id)!;
+                    (primitive as RectanglePrimitive).update(drawing as RectangleDrawing, drawing.id === selectedDrawingId);
+                }
+            } else if (drawing.type === "fib_retracement") {
+                if (!primitiveMapRef.current.has(drawing.id)) {
+                    const primitive = new FibRetracementPrimitive(drawing as FibRetracementDrawing, seriesRef, drawing.id === selectedDrawingId);
+                    chart.panes()[0].attachPrimitive(primitive);
+                    primitiveMapRef.current.set(drawing.id, primitive);
+                } else {
+                    const primitive = primitiveMapRef.current.get(drawing.id)!;
+                    (primitive as FibRetracementPrimitive).update(drawing as FibRetracementDrawing, drawing.id === selectedDrawingId);
+                }
             }
 
         }
@@ -471,6 +492,7 @@ export default function PriceChart({
                         const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
                         if (!point) return;
                         addDrawing({ id: generateId(), type: "horizontal_line", price: point.price, color: COLOR_PALETTE[0], lineWidth: 1 });
+                        onToolChange(null);
                     } else if (activeTool === "trend_line") {
                         const rect = containerRef.current!.getBoundingClientRect();
                         const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
@@ -481,6 +503,31 @@ export default function PriceChart({
                             const p1 = inProgressRef.current;
                             inProgressRef.current = null;
                             addDrawing({ id: generateId(), type: "trend_line", p1: p1, p2: point, color: COLOR_PALETTE[1], lineWidth: 1 });
+                            onToolChange(null);
+                        }
+                    } else if (activeTool === "rectangle") {
+                        const rect = containerRef.current!.getBoundingClientRect();
+                        const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+                        if (!point) return;
+                        if (!inProgressRef.current) {
+                            inProgressRef.current = point;
+                        } else {
+                            const p1 = inProgressRef.current;
+                            inProgressRef.current = null;
+                            addDrawing({ id: generateId(), type: "rectangle", p1: p1, p2: point, color: COLOR_PALETTE[2], fillOpacity: 0.85 });
+                            onToolChange(null);
+                        }
+                    } else if (activeTool === "fib_retracement") {
+                        const rect = containerRef.current!.getBoundingClientRect();
+                        const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+                        if (!point) return;
+                        if (!inProgressRef.current) {
+                            inProgressRef.current = point;
+                        } else {
+                            const p1 = inProgressRef.current;
+                            inProgressRef.current = null;
+                            addDrawing({ id: generateId(), type: "fib_retracement", p1: p1, p2: point, color: COLOR_PALETTE[3], levels: [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1] })
+                            onToolChange(null);
                         }
                     } else if (activeTool === null) {
                         const rect = containerRef.current!.getBoundingClientRect();
@@ -512,14 +559,57 @@ export default function PriceChart({
                                 const cy = e.clientY - rect.top;
                                 const dx = x2 - x1;
                                 const dy = y2 - y1;
-                                const len2 = dx*dx + dy*dy;
-                                const t = Math.max(0, Math.min(1, ((cx - x1)*dx + (cy - y1)*dy) / len2));
-                                const nearX = x1 + t*dx;
-                                const nearY = y1 + t*dy;
-                                const dist = Math.sqrt((cx-nearX)**2 + (cy-nearY)**2);
+                                const len2 = dx * dx + dy * dy;
+                                const t = Math.max(0, Math.min(1, ((cx - x1) * dx + (cy - y1) * dy) / len2));
+                                const nearX = x1 + t * dx;
+                                const nearY = y1 + t * dy;
+                                const dist = Math.sqrt((cx - nearX) ** 2 + (cy - nearY) ** 2);
                                 if (dist < 5) { found = d.id; break; }
                             }
                         }
+
+                        if (!found) {
+                            for (const d of drawings.filter(d => d.type === "rectangle")) {
+                                const x1 = chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
+                                const y1 = seriesRef.current?.priceToCoordinate(d.p1.price);
+                                const x2 = chartRef.current?.timeScale().timeToCoordinate(d.p2.time as any);
+                                const y2 = seriesRef.current?.priceToCoordinate(d.p2.price);
+                                if (
+                                    x1 === null ||
+                                    x1 === undefined ||
+                                    y1 === null ||
+                                    y1 === undefined ||
+                                    x2 === null ||
+                                    x2 === undefined ||
+                                    y2 === null ||
+                                    y2 === undefined
+                                ) continue;
+                                const cx = e.clientX - rect.left;
+                                const cy = e.clientY - rect.top;
+                                if (
+                                    cx >= Math.min(x1, x2) &&
+                                    cx <= Math.max(x1, x2) &&
+                                    cy >= Math.min(y1, y2) &&
+                                    cy <= Math.max(y1, y2)
+                                ) { found = d.id; break; }
+                            }
+                        }
+
+
+                        if (!found) {
+                            const cy = e.clientY - rect.top;
+                            for (const d of drawings.filter(d => d.type === "fib_retracement")) {
+                                for (const l of d.levels) {
+                                    const price = d.p2.price + (d.p1.price - d.p2.price) * l;
+                                    const lineY = seriesRef.current?.priceToCoordinate(price);
+                                    if (lineY === null) continue;
+                                    if (Math.abs(cy - lineY) < 5) { found = d.id; break; }
+                                }
+                                if (found) break;
+                            }
+
+                        }
+
                         onSelectDrawing(found);
                     }
 

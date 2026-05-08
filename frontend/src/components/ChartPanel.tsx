@@ -242,6 +242,7 @@ export default function ChartPanel({
                     onStatsChange={onStatsChange}
                     onCandlesChange={onCandlesChange}
                     onSelectDrawing={onSelectDrawing}
+                    onToolChange={setActiveTool}
                     onHoverChange={setHover}
                     activeTool={activeTool}
                     addDrawing={addDrawing}
