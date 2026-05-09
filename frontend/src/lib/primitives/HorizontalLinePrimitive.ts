@@ -1,6 +1,7 @@
 import type { IPanePrimitive, IPanePrimitivePaneView, IPrimitivePaneRenderer } from "lightweight-charts";
 import type { HorizontalLineDrawing } from "../drawings";
 import type React from "react";
+import { lineDashForStyle } from "../drawingUtils";
 
 
 class HorizontalLineRenderer implements IPrimitivePaneRenderer {
@@ -16,21 +17,29 @@ class HorizontalLineRenderer implements IPrimitivePaneRenderer {
     }
 
     draw(target: any): void {
-        target.useBitmapCoordinateSpace(({ context, bitmapSize, verticalPixelRatio }: {
+        target.useBitmapCoordinateSpace(({ context, bitmapSize, verticalPixelRatio, horizontalPixelRatio }: {
             context: CanvasRenderingContext2D;
             bitmapSize: { width: number; height: number };
             verticalPixelRatio: number;
+            horizontalPixelRatio: number;
         }) => {
             const y = this._seriesRef.current?.priceToCoordinate(this._drawing.price);
             if (y === null || y === undefined) return;
             const yPx = Math.round(y * verticalPixelRatio);
             context.strokeStyle = this._drawing.color;
             context.lineWidth = (this._isSelected ? this._drawing.lineWidth + 1 : this._drawing.lineWidth) * verticalPixelRatio;
+            context.fillStyle = this._drawing.color;
+            context.font = `${11 * verticalPixelRatio}px monospace`
             context.beginPath();
-            context.setLineDash(this._isSelected ? [5, 3] : []);
+            context.setLineDash(this._isSelected ? [5, 3] : lineDashForStyle(this._drawing.lineStyle));
             context.moveTo(0, yPx);
             context.lineTo(bitmapSize.width, yPx);
             context.stroke();
+            if (this._drawing.label) {
+                context.textAlign = "left";
+                context.fillText(this._drawing.label, 4 * horizontalPixelRatio, yPx - 4 * verticalPixelRatio);
+                context.textAlign = "right";
+            }
 
         })
     }

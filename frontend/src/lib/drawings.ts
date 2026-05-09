@@ -10,6 +10,8 @@ export interface HorizontalLineDrawing {
     price: number;
     color: string;
     lineWidth: number;
+    label?: string;
+    lineStyle?: "solid" | "dashed" | "dotted";
 }
 
 export interface TrendLineDrawing {
@@ -19,6 +21,8 @@ export interface TrendLineDrawing {
     p2: DrawingPoint;
     color: string;
     lineWidth: number;
+    label?: string;
+    lineStyle?: "solid" | "dashed" | "dotted";
 }
 
 export interface RectangleDrawing {
@@ -28,6 +32,9 @@ export interface RectangleDrawing {
     p2: DrawingPoint;
     color: string;
     fillOpacity: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+    lineWidth: number;
 }
 
 export interface FibRetracementDrawing {
@@ -37,6 +44,9 @@ export interface FibRetracementDrawing {
     p2: DrawingPoint;
     color: string;
     levels: number[];
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+    lineWidth: number;
 }
 
 export type Drawing =
@@ -47,3 +57,8 @@ export type Drawing =
 
 export type DrawingType = Drawing['type'];
 export type DrawingTool = DrawingType | null;
+export type DrawingUpdate = 
+    | Partial<Omit<HorizontalLineDrawing, 'id' | 'type'>>
+    | Partial<Omit<TrendLineDrawing, 'id' | 'type'>>
+    | Partial<Omit<RectangleDrawing, 'id' | 'type'>>
+    | Partial<Omit<FibRetracementDrawing, 'id' | 'type'>>

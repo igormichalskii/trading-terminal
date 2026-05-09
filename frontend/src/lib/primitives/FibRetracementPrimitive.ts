@@ -1,6 +1,7 @@
 import type { IPanePrimitive, IPanePrimitivePaneView, IPrimitivePaneRenderer } from "lightweight-charts";
 import type { FibRetracementDrawing } from "../drawings";
 import type React from "react";
+import { lineDashForStyle } from "../drawingUtils";
 
 class FibRetracementRenderer implements IPrimitivePaneRenderer {
     private _drawing: FibRetracementDrawing;
@@ -45,12 +46,12 @@ class FibRetracementRenderer implements IPrimitivePaneRenderer {
                 ) continue;
                 const yPx = Math.round(y * verticalPixelRatio);
                 context.strokeStyle = this._drawing.color;
-                context.lineWidth = (this._isSelected ? 2 : 1) * verticalPixelRatio;
+                context.lineWidth = (this._isSelected ? this._drawing.lineWidth + 1 : this._drawing.lineWidth) * verticalPixelRatio;
                 context.fillStyle = this._drawing.color;
                 context.font = `${11 * verticalPixelRatio}px monospace`;
                 context.fillText(`${(l * 100).toFixed(1)}% ${price.toFixed(2)}`, x1Px+ 4 * horizontalPixelRatio, yPx - 3 * verticalPixelRatio);
                 context.beginPath();
-                context.setLineDash(this._isSelected ? [5, 3] : []);
+                context.setLineDash(this._isSelected ? [5,3]: lineDashForStyle(this._drawing.lineStyle));
                 context.moveTo(x1Px, yPx);
                 context.lineTo(x2Px, yPx);
                 context.stroke();

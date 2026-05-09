@@ -55,3 +55,12 @@ export function toDrawingPoint(
     const logical = chart.timeScale().coordinateToLogical(x);
     return { time: numericTime, price: p, logical: logical != null ? logical as number : undefined };
 }
+
+export function lineDashForStyle(style?: string) {
+    if (!style) return [];
+    return ({
+        "solid": [],
+        "dashed": [6, 4],
+        "dotted": [2, 3],
+    })[style] ?? [];
+}

@@ -414,7 +414,7 @@ export default function PriceChart({
             if (drawing.type === "horizontal_line") {
                 if (!primitiveMapRef.current.has(drawing.id)) {
                     const primitive = new HorizontalLinePrimitive(drawing as HorizontalLineDrawing, seriesRef, drawing.id === selectedDrawingId);
-                    chart.panes()[0].attachPrimitive(primitive)
+                    seriesRef.current.attachPrimitive(primitive)
                     primitiveMapRef.current.set(drawing.id, primitive);
                 } else {
                     const primitive = primitiveMapRef.current.get(drawing.id)!;
@@ -423,7 +423,7 @@ export default function PriceChart({
             } else if (drawing.type === "trend_line") {
                 if (!primitiveMapRef.current.has(drawing.id)) {
                     const primitive = new TrendLinePrimitive(drawing as TrendLineDrawing, seriesRef, drawing.id === selectedDrawingId, chartRef);
-                    chart.panes()[0].attachPrimitive(primitive);
+                    seriesRef.current.attachPrimitive(primitive);
                     primitiveMapRef.current.set(drawing.id, primitive);
                 } else {
                     const primitive = primitiveMapRef.current.get(drawing.id)!;
@@ -432,7 +432,7 @@ export default function PriceChart({
             } else if (drawing.type === "rectangle") {
                 if (!primitiveMapRef.current.has(drawing.id)) {
                     const primitive = new RectanglePrimitive(drawing as RectangleDrawing, seriesRef, chartRef, drawing.id === selectedDrawingId);
-                    chart.panes()[0].attachPrimitive(primitive);
+                    seriesRef.current.attachPrimitive(primitive);
                     primitiveMapRef.current.set(drawing.id, primitive);
                 } else {
                     const primitive = primitiveMapRef.current.get(drawing.id)!;
@@ -441,7 +441,7 @@ export default function PriceChart({
             } else if (drawing.type === "fib_retracement") {
                 if (!primitiveMapRef.current.has(drawing.id)) {
                     const primitive = new FibRetracementPrimitive(drawing as FibRetracementDrawing, seriesRef, chartRef, drawing.id === selectedDrawingId);
-                    chart.panes()[0].attachPrimitive(primitive);
+                    seriesRef.current.attachPrimitive(primitive);
                     primitiveMapRef.current.set(drawing.id, primitive);
                 } else {
                     const primitive = primitiveMapRef.current.get(drawing.id)!;
@@ -452,7 +452,7 @@ export default function PriceChart({
         }
         for (const [id, primitive] of primitiveMapRef.current) {
             if (!drawings.find((d) => d.id === id)) {
-                chartRef.current?.panes()[0].detachPrimitive(primitive);
+                seriesRef.current?.detachPrimitive(primitive);
                 primitiveMapRef.current.delete(id);
             }
         }
@@ -491,7 +491,7 @@ export default function PriceChart({
                         const rect = containerRef.current!.getBoundingClientRect();
                         const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
                         if (!point) return;
-                        addDrawing({ id: generateId(), type: "horizontal_line", price: point.price, color: COLOR_PALETTE[0], lineWidth: 1 });
+                        addDrawing({ id: generateId(), type: "horizontal_line", price: point.price, color: COLOR_PALETTE[0], lineWidth: 1, lineStyle: "solid", label: "" });
                         onToolChange(null);
                     } else if (activeTool === "trend_line") {
                         const rect = containerRef.current!.getBoundingClientRect();
@@ -502,7 +502,7 @@ export default function PriceChart({
                         } else {
                             const p1 = inProgressRef.current;
                             inProgressRef.current = null;
-                            addDrawing({ id: generateId(), type: "trend_line", p1: p1, p2: point, color: COLOR_PALETTE[1], lineWidth: 1 });
+                            addDrawing({ id: generateId(), type: "trend_line", p1: p1, p2: point, color: COLOR_PALETTE[1], lineWidth: 1, lineStyle: "solid", label: "" });
                             onToolChange(null);
                         }
                     } else if (activeTool === "rectangle") {
@@ -514,7 +514,7 @@ export default function PriceChart({
                         } else {
                             const p1 = inProgressRef.current;
                             inProgressRef.current = null;
-                            addDrawing({ id: generateId(), type: "rectangle", p1: p1, p2: point, color: COLOR_PALETTE[2], fillOpacity: 0.85 });
+                            addDrawing({ id: generateId(), type: "rectangle", p1: p1, p2: point, color: COLOR_PALETTE[2], fillOpacity: 0.85, lineWidth: 1, lineStyle: "solid", label: ""});
                             onToolChange(null);
                         }
                     } else if (activeTool === "fib_retracement") {
@@ -526,7 +526,7 @@ export default function PriceChart({
                         } else {
                             const p1 = inProgressRef.current;
                             inProgressRef.current = null;
-                            addDrawing({ id: generateId(), type: "fib_retracement", p1: p1, p2: point, color: COLOR_PALETTE[3], levels: [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1] })
+                            addDrawing({ id: generateId(), type: "fib_retracement", p1: p1, p2: point, color: COLOR_PALETTE[3], levels: [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1], lineWidth: 1, lineStyle: "solid", label: "" })
                             onToolChange(null);
                         }
                     } else if (activeTool === null) {

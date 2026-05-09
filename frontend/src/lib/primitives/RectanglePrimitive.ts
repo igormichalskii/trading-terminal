@@ -1,6 +1,7 @@
 import type { IPanePrimitive, IPanePrimitivePaneView, IPrimitivePaneRenderer } from "lightweight-charts";
 import type { RectangleDrawing } from "../drawings";
 import type React from "react";
+import { lineDashForStyle } from "../drawingUtils";
 
 class RectangleRenderer implements IPrimitivePaneRenderer {
     private _drawing: RectangleDrawing;
@@ -45,12 +46,16 @@ class RectangleRenderer implements IPrimitivePaneRenderer {
             const y2Px = Math.round(y2 * verticalPixelRatio);
             context.globalAlpha = this._drawing.fillOpacity;
             context.fillStyle = this._drawing.color;
+            context.font = `${11 * verticalPixelRatio}px monospace`
             context.fillRect(x1Px, y1Px, x2Px - x1Px, y2Px - y1Px);
             context.globalAlpha = 1;
             context.strokeStyle = this._drawing.color;
             context.lineWidth = (this._isSelected ? 2 : 1) * verticalPixelRatio;
-            context.setLineDash(this._isSelected ? [5,3] : []);
+            context.setLineDash(this._isSelected ? [5,3] : lineDashForStyle(this._drawing.lineStyle));
             context.strokeRect(x1Px, y1Px, x2Px - x1Px, y2Px - y1Px);
+            if (this._drawing.label) {
+                context.fillText(this._drawing.label, x1Px + 4 * horizontalPixelRatio, Math.min(y1Px, y2Px) - 4 * verticalPixelRatio)
+            }
 
         })
     }

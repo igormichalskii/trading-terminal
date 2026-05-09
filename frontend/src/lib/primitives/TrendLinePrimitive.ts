@@ -1,6 +1,7 @@
 import type { IPanePrimitivePaneView, IPrimitivePaneRenderer, IPanePrimitive } from "lightweight-charts";
 import type { TrendLineDrawing } from "../drawings";
 import type React from "react";
+import { lineDashForStyle } from "../drawingUtils";
 
 class TrendLineRenderer implements IPrimitivePaneRenderer {
     private _drawing: TrendLineDrawing;
@@ -32,7 +33,7 @@ class TrendLineRenderer implements IPrimitivePaneRenderer {
             if (
                 x1 === null ||
                 x1 === undefined ||
-                y1 === null || 
+                y1 === null ||
                 y1 === undefined ||
                 x2 === null ||
                 x2 === undefined ||
@@ -45,11 +46,21 @@ class TrendLineRenderer implements IPrimitivePaneRenderer {
             const y2Px = Math.round(y2 * verticalPixelRatio);
             context.strokeStyle = this._drawing.color;
             context.lineWidth = (this._isSelected ? this._drawing.lineWidth + 1 : this._drawing.lineWidth) * verticalPixelRatio;
+            context.fillStyle = this._drawing.color;
+            context.font = `${11 * verticalPixelRatio}px monospace`
             context.beginPath();
-            context.setLineDash(this._isSelected ? [5,3] : []);
+            context.setLineDash(this._isSelected ? [5, 3] : lineDashForStyle(this._drawing.lineStyle));
             context.moveTo(x1Px, y1Px);
             context.lineTo(x2Px, y2Px);
             context.stroke();
+            if (this._drawing.label) {
+                const angle = Math.atan2(y2Px - y1Px, x2Px - x1Px);
+                context.save()
+                context.translate(x1Px, y1Px);
+                context.rotate(angle);
+                context.fillText(this._drawing.label, 0, -4 * verticalPixelRatio);
+                context.restore();
+            }
         })
     }
 }

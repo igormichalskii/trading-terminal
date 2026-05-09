@@ -3,8 +3,9 @@ import PriceChart from "./PriceChart";
 import type { OverlayData, HoverCandle } from "./PriceChart";
 import { INDICATORS } from "./IndicatorsLibrary";
 import "../terminal.css";
-import type { Drawing, DrawingTool } from "../lib/drawings";
+import type { Drawing, DrawingTool, DrawingUpdate } from "../lib/drawings";
 import DrawingToolbar from "./DrawingToolbar";
+import DrawingCustomizer from "./DrawingCustomizer";
 
 const TIMEFRAMES = ["1D", "1W", "1M", "3M", "6M", "1Y", "5Y", "ALL"] as const;
 type TF = typeof TIMEFRAMES[number];
@@ -40,6 +41,7 @@ interface Props {
     selectedDrawingId: string | null;
     onSelectDrawing: (id: string | null) => void;
     removeDrawing: (id: string) => void;
+    updateDrawing: (id: string, changes: DrawingUpdate) => void;
 }
 
 function fmtVol(v: number): string {
@@ -75,6 +77,7 @@ export default function ChartPanel({
     setActiveTool,
     addDrawing,
     removeDrawing,
+    updateDrawing,
 
 }: Props) {
     const [hover, setHover] = useState<HoverCandle | null>(null);
@@ -105,6 +108,8 @@ export default function ChartPanel({
 
     // OHLC overlay line
     const ohlcDisplay = hover ?? stats;
+
+    const selectedDrawing = drawings.find(d => d.id === selectedDrawingId) ?? null;
 
     return (
         <div className="t-panel t-chart-panel">
@@ -221,7 +226,7 @@ export default function ChartPanel({
             </div>
 
             {/* Chart viewport */}
-            <div className="t-chart-viewport">
+            <div className="t-chart-viewport" style={{ position: "relative" }}>
                 {ohlcDisplay && (
                     <div className="t-chart-overlay-stats">
                         O<span>{ohlcDisplay.open.toFixed(2)}</span>
@@ -248,6 +253,12 @@ export default function ChartPanel({
                     addDrawing={addDrawing}
                     removeDrawing={removeDrawing}
                 />
+                {selectedDrawing &&
+                    <DrawingCustomizer
+                        drawing={selectedDrawing}
+                        onUpdate={updateDrawing}
+                    />
+                }
             </div>
             <DrawingToolbar activeTool={activeTool} onToolChange={setActiveTool} />
         </div>
