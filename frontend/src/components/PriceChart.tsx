@@ -1,12 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { act, useEffect, useRef, useState } from "react";
 import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
 import { apiFetch } from "../lib/api";
-import { type DrawingPoint, type Drawing, type DrawingTool, type HorizontalLineDrawing, type TrendLineDrawing, type RectangleDrawing, type FibRetracementDrawing } from "../lib/drawings";
+import { type DrawingPoint, type Drawing, type DrawingTool, type HorizontalLineDrawing, type TrendLineDrawing, type RectangleDrawing, type FibRetracementDrawing, type HorizontalRayDrawing, type VerticalLineDrawing, type CrossLineDrawing } from "../lib/drawings";
 import { HorizontalLinePrimitive } from "../lib/primitives/HorizontalLinePrimitive";
 import { COLOR_PALETTE, generateId, toDrawingPoint } from "../lib/drawingUtils";
 import { TrendLinePrimitive } from "../lib/primitives/TrendLinePrimitive";
 import { RectanglePrimitive } from "../lib/primitives/RectanglePrimitive";
 import { FibRetracementPrimitive } from "../lib/primitives/FibRetracementPrimitive";
+import { HorizontalRayPrimitive } from "../lib/primitives/HorizontalRayPrimitive";
+import { VerticalLinePrimitive } from "../lib/primitives/VerticalLinePrimitive";
+import { CrossLinePrimitive } from "../lib/primitives/CrossLinePrimitive";
 
 interface Candle {
     time: string | number;
@@ -123,7 +126,7 @@ export default function PriceChart({
     onStatsChange, onCandlesChange, onHoverChange, onSelectDrawing, onToolChange, activeTool, addDrawing, removeDrawing,
 }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const primitiveMapRef = useRef<Map<string, HorizontalLinePrimitive | TrendLinePrimitive | RectanglePrimitive | FibRetracementPrimitive>>(new Map());
+    const primitiveMapRef = useRef<Map<string, HorizontalLinePrimitive | TrendLinePrimitive | RectanglePrimitive | FibRetracementPrimitive | HorizontalRayPrimitive | VerticalLinePrimitive | CrossLinePrimitive>>(new Map());
     const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
     const seriesRef = useRef<any>(null);
     const overlaySeriesRef = useRef<any[]>([]);
@@ -447,6 +450,33 @@ export default function PriceChart({
                     const primitive = primitiveMapRef.current.get(drawing.id)!;
                     (primitive as FibRetracementPrimitive).update(drawing as FibRetracementDrawing, drawing.id === selectedDrawingId);
                 }
+            } else if (drawing.type === "horizontal_ray") {
+                if (!primitiveMapRef.current.has(drawing.id)) {
+                    const primitive = new HorizontalRayPrimitive(drawing as HorizontalRayDrawing, seriesRef, chartRef, drawing.id === selectedDrawingId);
+                    seriesRef.current.attachPrimitive(primitive);
+                    primitiveMapRef.current.set(drawing.id, primitive);
+                } else {
+                    const primitive = primitiveMapRef.current.get(drawing.id)!;
+                    (primitive as HorizontalRayPrimitive).update(drawing as HorizontalRayDrawing, drawing.id === selectedDrawingId);
+                }
+            } else if (drawing.type === "vertical_line") {
+                if (!primitiveMapRef.current.has(drawing.id)) {
+                    const primitive = new VerticalLinePrimitive(drawing as VerticalLineDrawing, chartRef, drawing.id === selectedDrawingId);
+                    seriesRef.current.attachPrimitive(primitive);
+                    primitiveMapRef.current.set(drawing.id, primitive);
+                } else {
+                    const primitive = primitiveMapRef.current.get(drawing.id);
+                    (primitive as VerticalLinePrimitive).update(drawing as VerticalLineDrawing, drawing.id === selectedDrawingId);
+                }
+            } else if (drawing.type === "cross_line") {
+                if (!primitiveMapRef.current.has(drawing.id)) {
+                    const primitive = new CrossLinePrimitive(drawing as CrossLineDrawing, seriesRef, chartRef, drawing.id === selectedDrawingId);
+                    seriesRef.current.attachPrimitive(primitive);
+                    primitiveMapRef.current.set(drawing.id, primitive);
+                } else {
+                    const primitive = primitiveMapRef.current.get(drawing.id);
+                    (primitive as CrossLinePrimitive).update(drawing as CrossLineDrawing, drawing.id === selectedDrawingId);
+                }
             }
 
         }
@@ -529,6 +559,24 @@ export default function PriceChart({
                             addDrawing({ id: generateId(), type: "fib_retracement", p1: p1, p2: point, color: COLOR_PALETTE[3], levels: [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1], lineWidth: 1, lineStyle: "solid", label: "" })
                             onToolChange(null);
                         }
+                    } else if (activeTool === "horizontal_ray") {
+                        const rect = containerRef.current!.getBoundingClientRect();
+                        const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+                        if (!point) return;
+                        addDrawing({ id: generateId(), type: "horizontal_ray", p1: point, color: COLOR_PALETTE[4], lineWidth: 1, lineStyle: "solid", label: ""});
+                        onToolChange(null);
+                    } else if (activeTool === "vertical_line") {
+                        const rect = containerRef.current!.getBoundingClientRect();
+                        const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+                        if (!point) return;
+                        addDrawing({ id: generateId(), type: "vertical_line", p1: point, color: COLOR_PALETTE[5], lineWidth: 1, lineStyle: "solid", label: ""});
+                        onToolChange(null);
+                    } else if (activeTool === "cross_line") {
+                        const rect = containerRef.current!.getBoundingClientRect();
+                        const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+                        if (!point) return;
+                        addDrawing({ id: generateId(), type: "cross_line", p1: point, color: COLOR_PALETTE[6], lineWidth: 1, lineStyle: "solid", label: ""});
+                        onToolChange(null);
                     } else if (activeTool === null) {
                         const rect = containerRef.current!.getBoundingClientRect();
                         let found = null;
@@ -537,6 +585,53 @@ export default function PriceChart({
                             if (lineY == null) continue;
                             const clickY = e.clientY - rect.top;
                             if (Math.abs(clickY - lineY) < 5) { found = d.id; break; }
+                        }
+
+                        if (!found) {
+                            for (const d of drawings.filter(d => d.type === "vertical_line")) {
+                                const x = d.p1.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p1.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
+                                if (x === null || x === undefined) continue;
+                                const clickX = e.clientX - rect.left;
+                                if (Math.abs(clickX - x) < 5) { found = d.id; break; }
+                            }
+                        }
+
+                        if (!found) {
+                            for (const d of drawings.filter(d => d.type === "cross_line")) {
+                                const x = d.p1.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p1.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
+                                const y = seriesRef.current?.priceToCoordinate(d.p1.price);
+                                if (
+                                    x === null ||
+                                    x === undefined ||
+                                    y === null ||
+                                    y === undefined
+                                ) continue;
+                                const cx = e.clientX - rect.left;
+                                const cy = e.clientY - rect.top;
+                                if (Math.abs(cx - x) < 5 || Math.abs(cy - y) < 5) {found = d.id; break; }
+                            }
+                        }
+
+                        if (!found) {
+                            for (const d of drawings.filter(d => d.type === "horizontal_ray")) {
+                                const x = d.p1.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p1.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
+                                const y = seriesRef.current?.priceToCoordinate(d.p1.price);
+                                if (
+                                    x === null ||
+                                    x === undefined ||
+                                    y === null ||
+                                    y === undefined
+                                ) continue;
+                                const cx = e.clientX - rect.left;
+                                const cy = e.clientY - rect.top;
+                                if (cx >= x && Math.abs(cy - y) < 5) { found = d.id; break; }
+                            }
                         }
 
                         if (!found) {

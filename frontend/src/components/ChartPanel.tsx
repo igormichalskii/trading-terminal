@@ -226,41 +226,44 @@ export default function ChartPanel({
             </div>
 
             {/* Chart viewport */}
-            <div className="t-chart-viewport" style={{ position: "relative" }}>
-                {ohlcDisplay && (
-                    <div className="t-chart-overlay-stats">
-                        O<span>{ohlcDisplay.open.toFixed(2)}</span>
-                        {"  "}H<span>{ohlcDisplay.high.toFixed(2)}</span>
-                        {"  "}L<span>{ohlcDisplay.low.toFixed(2)}</span>
-                        {"  "}C<span>{ohlcDisplay.close.toFixed(2)}</span>
-                        {"  "}VOL<span>{fmtVol(ohlcDisplay.volume)}</span>
-                        {"  "}T<span>{fmtTime(ohlcDisplay.time)}</span>
-                    </div>
-                )}
-                <PriceChart
-                    symbol={symbol}
-                    timeframe={timeframe}
-                    chartType={chartType}
-                    overlays={overlays}
-                    drawings={drawings}
-                    selectedDrawingId={selectedDrawingId}
-                    onStatsChange={onStatsChange}
-                    onCandlesChange={onCandlesChange}
-                    onSelectDrawing={onSelectDrawing}
-                    onToolChange={setActiveTool}
-                    onHoverChange={setHover}
-                    activeTool={activeTool}
-                    addDrawing={addDrawing}
-                    removeDrawing={removeDrawing}
-                />
-                {selectedDrawing &&
-                    <DrawingCustomizer
-                        drawing={selectedDrawing}
-                        onUpdate={updateDrawing}
+            <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+                <DrawingToolbar activeTool={activeTool} onToolChange={setActiveTool} />
+                <div className="t-chart-viewport" style={{ position: "relative", flex: 1 }}>
+                    {ohlcDisplay && (
+                        <div className="t-chart-overlay-stats">
+                            O<span>{ohlcDisplay.open.toFixed(2)}</span>
+                            {"  "}H<span>{ohlcDisplay.high.toFixed(2)}</span>
+                            {"  "}L<span>{ohlcDisplay.low.toFixed(2)}</span>
+                            {"  "}C<span>{ohlcDisplay.close.toFixed(2)}</span>
+                            {"  "}VOL<span>{fmtVol(ohlcDisplay.volume)}</span>
+                            {"  "}T<span>{fmtTime(ohlcDisplay.time)}</span>
+                        </div>
+                    )}
+                    <PriceChart
+                        symbol={symbol}
+                        timeframe={timeframe}
+                        chartType={chartType}
+                        overlays={overlays}
+                        drawings={drawings}
+                        selectedDrawingId={selectedDrawingId}
+                        onStatsChange={onStatsChange}
+                        onCandlesChange={onCandlesChange}
+                        onSelectDrawing={onSelectDrawing}
+                        onToolChange={setActiveTool}
+                        onHoverChange={setHover}
+                        activeTool={activeTool}
+                        addDrawing={addDrawing}
+                        removeDrawing={removeDrawing}
                     />
-                }
+                    {selectedDrawing &&
+                        <DrawingCustomizer
+                            drawing={selectedDrawing}
+                            onUpdate={updateDrawing}
+                        />
+                    }
+                </div>
             </div>
-            <DrawingToolbar activeTool={activeTool} onToolChange={setActiveTool} />
+
         </div>
     );
 }
