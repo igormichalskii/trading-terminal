@@ -37,7 +37,7 @@ class FibRetracementRenderer implements IPrimitivePaneRenderer {
             ) return;
             const x1Px = Math.round(x1 * horizontalPixelRatio);
             const x2Px = Math.round(x2 * horizontalPixelRatio);
-            for (const l of this._drawing.levels) {
+            for (const l of (this._drawing.levels ?? [])) {
                 const price = this._drawing.p2.price + (this._drawing.p1.price - this._drawing.p2.price) * l;
                 const y = this._seriesRef.current?.priceToCoordinate(price);
                 if (

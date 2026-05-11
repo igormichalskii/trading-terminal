@@ -1,4 +1,4 @@
-import { act, useEffect, useRef, useState } from "react";
+import React, { act, useEffect, useRef, useState } from "react";
 import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
 import { apiFetch } from "../lib/api";
 import { type DrawingPoint, type Drawing, type DrawingTool, type HorizontalLineDrawing, type TrendLineDrawing, type RectangleDrawing, type FibRetracementDrawing, type HorizontalRayDrawing, type VerticalLineDrawing, type CrossLineDrawing, type RayDrawing, type ExtendedLineDrawing, type InfoLineDrawing, type TrendAngleDrawing } from "../lib/drawings";
@@ -125,6 +125,23 @@ function timeToISO(time: string | number): string {
     return (time as string) + "T00:00:00Z";
 }
 
+function createPrimitive(drawing: any, seriesRef: React.RefObject<any>, chartRef: React.RefObject<any>) {
+    switch (drawing.type) {
+        case "trend_line": return new TrendLinePrimitive(drawing, seriesRef, false, chartRef);
+        case "ray": return new RayPrimitive(drawing, seriesRef, chartRef, false);
+        case "extended_line": return new ExtendedLinePrimitive(drawing, seriesRef, chartRef, false);
+        case "info_line": return new InfoLinePrimitive(drawing, seriesRef, chartRef, false);
+        case "trend_angle": return new TrendAnglePrimitive(drawing, seriesRef, chartRef, false);
+        case "rectangle": return new RectanglePrimitive(drawing, seriesRef, chartRef, false);
+        case "fib_retracement": return new FibRetracementPrimitive(drawing, seriesRef, chartRef, false);
+        case "horizontal_line": return new HorizontalLinePrimitive(drawing, seriesRef, false);
+        case "horizontal_ray": return new HorizontalRayPrimitive(drawing, seriesRef, chartRef, false);
+        case "cross_line": return new CrossLinePrimitive(drawing, seriesRef, chartRef, false);
+        case "trend_line": return new TrendLinePrimitive(drawing, seriesRef, false, chartRef);
+        case "vertical_line": return new VerticalLinePrimitive(drawing, chartRef, false);
+    }
+}
+
 export default function PriceChart({
     symbol, timeframe, chartType, overlays, drawings, selectedDrawingId,
     onStatsChange, onCandlesChange, onHoverChange, onSelectDrawing, onToolChange, activeTool, addDrawing, removeDrawing,
@@ -135,6 +152,7 @@ export default function PriceChart({
     const seriesRef = useRef<any>(null);
     const overlaySeriesRef = useRef<any[]>([]);
     const inProgressRef = useRef<DrawingPoint | null>(null);
+    const previewPrimitiveRef = useRef<HorizontalLinePrimitive | TrendLinePrimitive | RectanglePrimitive | FibRetracementPrimitive | HorizontalRayPrimitive | VerticalLinePrimitive | CrossLinePrimitive | RayPrimitive | ExtendedLinePrimitive | InfoLinePrimitive | TrendAnglePrimitive | null>(null);
 
     // Pagination refs
     const allCandlesRef = useRef<Candle[]>([]);
@@ -418,105 +436,14 @@ export default function PriceChart({
         const chart = chartRef.current;
         if (!chart) return;
         for (const drawing of drawings) {
-            if (drawing.type === "horizontal_line") {
-                if (!primitiveMapRef.current.has(drawing.id)) {
-                    const primitive = new HorizontalLinePrimitive(drawing as HorizontalLineDrawing, seriesRef, drawing.id === selectedDrawingId);
-                    seriesRef.current.attachPrimitive(primitive)
+            if (!primitiveMapRef.current.has(drawing.id)) {
+                const primitive = createPrimitive(drawing, seriesRef, chartRef);
+                if (primitive) {
+                    seriesRef.current?.attachPrimitive(primitive);
                     primitiveMapRef.current.set(drawing.id, primitive);
-                } else {
-                    const primitive = primitiveMapRef.current.get(drawing.id)!;
-                    (primitive as HorizontalLinePrimitive).update(drawing as HorizontalLineDrawing, drawing.id === selectedDrawingId);
                 }
-            } else if (drawing.type === "trend_line") {
-                if (!primitiveMapRef.current.has(drawing.id)) {
-                    const primitive = new TrendLinePrimitive(drawing as TrendLineDrawing, seriesRef, drawing.id === selectedDrawingId, chartRef);
-                    seriesRef.current.attachPrimitive(primitive);
-                    primitiveMapRef.current.set(drawing.id, primitive);
-                } else {
-                    const primitive = primitiveMapRef.current.get(drawing.id)!;
-                    (primitive as TrendLinePrimitive).update(drawing as TrendLineDrawing, drawing.id === selectedDrawingId);
-                }
-            } else if (drawing.type === "rectangle") {
-                if (!primitiveMapRef.current.has(drawing.id)) {
-                    const primitive = new RectanglePrimitive(drawing as RectangleDrawing, seriesRef, chartRef, drawing.id === selectedDrawingId);
-                    seriesRef.current.attachPrimitive(primitive);
-                    primitiveMapRef.current.set(drawing.id, primitive);
-                } else {
-                    const primitive = primitiveMapRef.current.get(drawing.id)!;
-                    (primitive as RectanglePrimitive).update(drawing as RectangleDrawing, drawing.id === selectedDrawingId);
-                }
-            } else if (drawing.type === "fib_retracement") {
-                if (!primitiveMapRef.current.has(drawing.id)) {
-                    const primitive = new FibRetracementPrimitive(drawing as FibRetracementDrawing, seriesRef, chartRef, drawing.id === selectedDrawingId);
-                    seriesRef.current.attachPrimitive(primitive);
-                    primitiveMapRef.current.set(drawing.id, primitive);
-                } else {
-                    const primitive = primitiveMapRef.current.get(drawing.id)!;
-                    (primitive as FibRetracementPrimitive).update(drawing as FibRetracementDrawing, drawing.id === selectedDrawingId);
-                }
-            } else if (drawing.type === "horizontal_ray") {
-                if (!primitiveMapRef.current.has(drawing.id)) {
-                    const primitive = new HorizontalRayPrimitive(drawing as HorizontalRayDrawing, seriesRef, chartRef, drawing.id === selectedDrawingId);
-                    seriesRef.current.attachPrimitive(primitive);
-                    primitiveMapRef.current.set(drawing.id, primitive);
-                } else {
-                    const primitive = primitiveMapRef.current.get(drawing.id)!;
-                    (primitive as HorizontalRayPrimitive).update(drawing as HorizontalRayDrawing, drawing.id === selectedDrawingId);
-                }
-            } else if (drawing.type === "vertical_line") {
-                if (!primitiveMapRef.current.has(drawing.id)) {
-                    const primitive = new VerticalLinePrimitive(drawing as VerticalLineDrawing, chartRef, drawing.id === selectedDrawingId);
-                    seriesRef.current.attachPrimitive(primitive);
-                    primitiveMapRef.current.set(drawing.id, primitive);
-                } else {
-                    const primitive = primitiveMapRef.current.get(drawing.id);
-                    (primitive as VerticalLinePrimitive).update(drawing as VerticalLineDrawing, drawing.id === selectedDrawingId);
-                }
-            } else if (drawing.type === "cross_line") {
-                if (!primitiveMapRef.current.has(drawing.id)) {
-                    const primitive = new CrossLinePrimitive(drawing as CrossLineDrawing, seriesRef, chartRef, drawing.id === selectedDrawingId);
-                    seriesRef.current.attachPrimitive(primitive);
-                    primitiveMapRef.current.set(drawing.id, primitive);
-                } else {
-                    const primitive = primitiveMapRef.current.get(drawing.id);
-                    (primitive as CrossLinePrimitive).update(drawing as CrossLineDrawing, drawing.id === selectedDrawingId);
-                }
-            } else if (drawing.type === "ray") {
-                if (!primitiveMapRef.current.has(drawing.id)) {
-                    const primitive = new RayPrimitive(drawing as RayDrawing, seriesRef, chartRef, drawing.id === selectedDrawingId);
-                    seriesRef.current.attachPrimitive(primitive);
-                    primitiveMapRef.current.set(drawing.id, primitive);
-                } else {
-                    const primitive = primitiveMapRef.current.get(drawing.id);
-                    (primitive as RayPrimitive).update(drawing as RayDrawing, drawing.id === selectedDrawingId);
-                }
-            } else if (drawing.type === "extended_line") {
-                if (!primitiveMapRef.current.has(drawing.id)) {
-                    const primitive = new ExtendedLinePrimitive(drawing as ExtendedLineDrawing, seriesRef, chartRef, drawing.id === selectedDrawingId);
-                    seriesRef.current.attachPrimitive(primitive);
-                    primitiveMapRef.current.set(drawing.id, primitive);
-                } else {
-                    const primitive = primitiveMapRef.current.get(drawing.id);
-                    (primitive as ExtendedLinePrimitive).update(drawing as ExtendedLineDrawing, drawing.id === selectedDrawingId);
-                }
-            } else if (drawing.type === "info_line") {
-                if (!primitiveMapRef.current.has(drawing.id)) {
-                    const primitive = new InfoLinePrimitive(drawing as InfoLineDrawing, seriesRef, chartRef, drawing.id === selectedDrawingId);
-                    seriesRef.current.attachPrimitive(primitive);
-                    primitiveMapRef.current.set(drawing.id, primitive);
-                } else {
-                    const primitive = primitiveMapRef.current.get(drawing.id);
-                    (primitive as InfoLinePrimitive).update(drawing as InfoLineDrawing, drawing.id === selectedDrawingId);
-                }
-            } else if (drawing.type === "trend_angle") {
-                if (!primitiveMapRef.current.has(drawing.id)) {
-                    const primitive = new TrendAnglePrimitive(drawing as TrendAngleDrawing, seriesRef, chartRef, drawing.id === selectedDrawingId);
-                    seriesRef.current.attachPrimitive(primitive);
-                    primitiveMapRef.current.set(drawing.id, primitive);
-                } else {
-                    const primitive = primitiveMapRef.current.get(drawing.id);
-                    (primitive as TrendAnglePrimitive).update(drawing as TrendAngleDrawing, drawing.id === selectedDrawingId);
-                }
+            } else {
+                (primitiveMapRef.current.get(drawing.id) as any).update(drawing, drawing.id === selectedDrawingId);
             }
 
         }
@@ -551,6 +478,40 @@ export default function PriceChart({
         overlaySeriesRef.current.push(s);
     };
 
+    const handleMouseMove = (e: any) => {
+        if (!activeTool || !inProgressRef.current) {
+            if (previewPrimitiveRef.current) {
+                seriesRef.current?.detachPrimitive(previewPrimitiveRef.current);
+                previewPrimitiveRef.current = null;
+            }
+            return;
+        }
+        const rect = containerRef.current!.getBoundingClientRect();
+        const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+        if (!point) return;
+        const tempDrawing = { 
+            id: "__preview__", 
+            type: activeTool, 
+            p1: inProgressRef.current, 
+            p2: point, 
+            color: COLOR_PALETTE[0] + "99", 
+            lineWidth: 1, 
+            lineStyle: "solid" as const, 
+            label: "",
+            levels: [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1],
+            fillOpacity: 0.1,
+        };
+        if (previewPrimitiveRef.current) {
+            (previewPrimitiveRef.current as any).update(tempDrawing, false);
+        } else {
+            const primitive = createPrimitive(tempDrawing, seriesRef, chartRef);
+            if (primitive) {
+                seriesRef.current?.attachPrimitive(primitive);
+                previewPrimitiveRef.current = primitive as any;
+            }
+        }
+    }
+
     return (
         <div style={{ position: "relative", width: "100%", flex: 1, minHeight: 0 }}>
             <div
@@ -572,6 +533,8 @@ export default function PriceChart({
                         } else {
                             const p1 = inProgressRef.current;
                             inProgressRef.current = null;
+                            seriesRef.current?.detachPrimitive(previewPrimitiveRef.current);
+                            previewPrimitiveRef.current = null;
                             addDrawing({ id: generateId(), type: "trend_line", p1: p1, p2: point, color: COLOR_PALETTE[1], lineWidth: 1, lineStyle: "solid", label: "" });
                             onToolChange(null);
                         }
@@ -584,6 +547,8 @@ export default function PriceChart({
                         } else {
                             const p1 = inProgressRef.current;
                             inProgressRef.current = null;
+                            seriesRef.current?.detachPrimitive(previewPrimitiveRef.current);
+                            previewPrimitiveRef.current = null;
                             addDrawing({ id: generateId(), type: "rectangle", p1: p1, p2: point, color: COLOR_PALETTE[2], fillOpacity: 0.85, lineWidth: 1, lineStyle: "solid", label: "" });
                             onToolChange(null);
                         }
@@ -596,6 +561,8 @@ export default function PriceChart({
                         } else {
                             const p1 = inProgressRef.current;
                             inProgressRef.current = null;
+                            seriesRef.current?.detachPrimitive(previewPrimitiveRef.current);
+                            previewPrimitiveRef.current = null;
                             addDrawing({ id: generateId(), type: "fib_retracement", p1: p1, p2: point, color: COLOR_PALETTE[3], levels: [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1], lineWidth: 1, lineStyle: "solid", label: "" })
                             onToolChange(null);
                         }
@@ -626,6 +593,8 @@ export default function PriceChart({
                         } else {
                             const p1 = inProgressRef.current;
                             inProgressRef.current = null;
+                            seriesRef.current?.detachPrimitive(previewPrimitiveRef.current);
+                            previewPrimitiveRef.current = null;
                             addDrawing({ id: generateId(), type: "ray", p1: p1, p2: point, color: COLOR_PALETTE[7], lineWidth: 1, lineStyle: "solid", label: "" });
                             onToolChange(null);
                         }
@@ -638,6 +607,8 @@ export default function PriceChart({
                         } else {
                             const p1 = inProgressRef.current;
                             inProgressRef.current = null;
+                            seriesRef.current?.detachPrimitive(previewPrimitiveRef.current);
+                            previewPrimitiveRef.current = null;
                             addDrawing({ id: generateId(), type: "info_line", p1: p1, p2: point, color: COLOR_PALETTE[8], lineWidth: 1, lineStyle: "solid", label: "" });
                             onToolChange(null);
                         }
@@ -650,6 +621,8 @@ export default function PriceChart({
                         } else {
                             const p1 = inProgressRef.current;
                             inProgressRef.current = null;
+                            seriesRef.current?.detachPrimitive(previewPrimitiveRef.current);
+                            previewPrimitiveRef.current = null;
                             addDrawing({ id: generateId(), type: "extended_line", p1: p1, p2: point, color: COLOR_PALETTE[9], lineWidth: 1, lineStyle: "solid", label: "" });
                             onToolChange(null);
                         }
@@ -662,6 +635,8 @@ export default function PriceChart({
                         } else {
                             const p1 = inProgressRef.current;
                             inProgressRef.current = null;
+                            seriesRef.current?.detachPrimitive(previewPrimitiveRef.current);
+                            previewPrimitiveRef.current = null;
                             addDrawing({ id: generateId(), type: "trend_angle", p1: p1, p2: point, color: COLOR_PALETTE[10], lineWidth: 1, lineStyle: "solid", label: "" });
                             onToolChange(null)
                         }
@@ -936,7 +911,9 @@ export default function PriceChart({
                         onSelectDrawing(found);
                     }
 
-                }} />
+                }}
+                onMouseMove={(e) => handleMouseMove(e)}
+            />
 
             {loading && (
                 <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(17,17,17,0.7)" }}>
