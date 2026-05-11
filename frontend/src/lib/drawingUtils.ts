@@ -9,7 +9,10 @@ export const COLOR_PALETTE = [
     "#a855f7",
     "#06b6d4",
     "#f97316",
-    "#ec4899"
+    "#ec4899",
+    "#14b8a6",
+    "#8b5cf6",
+    "#f43f5e",
 ]
 
 export function generateId() {

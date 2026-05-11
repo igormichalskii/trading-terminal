@@ -29,6 +29,35 @@ const ICONS: Record<string, React.ReactNode> = {
             <rect x="2" y="4" width="14" height="10" stroke="currentColor" strokeWidth="1.5" />
         </svg>
     ),
+    ray: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <line x1="2" y1="14" x2="16" y2="4" stroke="currentColor" strokeWidth="1.5" />
+            <circle cx="2" cy="14" r="1.5" fill="currentColor" />
+            <polygon points="13,3 17,5 14,8" fill="currentColor" />
+        </svg>
+    ),
+    extended_line: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <line x1="2" y1="14" x2="16" y2="4" stroke="currentColor" strokeWidth="1.5" />
+            <polygon points="1,11 3,16 6,13" fill="currentColor" />
+            <polygon points="13,3 17,5 14,8" fill="currentColor" />
+        </svg>
+    ),
+    info_line: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <line x1="2" y1="14" x2="13" y2="4" stroke="currentColor" strokeWidth="1.5" />
+            <circle cx="2" cy="14" r="1.5" fill="currentColor" />
+            <circle cx="13" cy="4" r="1.5" fill="currentColor" />
+            <text x="14" y="8" fontSize="6" fill="currentColor" fontFamily="monospace">i</text>
+        </svg>
+    ),
+    trend_angle: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <line x1="2" y1="13" x2="16" y2="13" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="2" y1="13" x2="14" y2="4" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M 7 13 A 5 5 0 0 1 5.5 9" stroke="currentColor" strokeWidth="1" fill="none" />
+        </svg>
+    ),
     horizontal_ray: (
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <line x1="2" y1="9" x2="16" y2="9" stroke="currentColor" strokeWidth="1.5" />
@@ -55,11 +84,15 @@ const GROUPS = [
     {
         id: "lines",
         tools: [
-            "horizontal_line", 
-            "trend_line", 
-            "horizontal_ray", 
-            "vertical_line", 
+            "horizontal_line",
+            "horizontal_ray",
+            "vertical_line",
             "cross_line",
+            "trend_line",
+            "ray",
+            "extended_line",
+            "info_line",
+            "trend_angle",
         ] as DrawingTool[],
     },
     {

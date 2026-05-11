@@ -55,6 +55,50 @@ export interface TrendLineDrawing {
     lineStyle?: "solid" | "dashed" | "dotted";
 }
 
+export interface RayDrawing {
+    id: string;
+    type: "ray";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+}
+
+export interface InfoLineDrawing {
+    id: string;
+    type: "info_line";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+}
+
+export interface ExtendedLineDrawing {
+    id: string;
+    type: "extended_line";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+}
+
+export interface TrendAngleDrawing {
+    id: string;
+    type: "trend_angle";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+}
+
 export interface RectangleDrawing {
     id: string;
     type: "rectangle";
@@ -86,7 +130,11 @@ export type Drawing =
     | CrossLineDrawing
     | TrendLineDrawing
     | RectangleDrawing
-    | FibRetracementDrawing;
+    | FibRetracementDrawing
+    | RayDrawing
+    | ExtendedLineDrawing
+    | InfoLineDrawing
+    | TrendAngleDrawing;
 
 export type DrawingType = Drawing['type'];
 export type DrawingTool = DrawingType | null;
@@ -98,3 +146,7 @@ export type DrawingUpdate =
     | Partial<Omit<TrendLineDrawing, 'id' | 'type'>>
     | Partial<Omit<RectangleDrawing, 'id' | 'type'>>
     | Partial<Omit<FibRetracementDrawing, 'id' | 'type'>>
+    | Partial<Omit<RayDrawing, 'id' | 'type'>>
+    | Partial<Omit<ExtendedLineDrawing, 'id' | 'type'>>
+    | Partial<Omit<InfoLineDrawing, 'id' | 'type'>>
+    | Partial<Omit<TrendAngleDrawing, 'id' | 'type'>>

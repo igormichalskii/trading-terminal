@@ -1,7 +1,7 @@
 import { act, useEffect, useRef, useState } from "react";
 import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
 import { apiFetch } from "../lib/api";
-import { type DrawingPoint, type Drawing, type DrawingTool, type HorizontalLineDrawing, type TrendLineDrawing, type RectangleDrawing, type FibRetracementDrawing, type HorizontalRayDrawing, type VerticalLineDrawing, type CrossLineDrawing } from "../lib/drawings";
+import { type DrawingPoint, type Drawing, type DrawingTool, type HorizontalLineDrawing, type TrendLineDrawing, type RectangleDrawing, type FibRetracementDrawing, type HorizontalRayDrawing, type VerticalLineDrawing, type CrossLineDrawing, type RayDrawing, type ExtendedLineDrawing, type InfoLineDrawing, type TrendAngleDrawing } from "../lib/drawings";
 import { HorizontalLinePrimitive } from "../lib/primitives/HorizontalLinePrimitive";
 import { COLOR_PALETTE, generateId, toDrawingPoint } from "../lib/drawingUtils";
 import { TrendLinePrimitive } from "../lib/primitives/TrendLinePrimitive";
@@ -10,6 +10,10 @@ import { FibRetracementPrimitive } from "../lib/primitives/FibRetracementPrimiti
 import { HorizontalRayPrimitive } from "../lib/primitives/HorizontalRayPrimitive";
 import { VerticalLinePrimitive } from "../lib/primitives/VerticalLinePrimitive";
 import { CrossLinePrimitive } from "../lib/primitives/CrossLinePrimitive";
+import { RayPrimitive } from "../lib/primitives/RayPrimitive";
+import { ExtendedLinePrimitive } from "../lib/primitives/ExtendedLinePrimitive";
+import { InfoLinePrimitive } from "../lib/primitives/InfoLinePrimitive";
+import { TrendAnglePrimitive } from "../lib/primitives/TrendAnglePrimitive";
 
 interface Candle {
     time: string | number;
@@ -126,7 +130,7 @@ export default function PriceChart({
     onStatsChange, onCandlesChange, onHoverChange, onSelectDrawing, onToolChange, activeTool, addDrawing, removeDrawing,
 }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const primitiveMapRef = useRef<Map<string, HorizontalLinePrimitive | TrendLinePrimitive | RectanglePrimitive | FibRetracementPrimitive | HorizontalRayPrimitive | VerticalLinePrimitive | CrossLinePrimitive>>(new Map());
+    const primitiveMapRef = useRef<Map<string, HorizontalLinePrimitive | TrendLinePrimitive | RectanglePrimitive | FibRetracementPrimitive | HorizontalRayPrimitive | VerticalLinePrimitive | CrossLinePrimitive | RayPrimitive | ExtendedLinePrimitive | InfoLinePrimitive | TrendAnglePrimitive>>(new Map());
     const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
     const seriesRef = useRef<any>(null);
     const overlaySeriesRef = useRef<any[]>([]);
@@ -477,6 +481,42 @@ export default function PriceChart({
                     const primitive = primitiveMapRef.current.get(drawing.id);
                     (primitive as CrossLinePrimitive).update(drawing as CrossLineDrawing, drawing.id === selectedDrawingId);
                 }
+            } else if (drawing.type === "ray") {
+                if (!primitiveMapRef.current.has(drawing.id)) {
+                    const primitive = new RayPrimitive(drawing as RayDrawing, seriesRef, chartRef, drawing.id === selectedDrawingId);
+                    seriesRef.current.attachPrimitive(primitive);
+                    primitiveMapRef.current.set(drawing.id, primitive);
+                } else {
+                    const primitive = primitiveMapRef.current.get(drawing.id);
+                    (primitive as RayPrimitive).update(drawing as RayDrawing, drawing.id === selectedDrawingId);
+                }
+            } else if (drawing.type === "extended_line") {
+                if (!primitiveMapRef.current.has(drawing.id)) {
+                    const primitive = new ExtendedLinePrimitive(drawing as ExtendedLineDrawing, seriesRef, chartRef, drawing.id === selectedDrawingId);
+                    seriesRef.current.attachPrimitive(primitive);
+                    primitiveMapRef.current.set(drawing.id, primitive);
+                } else {
+                    const primitive = primitiveMapRef.current.get(drawing.id);
+                    (primitive as ExtendedLinePrimitive).update(drawing as ExtendedLineDrawing, drawing.id === selectedDrawingId);
+                }
+            } else if (drawing.type === "info_line") {
+                if (!primitiveMapRef.current.has(drawing.id)) {
+                    const primitive = new InfoLinePrimitive(drawing as InfoLineDrawing, seriesRef, chartRef, drawing.id === selectedDrawingId);
+                    seriesRef.current.attachPrimitive(primitive);
+                    primitiveMapRef.current.set(drawing.id, primitive);
+                } else {
+                    const primitive = primitiveMapRef.current.get(drawing.id);
+                    (primitive as InfoLinePrimitive).update(drawing as InfoLineDrawing, drawing.id === selectedDrawingId);
+                }
+            } else if (drawing.type === "trend_angle") {
+                if (!primitiveMapRef.current.has(drawing.id)) {
+                    const primitive = new TrendAnglePrimitive(drawing as TrendAngleDrawing, seriesRef, chartRef, drawing.id === selectedDrawingId);
+                    seriesRef.current.attachPrimitive(primitive);
+                    primitiveMapRef.current.set(drawing.id, primitive);
+                } else {
+                    const primitive = primitiveMapRef.current.get(drawing.id);
+                    (primitive as TrendAnglePrimitive).update(drawing as TrendAngleDrawing, drawing.id === selectedDrawingId);
+                }
             }
 
         }
@@ -544,7 +584,7 @@ export default function PriceChart({
                         } else {
                             const p1 = inProgressRef.current;
                             inProgressRef.current = null;
-                            addDrawing({ id: generateId(), type: "rectangle", p1: p1, p2: point, color: COLOR_PALETTE[2], fillOpacity: 0.85, lineWidth: 1, lineStyle: "solid", label: ""});
+                            addDrawing({ id: generateId(), type: "rectangle", p1: p1, p2: point, color: COLOR_PALETTE[2], fillOpacity: 0.85, lineWidth: 1, lineStyle: "solid", label: "" });
                             onToolChange(null);
                         }
                     } else if (activeTool === "fib_retracement") {
@@ -563,20 +603,68 @@ export default function PriceChart({
                         const rect = containerRef.current!.getBoundingClientRect();
                         const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
                         if (!point) return;
-                        addDrawing({ id: generateId(), type: "horizontal_ray", p1: point, color: COLOR_PALETTE[4], lineWidth: 1, lineStyle: "solid", label: ""});
+                        addDrawing({ id: generateId(), type: "horizontal_ray", p1: point, color: COLOR_PALETTE[4], lineWidth: 1, lineStyle: "solid", label: "" });
                         onToolChange(null);
                     } else if (activeTool === "vertical_line") {
                         const rect = containerRef.current!.getBoundingClientRect();
                         const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
                         if (!point) return;
-                        addDrawing({ id: generateId(), type: "vertical_line", p1: point, color: COLOR_PALETTE[5], lineWidth: 1, lineStyle: "solid", label: ""});
+                        addDrawing({ id: generateId(), type: "vertical_line", p1: point, color: COLOR_PALETTE[5], lineWidth: 1, lineStyle: "solid", label: "" });
                         onToolChange(null);
                     } else if (activeTool === "cross_line") {
                         const rect = containerRef.current!.getBoundingClientRect();
                         const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
                         if (!point) return;
-                        addDrawing({ id: generateId(), type: "cross_line", p1: point, color: COLOR_PALETTE[6], lineWidth: 1, lineStyle: "solid", label: ""});
+                        addDrawing({ id: generateId(), type: "cross_line", p1: point, color: COLOR_PALETTE[6], lineWidth: 1, lineStyle: "solid", label: "" });
                         onToolChange(null);
+                    } else if (activeTool === "ray") {
+                        const rect = containerRef.current!.getBoundingClientRect();
+                        const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+                        if (!point) return;
+                        if (!inProgressRef.current) {
+                            inProgressRef.current = point;
+                        } else {
+                            const p1 = inProgressRef.current;
+                            inProgressRef.current = null;
+                            addDrawing({ id: generateId(), type: "ray", p1: p1, p2: point, color: COLOR_PALETTE[7], lineWidth: 1, lineStyle: "solid", label: "" });
+                            onToolChange(null);
+                        }
+                    } else if (activeTool === "info_line") {
+                        const rect = containerRef.current!.getBoundingClientRect();
+                        const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+                        if (!point) return;
+                        if (!inProgressRef.current) {
+                            inProgressRef.current = point;
+                        } else {
+                            const p1 = inProgressRef.current;
+                            inProgressRef.current = null;
+                            addDrawing({ id: generateId(), type: "info_line", p1: p1, p2: point, color: COLOR_PALETTE[8], lineWidth: 1, lineStyle: "solid", label: "" });
+                            onToolChange(null);
+                        }
+                    } else if (activeTool === "extended_line") {
+                        const rect = containerRef.current!.getBoundingClientRect();
+                        const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+                        if (!point) return;
+                        if (!inProgressRef.current) {
+                            inProgressRef.current = point;
+                        } else {
+                            const p1 = inProgressRef.current;
+                            inProgressRef.current = null;
+                            addDrawing({ id: generateId(), type: "extended_line", p1: p1, p2: point, color: COLOR_PALETTE[9], lineWidth: 1, lineStyle: "solid", label: "" });
+                            onToolChange(null);
+                        }
+                    } else if (activeTool === "trend_angle") {
+                        const rect = containerRef.current!.getBoundingClientRect();
+                        const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+                        if (!point) return;
+                        if (!inProgressRef.current) {
+                            inProgressRef.current = point;
+                        } else {
+                            const p1 = inProgressRef.current;
+                            inProgressRef.current = null;
+                            addDrawing({ id: generateId(), type: "trend_angle", p1: p1, p2: point, color: COLOR_PALETTE[10], lineWidth: 1, lineStyle: "solid", label: "" });
+                            onToolChange(null)
+                        }
                     } else if (activeTool === null) {
                         const rect = containerRef.current!.getBoundingClientRect();
                         let found = null;
@@ -612,7 +700,7 @@ export default function PriceChart({
                                 ) continue;
                                 const cx = e.clientX - rect.left;
                                 const cy = e.clientY - rect.top;
-                                if (Math.abs(cx - x) < 5 || Math.abs(cy - y) < 5) {found = d.id; break; }
+                                if (Math.abs(cx - x) < 5 || Math.abs(cy - y) < 5) { found = d.id; break; }
                             }
                         }
 
@@ -635,6 +723,72 @@ export default function PriceChart({
                         }
 
                         if (!found) {
+                            for (const d of drawings.filter(d => d.type === "ray")) {
+                                const x1 = d.p1.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p1.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
+                                const x2 = d.p2.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p2.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p2.time as any);
+                                const y1 = seriesRef.current?.priceToCoordinate(d.p1.price);
+                                const y2 = seriesRef.current?.priceToCoordinate(d.p2.price);
+                                if (
+                                    x1 === null ||
+                                    x1 === undefined ||
+                                    x2 === null ||
+                                    x2 === undefined ||
+                                    y1 === null ||
+                                    y1 === undefined ||
+                                    y2 === null ||
+                                    y2 === undefined
+                                ) continue;
+                                const cx = e.clientX - rect.left;
+                                const cy = e.clientY - rect.top;
+                                const dx = x2 - x1;
+                                const dy = y2 - y1;
+                                const len2 = dx * dx + dy * dy;
+                                const t = Math.max(0, ((cx - x1) * dx + (cy - y1) * dy) / len2);
+                                const nearX = x1 + t * dx;
+                                const nearY = y1 + t * dy;
+                                const dist = Math.sqrt((cx - nearX) ** 2 + (cy - nearY) ** 2);
+                                if (dist < 5) { found = d.id; break; }
+                            }
+                        }
+
+                        if (!found) {
+                            for (const d of drawings.filter(d => d.type === "info_line")) {
+                                const x1 = d.p1.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p1.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
+                                const x2 = d.p2.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p2.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p2.time as any);
+                                const y1 = seriesRef.current?.priceToCoordinate(d.p1.price);
+                                const y2 = seriesRef.current?.priceToCoordinate(d.p2.price);
+                                if (
+                                    x1 === null ||
+                                    x1 === undefined ||
+                                    x2 === null ||
+                                    x2 === undefined ||
+                                    y1 === null ||
+                                    y1 === undefined ||
+                                    y2 === null ||
+                                    y2 === undefined
+                                ) continue;
+                                const cx = e.clientX - rect.left;
+                                const cy = e.clientY - rect.top;
+                                const dx = x2 - x1;
+                                const dy = y2 - y1;
+                                const len2 = dx * dx + dy * dy;
+                                const t = Math.max(0, Math.min(1, ((cx - x1) * dx + (cy - y1) * dy) / len2));
+                                const nearX = x1 + t * dx;
+                                const nearY = y1 + t * dy;
+                                const dist = Math.sqrt((cx - nearX) ** 2 + (cy - nearY) ** 2);
+                                if (dist < 5) { found = d.id; break; }
+                            }
+                        }
+
+                        if (!found) {
                             for (const d of drawings.filter(d => d.type === "trend_line")) {
                                 const x1 = d.p1.logical != null
                                     ? chartRef.current?.timeScale().logicalToCoordinate(d.p1.logical as any)
@@ -651,6 +805,72 @@ export default function PriceChart({
                                     y1 === undefined ||
                                     x2 === null ||
                                     x2 === undefined ||
+                                    y2 === null ||
+                                    y2 === undefined
+                                ) continue;
+                                const cx = e.clientX - rect.left;
+                                const cy = e.clientY - rect.top;
+                                const dx = x2 - x1;
+                                const dy = y2 - y1;
+                                const len2 = dx * dx + dy * dy;
+                                const t = Math.max(0, Math.min(1, ((cx - x1) * dx + (cy - y1) * dy) / len2));
+                                const nearX = x1 + t * dx;
+                                const nearY = y1 + t * dy;
+                                const dist = Math.sqrt((cx - nearX) ** 2 + (cy - nearY) ** 2);
+                                if (dist < 5) { found = d.id; break; }
+                            }
+                        }
+
+                        if (!found) {
+                            for (const d of drawings.filter(d => d.type === "extended_line")) {
+                                const x1 = d.p1.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p1.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
+                                const x2 = d.p2.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p2.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p2.time as any);
+                                const y1 = seriesRef.current?.priceToCoordinate(d.p1.price);
+                                const y2 = seriesRef.current?.priceToCoordinate(d.p2.price);
+                                if (
+                                    x1 === null ||
+                                    x1 === undefined ||
+                                    x2 === null ||
+                                    x2 === undefined ||
+                                    y1 === null ||
+                                    y1 === undefined ||
+                                    y2 === null ||
+                                    y2 === undefined
+                                ) continue;
+                                const cx = e.clientX - rect.left;
+                                const cy = e.clientY - rect.top;
+                                const dx = x2 - x1;
+                                const dy = y2 - y1;
+                                const len2 = dx * dx + dy * dy;
+                                const t = Math.max(0, ((cx - x1) * dx + (cy - y1) * dy) / len2);
+                                const nearX = x1 + t * dx;
+                                const nearY = y1 + t * dy;
+                                const dist = Math.sqrt((cx - nearX) ** 2 + (cy - nearY) ** 2);
+                                if (dist < 5) { found = d.id; break; }
+                            }
+                        }
+
+                        if (!found) {
+                            for (const d of drawings.filter(d => d.type === "trend_angle")) {
+                                const x1 = d.p1.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p1.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
+                                const x2 = d.p2.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p2.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p2.time as any);
+                                const y1 = seriesRef.current?.priceToCoordinate(d.p1.price);
+                                const y2 = seriesRef.current?.priceToCoordinate(d.p2.price);
+                                if (
+                                    x1 === null ||
+                                    x1 === undefined ||
+                                    x2 === null ||
+                                    x2 === undefined ||
+                                    y1 === null ||
+                                    y1 === undefined ||
                                     y2 === null ||
                                     y2 === undefined
                                 ) continue;
