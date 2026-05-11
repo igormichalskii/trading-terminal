@@ -1,7 +1,7 @@
-import React, { act, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
 import { apiFetch } from "../lib/api";
-import { type DrawingPoint, type Drawing, type DrawingTool, type HorizontalLineDrawing, type TrendLineDrawing, type RectangleDrawing, type FibRetracementDrawing, type HorizontalRayDrawing, type VerticalLineDrawing, type CrossLineDrawing, type RayDrawing, type ExtendedLineDrawing, type InfoLineDrawing, type TrendAngleDrawing } from "../lib/drawings";
+import { type DrawingPoint, type Drawing, type DrawingTool } from "../lib/drawings";
 import { HorizontalLinePrimitive } from "../lib/primitives/HorizontalLinePrimitive";
 import { COLOR_PALETTE, generateId, toDrawingPoint } from "../lib/drawingUtils";
 import { TrendLinePrimitive } from "../lib/primitives/TrendLinePrimitive";
