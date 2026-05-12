@@ -123,6 +123,56 @@ export interface FibRetracementDrawing {
     lineWidth: number;
 }
 
+export interface ParallelChannelDrawing {
+    id: string;
+    type: "parallel_channel";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    p3: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+}
+
+export interface DisjointChannelDrawing {
+    id: string;
+    type: "disjoint_channel";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    p3: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+}
+
+export interface FlatTopBottomDrawing {
+    id: string;
+    type: "flat_top_bottom";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    p3: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+}
+
+export interface RegressionTrendDrawing {
+    id: string;
+    type: "regression_trend";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    r1Price: number;
+    r2Price: number;
+    deviation: number;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+}
+
 export type Drawing =
     | HorizontalLineDrawing
     | HorizontalRayDrawing
@@ -134,11 +184,15 @@ export type Drawing =
     | RayDrawing
     | ExtendedLineDrawing
     | InfoLineDrawing
-    | TrendAngleDrawing;
+    | TrendAngleDrawing
+    | ParallelChannelDrawing
+    | DisjointChannelDrawing
+    | FlatTopBottomDrawing
+    | RegressionTrendDrawing;
 
 export type DrawingType = Drawing['type'];
 export type DrawingTool = DrawingType | null;
-export type DrawingUpdate = 
+export type DrawingUpdate =
     | Partial<Omit<HorizontalLineDrawing, 'id' | 'type'>>
     | Partial<Omit<HorizontalRayDrawing, 'id' | 'type'>>
     | Partial<Omit<VerticalLineDrawing, 'id' | 'type'>>
@@ -150,3 +204,7 @@ export type DrawingUpdate =
     | Partial<Omit<ExtendedLineDrawing, 'id' | 'type'>>
     | Partial<Omit<InfoLineDrawing, 'id' | 'type'>>
     | Partial<Omit<TrendAngleDrawing, 'id' | 'type'>>
+    | Partial<Omit<ParallelChannelDrawing, 'id' | 'type'>>
+    | Partial<Omit<DisjointChannelDrawing, 'id' | 'type'>>
+    | Partial<Omit<FlatTopBottomDrawing, 'id' | 'type'>>
+    | Partial<Omit<RegressionTrendDrawing, 'id' | 'type'>>;

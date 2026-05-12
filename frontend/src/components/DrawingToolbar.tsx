@@ -78,6 +78,40 @@ const ICONS: Record<string, React.ReactNode> = {
             <circle cx="9" cy="9" r="1.5" fill="currentColor" />
         </svg>
     ),
+    parallel_channel: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <line x1="2" y1="5" x2="16" y2="10" stroke="currentColor" strokeWidth="1.5" />
+            <line x1="2" y1="10" x2="16" y2="15" stroke="currentColor" strokeWidth="1.5" />
+            <circle cx="2" cy="5" r="1.5" fill="currentColor" />
+            <circle cx="16" cy="10" r="1.5" fill="currentColor" />
+            <circle cx="2" cy="10" r="1.5" fill="currentColor" />
+        </svg>
+    ),
+    disjoint_channel: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <line x1="2" y1="5" x2="16" y2="10" stroke="currentColor" strokeWidth="1.5" />
+            <line x1="2" y1="13" x2="16" y2="8" stroke="currentColor" strokeWidth="1.5" />
+            <circle cx="2" cy="5" r="1.5" fill="currentColor" />
+            <circle cx="16" cy="10" r="1.5" fill="currentColor" />
+            <circle cx="2" cy="13" r="1.5" fill="currentColor" />
+        </svg>
+    ),
+    flat_top_bottom: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <line x1="2" y1="5" x2="16" y2="12" stroke="currentColor" strokeWidth="1.5" />
+            <line x1="2" y1="13" x2="16" y2="13" stroke="currentColor" strokeWidth="1.5" />
+            <circle cx="2" cy="5" r="1.5" fill="currentColor" />
+            <circle cx="16" cy="12" r="1.5" fill="currentColor" />
+            <circle cx="2" cy="13" r="1.5" fill="currentColor" />
+        </svg>
+    ),
+    regression_trend: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <line x1="2" y1="4" x2="16" y2="9" stroke="currentColor" strokeWidth="1" strokeDasharray="2,2" />
+            <line x1="2" y1="7" x2="16" y2="12" stroke="currentColor" strokeWidth="1.5" />
+            <line x1="2" y1="10" x2="16" y2="15" stroke="currentColor" strokeWidth="1" strokeDasharray="2,2" />
+        </svg>
+    ),
 };
 
 const GROUPS = [
@@ -93,6 +127,15 @@ const GROUPS = [
             "extended_line",
             "info_line",
             "trend_angle",
+        ] as DrawingTool[],
+    },
+    {
+        id: "channels",
+        tools: [
+            "parallel_channel",
+            "disjoint_channel",
+            "flat_top_bottom",
+            "regression_trend",
         ] as DrawingTool[],
     },
     {
@@ -134,7 +177,10 @@ export default function DrawingToolbar({
                     </button>
                     <button
                         className="t-tool-btn"
-                        onClick={() => setExpanded(prev => ({ ...prev, [group.id]: !prev[group.id] }))}
+                        onClick={() => setExpanded(prev => {
+                            const allClosed = Object.fromEntries(GROUPS.map(g => [g.id, false]));
+                            return { ...allClosed, [group.id]: !prev[group.id] };
+                        })}
                         style={{ fontSize: 9, padding: "2px 3px" }}
                     >
                         {expanded[group.id] ? "◀" : "▶"}
