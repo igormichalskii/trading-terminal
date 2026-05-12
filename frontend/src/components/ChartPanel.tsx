@@ -115,7 +115,7 @@ export default function ChartPanel({
         <div className="t-panel t-chart-panel">
             {/* Chart header */}
             <div style={{
-                padding: "10px 14px",
+                padding: "8px 14px",
                 borderBottom: "1px solid var(--border)",
                 display: "flex",
                 alignItems: "center",
@@ -155,10 +155,10 @@ export default function ChartPanel({
 
             {/* Chart toolbar */}
             <div style={{
-                padding: "6px 14px",
+                padding: "4px 10px",
                 display: "flex",
                 alignItems: "center",
-                gap: 6,
+                gap: 4,
                 borderBottom: "1px solid var(--border)",
                 flexShrink: 0,
             }}>
@@ -181,7 +181,7 @@ export default function ChartPanel({
                 {(["CANDLE", "LINE"] as const).map((ct) => (
                     <button
                         key={ct}
-                        className={"t-tool-btn" + (chartType === ct ? " active" : "")}
+                        className={"t-tool-btn t-tool-btn--text" + (chartType === ct ? " active" : "")}
                         onClick={() => setChartType(ct)}
                     >
                         {ct}
@@ -197,7 +197,7 @@ export default function ChartPanel({
                         return (
                             <button
                                 key={ind}
-                                className={"t-tool-btn" + (activeIndicators.has(ind) ? " active" : "")}
+                                className={"t-tool-btn t-tool-btn--text" + (activeIndicators.has(ind) ? " active" : "")}
                                 onClick={() => onToggleIndicator(ind)}
                             >
                                 {ind.toUpperCase()}
@@ -207,18 +207,18 @@ export default function ChartPanel({
                         return (
                             <button
                                 key={ind}
-                                className={"t-tool-btn" + (activeSubCharts.has(ind) ? " active" : "")}
+                                className={"t-tool-btn t-tool-btn--text" + (activeSubCharts.has(ind) ? " active" : "")}
                                 onClick={() => onToggleSubChart(ind)}
-                                style={{ border: "1px solid #e70c0c" }}
+                                style={{ borderColor: "#ef4444" }}
                             >
                                 {ind.toUpperCase()}
                             </button>
                         )
                     }
-
                 })}
                 <button
-                    className="t-tool-btn" title="Add more indicators"
+                    className="t-tool-btn t-tool-btn--text"
+                    title="Add more indicators"
                     onClick={onOpenLibrary}
                 >
                     INDICATORS

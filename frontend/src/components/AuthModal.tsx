@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { passwordError } from "../lib/validation";
+import "../terminal.css";
 
 interface Props {
     onClose: () => void;
@@ -79,14 +80,13 @@ export default function AuthModal({ onClose }: Props) {
                 </div>
 
                 {/* OAuth buttons */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20 }}>
                     {(["google", "apple"] as const).map((provider) => (
                         <button
                             key={provider}
                             onClick={() => handleOAuth(provider)}
-                            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "8px 12px", background: "transparent", border: "1px solid var(--border-bright)", color: "var(--text-dim)", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.05em", cursor: "pointer", transition: "all 0.15s" }}
-                            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--text-muted)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text)"; }}
-                            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-bright)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text-dim)"; }}
+                            className="t-tool-btn t-tool-btn--text"
+                            style={{ width: "100%", gap: 8, justifyContent: "center" }}
                         >
                             {provider === "google" ? <GoogleIcon /> : <AppleIcon />}
                             {provider === "google" ? "CONTINUE WITH GOOGLE" : "CONTINUE WITH APPLE"}

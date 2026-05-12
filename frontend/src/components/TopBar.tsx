@@ -99,25 +99,14 @@ export default function TopBar({ symbol, onSymbolChange, page, onPageChange, use
             </div>
 
             {/* Page nav */}
-            <div style={{ display: "flex", gap: 1, flexShrink: 0 }}>
+            <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
                 {(["chart", "earnings", "portfolio"] as const).map((p) => (
                     <button
                         key={p}
                         onClick={() => onPageChange(p)}
-                        style={{
-                            background: page === p ? "var(--accent-dim)" : "transparent",
-                            border: `1px solid ${page === p ? "var(--accent)" : "var(--border-bright)"}`,
-                            color: page === p ? "var(--accent)" : "var(--text-muted)",
-                            fontFamily: "var(--font-mono)",
-                            fontSize: 10,
-                            letterSpacing: "0.06em",
-                            padding: "3px 10px",
-                            cursor: "pointer",
-                            textTransform: "uppercase",
-                            transition: "all 0.15s",
-                        }}
+                        className={"t-tool-btn t-tool-btn--text" + (page === p ? " active" : "")}
                     >
-                        {p}
+                        {p.toUpperCase()}
                     </button>
                 ))}
             </div>
@@ -156,38 +145,16 @@ export default function TopBar({ symbol, onSymbolChange, page, onPageChange, use
                 <button
                     onClick={onSignOut}
                     title={user.email}
-                    style={{
-                        width: 28, height: 28,
-                        background: "var(--accent-dim)",
-                        border: "1px solid var(--accent)",
-                        color: "var(--accent)",
-                        fontFamily: "var(--font-mono)",
-                        fontWeight: 700,
-                        fontSize: 11,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        flexShrink: 0,
-                    }}
+                    className="t-tool-btn active"
+                    style={{ fontWeight: 700, fontSize: 11, flexShrink: 0 }}
                 >
                     {(user.email?.[0] ?? "U").toUpperCase()}
                 </button>
             ) : (
                 <button
                     onClick={onSignIn}
-                    style={{
-                        background: "transparent",
-                        border: "1px solid var(--border-bright)",
-                        color: "var(--text-dim)",
-                        fontFamily: "var(--font-mono)",
-                        fontSize: 10,
-                        padding: "4px 10px",
-                        cursor: "pointer",
-                        letterSpacing: "0.05em",
-                        flexShrink: 0,
-                        transition: "all 0.15s",
-                    }}
+                    className="t-tool-btn t-tool-btn--text"
+                    style={{ flexShrink: 0 }}
                 >
                     SIGN IN
                 </button>

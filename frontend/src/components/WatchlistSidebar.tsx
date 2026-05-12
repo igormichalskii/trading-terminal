@@ -189,7 +189,8 @@ export default function WatchlistSidebar({ user, activeSymbol, onSelect, onSymbo
                         <button
                             onClick={addSymbol}
                             disabled={adding}
-                            style={{ background: "transparent", border: "1px solid var(--border-bright)", color: "var(--text-dim)", padding: "4px 8px", fontFamily: "var(--font-mono)", fontSize: 11, cursor: adding ? "default" : "pointer", opacity: adding ? 0.5 : 1 }}
+                            className="t-tool-btn t-tool-btn--text"
+                            style={{ opacity: adding ? 0.5 : 1 }}
                         >
                             {adding ? "…" : "ADD"}
                         </button>
@@ -214,11 +215,11 @@ export default function WatchlistSidebar({ user, activeSymbol, onSelect, onSymbo
             {/* Ticker list */}
             <div style={{ flex: 1, overflowY: "auto" }}>
                 {loading ? (
-                    <div style={{ padding: "12px 8px", fontSize: 11, color: "var(--text-dim)" }}>Loading…</div>
+                    <div style={{ padding: "12px", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.06em" }}>LOADING…</div>
                 ) : !user ? (
-                    <div style={{ padding: "12px 8px", fontSize: 11, color: "var(--text-dim)" }}>Sign in to see your watchlist.</div>
+                    <div style={{ padding: "12px", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.04em" }}>SIGN IN TO SEE YOUR WATCHLIST.</div>
                 ) : sorted.length === 0 ? (
-                    <div style={{ padding: "12px 8px", fontSize: 11, color: "var(--text-dim)" }}>No symbols yet.</div>
+                    <div style={{ padding: "12px", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.04em" }}>NO SYMBOLS YET.</div>
                 ) : (
                     sorted.map((item) => {
                         const up = item.chg >= 0;

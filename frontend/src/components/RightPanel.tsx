@@ -247,18 +247,15 @@ export default function RightPanel({
             {activePanel && (
                 <>
                     {activePanel !== "watchlist" && (
-                        <div style={{
-                            padding: "12px 14px", borderBottom: "1px solid var(--border)",
-                            fontFamily: "var(--font-mono)", fontSize: 11
-                        }}>
-                            {activePanel.toUpperCase()}
+                        <div className="t-panel-header">
+                            <span className="t-panel-title">{activePanel.toUpperCase()}</span>
                         </div>
                     )}
                     <div style={{ flex: 1, overflowY: "auto" }}>
                         <div style={{ display: activePanel === "indicators" ? undefined : "none" }}>
                             {cells.length === 0 ? (
-                                <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-dim)" }}>
-                                    {lastClose ? "Loading…" : "Load a symbol to see signals."}
+                                <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.04em" }}>
+                                    {lastClose ? "LOADING…" : "LOAD A SYMBOL TO SEE SIGNALS."}
                                 </div>
                             ) : cells.map((cell) => {
                                 return (

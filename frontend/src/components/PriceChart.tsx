@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { act, useEffect, useRef, useState } from "react";
 import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
 import { apiFetch } from "../lib/api";
 import { type DrawingPoint, type Drawing, type DrawingTool } from "../lib/drawings";
@@ -495,10 +495,19 @@ export default function PriceChart({
                 removeDrawing(selectedDrawingId);
                 onSelectDrawing(null);
             }
+            if (e.key === "Escape" && activeTool) {
+                inProgressRef.current = [];
+                if (previewPrimitiveRef.current) {
+                    seriesRef.current?.detachPrimitive(previewPrimitiveRef.current);
+                    previewPrimitiveRef.current = null;
+                    previewTypeRef.current = null
+                }
+                onToolChange(null);
+            }
         }
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [selectedDrawingId, removeDrawing, onSelectDrawing])
+    }, [selectedDrawingId, removeDrawing, onSelectDrawing, activeTool, onToolChange])
 
     const addLine = (data: Point[], color: string, dashed = false) => {
         const chart = chartRef.current;
@@ -521,15 +530,35 @@ export default function PriceChart({
             }
             return;
         }
+        const THREE_CLICK_TOOLS = ["parallel_channel", "disjoint_channel", "flat_top_bottom"];
         const rect = containerRef.current!.getBoundingClientRect();
         const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
         if (!point) return;
 
         let tempDrawing: any;
-        if (inProgressRef.current.length === 1) {
-            tempDrawing = { id: "__preview__", type: "trend_line", p1: inProgressRef.current[0], p2: point, color: COLOR_PALETTE[0] + "99", lineWidth: 1, lineStyle: "solid" as const, label: "" };
+        if (inProgressRef.current.length === 1 && THREE_CLICK_TOOLS.includes(activeTool)) {
+            tempDrawing = {
+                id: "__preview__", type: "trend_line",
+                p1: inProgressRef.current[0], p2: point,
+                color: COLOR_PALETTE[0] + "99", lineWidth: 1, lineStyle: "solid" as const, label: ""
+            };
+        } else if (inProgressRef.current.length === 2) {
+            tempDrawing = {
+                id: "__preview__", type: activeTool,
+                p1: inProgressRef.current[0], p2: inProgressRef.current[1], p3: point,
+                color: COLOR_PALETTE[0] + "99", lineWidth: 1, lineStyle: "solid" as const, label: "",
+                levels: [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1],
+                fillOpacity: 0.1
+            };
         } else {
-            tempDrawing = { id: "__preview__", type: activeTool, p1: inProgressRef.current[0], p2: inProgressRef.current[1], p3: point, color: COLOR_PALETTE[0] + "99", lineWidth: 1, lineStyle: "solid" as const, label: "", levels: [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1], fillOpacity: 0.1 };
+            const previewType = activeTool === "regression_trend" ? "trend_line" : activeTool;
+            tempDrawing = {
+                id: "__preview__", type: previewType,
+                p1: inProgressRef.current[0], p2: point,
+                color: COLOR_PALETTE[0] + "99", lineWidth: 1, lineStyle: "solid" as const, label: "",
+                levels: [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1],
+                fillOpacity: 0.1
+            };
         }
 
         if (previewPrimitiveRef.current && previewTypeRef.current !== tempDrawing.type) {

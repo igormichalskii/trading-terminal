@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { apiFetch, verifySymbol } from "../lib/api";
 import { tickerError } from "../lib/validation";
+import "../terminal.css";
 
 const MAX_CUSTOM_SYMBOLS = 20;
 
@@ -234,11 +235,7 @@ function PresetCard({ preset, isStatic, isActive, loading, onRun, onDelete }: {
                     {loading&&isActive?"RUNNING…":"RUN"}
                 </button>
                 {!isStatic && onDelete && (
-                    <button onClick={onDelete} style={{
-                        ...mono, fontSize:10, padding:"4px 10px", cursor:"pointer",
-                        border:"1px solid var(--border-bright)", color:"var(--text-muted)",
-                        background:"transparent", transition:"all 0.15s",
-                    }}>DELETE</button>
+                    <button onClick={onDelete} className="t-tool-btn t-tool-btn--text">DELETE</button>
                 )}
             </div>
         </div>
@@ -417,7 +414,6 @@ export default function PortfolioOptimizer({ watchlistSymbols, isLoggedIn }: Pro
         border: "none",
         borderBottom: `2px solid ${active ? (isCompare ? "var(--purple)" : "var(--accent)") : "transparent"}`,
         color: active ? (isCompare ? "var(--purple)" : "var(--accent)") : "var(--text-muted)",
-        borderRight: "1px solid var(--border)",
         transition: "color 0.15s, border-color 0.15s",
     });
 
@@ -493,13 +489,9 @@ export default function PortfolioOptimizer({ watchlistSymbols, isLoggedIn }: Pro
                                     <span style={{ ...mono, fontSize:9, color:"var(--down)", letterSpacing:"0.04em" }}>{customInputErr}</span>
                                 )}
                                 </div>
-                                <button onClick={addCustomSymbol} disabled={customInputChecking} style={{
-                                    ...mono, fontSize:12, padding:"4px 10px",
-                                    cursor: customInputChecking ? "not-allowed" : "pointer",
-                                    background:"transparent", border:"1px solid var(--border-bright)",
-                                    color: customInputChecking ? "var(--text-muted)" : "var(--text-dim)",
-                                    transition:"all 0.15s",
-                                }}>{customInputChecking ? "…" : "+"}</button>
+                                <button onClick={addCustomSymbol} disabled={customInputChecking} className="t-tool-btn" style={{ fontSize: 16 }}>
+                                    {customInputChecking ? "…" : "+"}
+                                </button>
                             </div>
                         </div>
 

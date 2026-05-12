@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { apiFetch } from "../lib/api";
+import "../terminal.css";
 
 interface EarningsEvent {
     symbol: string;
@@ -98,11 +99,11 @@ function EarningsTooltip({ tip }: { tip: TooltipState }) {
             position: "fixed", zIndex: 9999,
             left: x, top: y,
             width: TOOLTIP_W,
-            background: "var(--panel)",
+            background: "var(--panel-hover)",
             border: `1px solid ${accentColor}`,
             padding: "10px 12px",
             pointerEvents: "none",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.6)",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.8)",
         }}>
             {/* Header */}
             <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8, paddingBottom: 8, borderBottom: "1px solid var(--border)" }}>
@@ -333,14 +334,7 @@ export default function EarningsCalendar({ watchlistSymbols, activeSymbol, isLog
                 {!activeInWatchlist && activeSymbol && (
                     <button
                         onClick={() => setIncludeActive(v => !v)}
-                        style={{
-                            ...mono, fontSize: 10, letterSpacing: "0.08em", padding: "5px 12px",
-                            cursor: "pointer",
-                            border: `1px solid ${includeActive ? "var(--accent)" : "var(--border-bright)"}`,
-                            color: includeActive ? "var(--accent)" : "var(--text-muted)",
-                            background: includeActive ? "var(--accent-dim)" : "transparent",
-                            transition: "all 0.15s",
-                        }}
+                        className={"t-tool-btn t-tool-btn--text" + (includeActive ? " active" : "")}
                     >
                         {includeActive ? "▣" : "□"} INCLUDE {activeSymbol}
                     </button>
@@ -348,7 +342,7 @@ export default function EarningsCalendar({ watchlistSymbols, activeSymbol, isLog
             </div>
 
             {symbols.length === 0 && (
-                <div style={{ border: "1px solid var(--border)", padding: "40px 24px", textAlign: "center" }}>
+                <div style={{ border: "1px solid var(--border-bright)", padding: "40px 24px", textAlign: "center" }}>
                     <p style={{ ...mono, fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.06em" }}>
                         {isLoggedIn
                             ? "ADD SYMBOLS TO YOUR WATCHLIST TO SEE THEIR EARNINGS HERE."
@@ -372,14 +366,14 @@ export default function EarningsCalendar({ watchlistSymbols, activeSymbol, isLog
             {!loading && !error && symbols.length > 0 && (
                 <>
                     {/* ── Calendar grid ── */}
-                    <div style={{ border: "1px solid var(--border)" }}>
+                    <div style={{ border: "1px solid var(--border-bright)" }}>
 
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderBottom: "1px solid var(--border)", background: "var(--panel)" }}>
-                            <button onClick={prevMonth} style={{ ...mono, fontSize: 13, background: "none", border: "1px solid var(--border-bright)", color: "var(--text-dim)", width: 28, height: 28, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>‹</button>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 10px", borderBottom: "1px solid var(--border)", background: "var(--panel)" }}>
+                            <button onClick={prevMonth} className="t-tool-btn" style={{ fontSize: 16 }}>‹</button>
                             <span style={{ ...mono, fontSize: 12, fontWeight: 700, color: "var(--text)", letterSpacing: "0.1em" }}>
                                 {MONTHS[viewMonth]} {viewYear}
                             </span>
-                            <button onClick={nextMonth} style={{ ...mono, fontSize: 13, background: "none", border: "1px solid var(--border-bright)", color: "var(--text-dim)", width: 28, height: 28, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>›</button>
+                            <button onClick={nextMonth} className="t-tool-btn" style={{ fontSize: 16 }}>›</button>
                         </div>
 
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 1, background: "var(--border)" }}>
@@ -425,7 +419,7 @@ export default function EarningsCalendar({ watchlistSymbols, activeSymbol, isLog
 
                     {/* ── Recent results table ── */}
                     {past.length > 0 && (
-                        <div style={{ border: "1px solid var(--border)", overflow: "hidden" }}>
+                        <div style={{ border: "1px solid var(--border-bright)", overflow: "hidden" }}>
                             <div style={{ ...mono, fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", color: "var(--text-muted)", padding: "8px 14px", borderBottom: "1px solid var(--border)", background: "var(--panel)" }}>
                                 RECENT RESULTS
                             </div>

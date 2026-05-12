@@ -123,27 +123,39 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 8px 0;
+  padding: 8px 4px;
   gap: 4px;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
 }
 
 .t-right-sidebar button {
   width: 40px;
-  height: 40px;
-  background: none;
+  height: 28px;
+  background: transparent;
   border: 1px solid transparent;
+  border-radius: 3px;
   color: var(--text-dim);
   font-family: var(--font-mono);
   font-size: 9px;
+  letter-spacing: 0.06em;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.15s;
 }
 
 .t-right-sidebar button:hover {
   color: var(--text);
+  border-color: var(--border-bright);
+  background: #1e1e1e;
+}
+
+.t-right-sidebar button.active {
+  color: var(--accent);
   border-color: var(--accent);
+  background: var(--accent-dim);
 }
 
 .t-icon-btn {
@@ -233,39 +245,76 @@
 /* ── Toolbar buttons ── */
 .t-tf-group {
   display: flex;
-  border: 1px solid var(--border-bright);
+  gap: 2px;
 }
 
 .t-tf-btn {
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
   color: var(--text-muted);
-  padding: 4px 10px;
+  height: 28px;
+  padding: 0 8px;
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.05em;
-  transition: color 0.15s, background 0.15s;
+  transition: all 0.15s;
 }
 
-.t-tf-btn:hover { color: var(--text); }
-.t-tf-btn.active { color: var(--bg); background: var(--accent); }
+.t-tf-btn:hover { color: var(--text); border-color: var(--border-bright); background: #1e1e1e; }
+.t-tf-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
 
 .t-tool-btn {
   background: transparent;
-  border: 1px solid var(--border-bright);
+  border: 1px solid transparent;
   color: var(--text-dim);
-  padding: 4px 9px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  border-radius: 3px;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.05em;
   transition: all 0.15s;
+  flex-shrink: 0;
 }
 
-.t-tool-btn:hover { color: var(--text); border-color: var(--text-muted); }
+.t-tool-btn:hover { color: var(--text); border-color: var(--border-bright); background: #1e1e1e; }
 .t-tool-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+
+.t-tool-btn--text {
+  width: auto;
+  padding: 0 10px;
+  min-width: 28px;
+  letter-spacing: 0.06em;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.t-tool-chevron {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  width: 10px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 7px;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+
+.t-tool-chevron:hover { opacity: 1; color: var(--text); }
 
 /* ── Order book ── */
 .t-ob-row {
@@ -402,7 +451,7 @@
 
 /* ── Status bar ── */
 .t-status-bar {
-  height: 24px;
+  height: 26px;
   background: var(--panel);
   border-top: 1px solid var(--border);
   display: flex;
@@ -419,14 +468,18 @@
 .t-ai-badge {
   margin-left: auto;
   color: var(--accent);
-  padding: 2px 8px;
+  height: 20px;
+  padding: 0 10px;
   border: 1px solid var(--accent);
+  border-radius: 3px;
   cursor: pointer;
   transition: background 0.15s;
-  background: none;
+  background: transparent;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
 }
 
 .t-ai-badge:hover { background: var(--accent-dim); }

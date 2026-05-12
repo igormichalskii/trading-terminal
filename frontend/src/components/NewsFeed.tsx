@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
+import "../terminal.css";
 
 interface Article {
     headline: string;
@@ -149,19 +150,8 @@ export default function NewsFeed({ symbol }: Props) {
                                 </span>
                                 <button
                                     onClick={() => toggleAnalysis(i, a)}
-                                    style={{
-                                        ...mono,
-                                        fontSize: 9,
-                                        letterSpacing: "0.08em",
-                                        color: expandedIdx === i ? "var(--accent)" : "var(--text-muted)",
-                                        background: "transparent",
-                                        border: `1px solid ${expandedIdx === i ? "var(--accent)" : "var(--border-bright)"}`,
-                                        padding: "2px 6px",
-                                        cursor: "pointer",
-                                        transition: "all 0.15s",
-                                        flexShrink: 0,
-                                        marginLeft: 8,
-                                    }}
+                                    className={"t-tool-btn t-tool-btn--text" + (expandedIdx === i ? " active" : "")}
+                                    style={{ marginLeft: 8, height: 20, fontSize: 9 }}
                                 >
                                     {expandedIdx === i ? "HIDE" : "AI"}
                                 </button>

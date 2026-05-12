@@ -139,8 +139,8 @@ export default function MLPrediction({ symbol }: Props) {
                                         background: "var(--accent)",
                                     }} />
                                 </div>
-                                <span style={{ ...mono, fontSize: 10, color: "var(--text-dim)", whiteSpace: "nowrap" }}>
-                                    {f.label}
+                                <span style={{ ...mono, fontSize: 10, color: "var(--text-dim)", whiteSpace: "nowrap", letterSpacing: "0.03em" }}>
+                                    {f.label.toUpperCase()}
                                 </span>
                                 <span style={{ ...mono, fontSize: 10, color: "var(--text-muted)", minWidth: 28, textAlign: "right" }}>
                                     {pct}%

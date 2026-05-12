@@ -164,35 +164,55 @@ export default function DrawingToolbar({
         Object.fromEntries(GROUPS.map(g => [g.id, false]))
     );
 
-    return <div>
+    return <div style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 2,
+        padding: "4px 4px",
+        background: "var(--panel)",
+        borderRight: "1px solid var(--border-bright)",
+        width: 44,
+        flexShrink: 0,
+    }}>
+        <button
+            className={"t-tool-btn" + (activeTool === null ? " active" : "")}
+            onClick={() => onToolChange(null)}
+            title="Pointer"
+        >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M4 2 L4 13 L7 10 L9 15 L11 14 L9 9 L13 9 Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" fill="none" />
+            </svg>
+        </button>
+
+        <div style={{ width: "80%", height: 1, background: "var(--border-bright)", margin: "2px 0" }} />
+
         {GROUPS.map((group) => (
-            <div key={group.id} style={{ position: "relative" }}>
-                <div style={{ display: "flex", alignItems: "center" }}>
-                    <button
-                        className={"t-tool-btn" + (activeTool === lastTools[group.id] ? " active" : "")}
-                        onClick={() => onToolChange(lastTools[group.id] as DrawingTool)}
-                        title={lastTools[group.id]}
-                    >
-                        {ICONS[lastTools[group.id]]}
-                    </button>
-                    <button
-                        className="t-tool-btn"
-                        onClick={() => setExpanded(prev => {
-                            const allClosed = Object.fromEntries(GROUPS.map(g => [g.id, false]));
-                            return { ...allClosed, [group.id]: !prev[group.id] };
-                        })}
-                        style={{ fontSize: 9, padding: "2px 3px" }}
-                    >
-                        {expanded[group.id] ? "◀" : "▶"}
-                    </button>
-                </div>
+            <div key={group.id} style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                <button
+                    className={"t-tool-btn" + (activeTool === lastTools[group.id] ? " active" : "")}
+                    onClick={() => onToolChange(lastTools[group.id] as DrawingTool)}
+                    title={lastTools[group.id]}
+                >
+                    {ICONS[lastTools[group.id]]}
+                </button>
+                <button
+                    className="t-tool-chevron"
+                    onClick={() => setExpanded(prev => {
+                        const allClosed = Object.fromEntries(GROUPS.map(g => [g.id, false]));
+                        return { ...allClosed, [group.id]: !prev[group.id] };
+                    })}
+                    title="Expand"
+                >
+                    {expanded[group.id] ? "◀" : "▶"}
+                </button>
                 {expanded[group.id] && (
                     <div style={{
                         position: "absolute",
                         left: "100%",
                         top: 0,
-                        background: "#1a1a1a",
-                        border: "1px solid #2a2a2a",
+                        background: "var(--panel-hover)",
+                        border: "1px solid var(--border-bright)",
                         borderRadius: 4,
                         padding: 4,
                         display: "flex",

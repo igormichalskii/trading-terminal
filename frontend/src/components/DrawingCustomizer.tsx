@@ -22,7 +22,7 @@ export default function DrawingCustomizer({
     return (
         <div style={{
             position: "absolute", top: 8, right: 8, zIndex: 10,
-            background: "#1a1a1a", border: "1px solid #2a2a2a",
+            background: "var(--panel)", border: "1px solid var(--border-bright)",
             borderRadius: 6, padding: "10px 12px",
             display: "flex", flexDirection: "column", gap: 8,
             minWidth: 230, fontFamily: "var(--font-mono)", fontSize: 12,
@@ -109,7 +109,7 @@ export default function DrawingCustomizer({
                     placeholder="Label..."
                     onChange={(e) => onUpdate(drawing.id, { label: e.target.value })}
                     style={{
-                        flex: 1, background: "#0f0f0f", border: "1px solid #2a2a2a",
+                        flex: 1, background: "var(--bg)", border: "1px solid var(--border-bright)",
                         borderRadius: 3, padding: "3px 6px", color: "var(--text)",
                         fontSize: 11, fontFamily: "var(--font-mono)", outline: "none",
                     }}
