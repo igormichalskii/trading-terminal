@@ -5,13 +5,11 @@ import { lineDashForStyle } from "../drawingUtils";
 
 class FibTimeZoneRenderer implements IPrimitivePaneRenderer {
     private _drawing: FibTimeZoneDrawing;
-    private _seriesRef: React.RefObject<any>;
     private _chartRef: React.RefObject<any>;
     private _isSelected: boolean;
 
-    constructor(drawing: FibTimeZoneDrawing, seriesRef: React.RefObject<any>, chartRef: React.RefObject<any>, isSelected: boolean) {
+    constructor(drawing: FibTimeZoneDrawing, chartRef: React.RefObject<any>, isSelected: boolean) {
         this._drawing = drawing;
-        this._seriesRef = seriesRef;
         this._chartRef = chartRef;
         this._isSelected = isSelected;
     }
@@ -72,7 +70,7 @@ class FibTimeZonePaneView implements IPanePrimitivePaneView {
     }
 
     renderer(): IPrimitivePaneRenderer {
-        return new FibTimeZoneRenderer(this._drawing, this._seriesRef, this._chartRef, this._isSelected);
+        return new FibTimeZoneRenderer(this._drawing, this._chartRef, this._isSelected);
     }
 }
 
