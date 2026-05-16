@@ -1,5 +1,5 @@
-import React, { act, useEffect, useRef, useState } from "react";
-import { createChart, CandlestickSeries, LineSeries, ColorType } from "lightweight-charts";
+import React, { useEffect, useRef, useState } from "react";
+import { createChart, CandlestickSeries, LineSeries } from "lightweight-charts";
 import { apiFetch } from "../lib/api";
 import { type DrawingPoint, type Drawing, type DrawingTool } from "../lib/drawings";
 import { HorizontalLinePrimitive } from "../lib/primitives/HorizontalLinePrimitive";
