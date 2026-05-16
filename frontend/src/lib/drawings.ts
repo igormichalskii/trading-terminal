@@ -173,6 +173,104 @@ export interface RegressionTrendDrawing {
     label?: string;
 }
 
+export interface PitchforkDrawing {
+    id: string;
+    type: "pitchfork";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    p3: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+}
+
+export interface SchiffPitchforkDrawing {
+    id: string;
+    type: "schiff_pitchfork";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    p3: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+}
+
+export interface ModifiedSchiffPitchforkDrawing {
+    id: string;
+    type: "modified_schiff_pitchfork";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    p3: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+}
+
+export interface InsidePitchforkDrawing {
+    id: string;
+    type: "inside_pitchfork";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    p3: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+}
+
+export interface FibTimeZoneDrawing {
+    id: string;
+    type: "fib_time_zone";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+    levels: number[];
+}
+
+export interface TrendBasedFibExtensionDrawing {
+    id: string;
+    type: "trend_based_fib_extension";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    p3: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+    levels: number[];
+}
+
+export interface FibChannelDrawing {
+    id: string;
+    type: "fib_channel";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    p3: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+    levels: number[];
+}
+
+export interface FibSpeedResistanceFanDrawing {
+    id: string;
+    type: "fib_speed_resistance_fan";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+    levels: number[];
+}
+
 export type Drawing =
     | HorizontalLineDrawing
     | HorizontalRayDrawing
@@ -188,7 +286,15 @@ export type Drawing =
     | ParallelChannelDrawing
     | DisjointChannelDrawing
     | FlatTopBottomDrawing
-    | RegressionTrendDrawing;
+    | RegressionTrendDrawing
+    | PitchforkDrawing
+    | SchiffPitchforkDrawing
+    | ModifiedSchiffPitchforkDrawing
+    | InsidePitchforkDrawing
+    | FibTimeZoneDrawing
+    | TrendBasedFibExtensionDrawing
+    | FibChannelDrawing
+    | FibSpeedResistanceFanDrawing;
 
 export type DrawingType = Drawing['type'];
 export type DrawingTool = DrawingType | null;
@@ -207,4 +313,12 @@ export type DrawingUpdate =
     | Partial<Omit<ParallelChannelDrawing, 'id' | 'type'>>
     | Partial<Omit<DisjointChannelDrawing, 'id' | 'type'>>
     | Partial<Omit<FlatTopBottomDrawing, 'id' | 'type'>>
-    | Partial<Omit<RegressionTrendDrawing, 'id' | 'type'>>;
+    | Partial<Omit<RegressionTrendDrawing, 'id' | 'type'>>
+    | Partial<Omit<PitchforkDrawing, 'id' | 'type'>>
+    | Partial<Omit<SchiffPitchforkDrawing, 'id' | 'type'>>
+    | Partial<Omit<ModifiedSchiffPitchforkDrawing, 'id' | 'type'>>
+    | Partial<Omit<InsidePitchforkDrawing, 'id' | 'type'>>
+    | Partial<Omit<FibTimeZoneDrawing, 'id' | 'type'>>
+    | Partial<Omit<TrendBasedFibExtensionDrawing, 'id' | 'type'>>
+    | Partial<Omit<FibChannelDrawing, 'id' | 'type'>>
+    | Partial<Omit<FibSpeedResistanceFanDrawing, 'id' | 'type'>>;

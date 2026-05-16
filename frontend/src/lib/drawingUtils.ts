@@ -55,8 +55,7 @@ export function toDrawingPoint(
         ? Math.floor(new Date(t + "T00:00:00Z").getTime() / 1000)
         : t as number;
 
-    const logical = chart.timeScale().coordinateToLogical(x);
-    return { time: numericTime, price: p, logical: logical != null ? logical as number : undefined };
+    return { time: numericTime, price: p};
 }
 
 export function lineDashForStyle(style?: string) {
@@ -66,4 +65,21 @@ export function lineDashForStyle(style?: string) {
         "dashed": [6, 4],
         "dotted": [2, 3],
     })[style] ?? [];
+}
+
+export function rayEndpoint(sx: number, sy: number, dx: number, dy: number, w: number, h: number) {
+    let t = Infinity;
+    if (dx > 0) {
+        t = Math.min(t, (w - sx) / dx);
+    } else if (dx < 0) {
+        t = Math.min(t, (0 - sx) / dx);
+    }
+
+    if (dy > 0) {
+        t = Math.min(t, (h - sy) / dy);
+    } else if (dy < 0) {
+        t = Math.min(t, (0 - sy) / dy);
+    }
+
+    return [sx + t * dx, sy + t * dy];
 }

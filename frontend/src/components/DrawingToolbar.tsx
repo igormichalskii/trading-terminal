@@ -24,6 +24,47 @@ const ICONS: Record<string, React.ReactNode> = {
             <line x1="2" y1="14" x2="16" y2="14" stroke="currentColor" strokeWidth="1.2" />
         </svg>
     ),
+    fib_channel: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <line x1="2" y1="5" x2="16" y2="8" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="2" y1="8" x2="16" y2="11" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="2" y1="10" x2="16" y2="13" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="2" y1="13" x2="16" y2="16" stroke="currentColor" strokeWidth="1.2" />
+            <circle cx="2" cy="5" r="1.5" fill="currentColor" />
+            <circle cx="16" cy="8" r="1.5" fill="currentColor" />
+            <circle cx="2" cy="13" r="1.5" fill="currentColor" strokeOpacity="0.5" />
+        </svg>
+    ),
+    trend_based_fib_extension: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <line x1="2" y1="14" x2="9" y2="5" stroke="currentColor" strokeWidth="1.5" />
+            <circle cx="2" cy="14" r="1.5" fill="currentColor" />
+            <circle cx="9" cy="5" r="1.5" fill="currentColor" />
+            <circle cx="9" cy="9" r="1.5" fill="currentColor" />
+            <line x1="9" y1="4" x2="16" y2="4" stroke="currentColor" strokeWidth="1" />
+            <line x1="9" y1="7" x2="16" y2="7" stroke="currentColor" strokeWidth="1" />
+            <line x1="9" y1="10" x2="16" y2="10" stroke="currentColor" strokeWidth="1" />
+            <line x1="9" y1="14" x2="16" y2="14" stroke="currentColor" strokeWidth="1" />
+        </svg>
+    ),
+    fib_time_zone: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <line x1="3" y1="2" x2="3" y2="16" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="6" y1="2" x2="6" y2="16" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="10" y1="2" x2="10" y2="16" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="15" y1="2" x2="15" y2="16" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="2" y1="14" x2="16" y2="14" stroke="currentColor" strokeWidth="1" strokeOpacity="0.3" />
+        </svg>
+    ),
+    fib_speed_resistance_fan: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <circle cx="2" cy="16" r="1.5" fill="currentColor" />
+            <line x1="2" y1="16" x2="16" y2="16" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="2" y1="16" x2="16" y2="10" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="2" y1="16" x2="16" y2="5" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="2" y1="16" x2="12" y2="2" stroke="currentColor" strokeWidth="1.2" />
+        </svg>
+    ),
     rectangle: (
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <rect x="2" y="4" width="14" height="10" stroke="currentColor" strokeWidth="1.5" />
@@ -112,6 +153,54 @@ const ICONS: Record<string, React.ReactNode> = {
             <line x1="2" y1="10" x2="16" y2="15" stroke="currentColor" strokeWidth="1" strokeDasharray="2,2" />
         </svg>
     ),
+    pitchfork: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <circle cx="3" cy="9" r="1.5" fill="currentColor" />
+            <circle cx="9" cy="4" r="1.5" fill="currentColor" />
+            <circle cx="9" cy="14" r="1.5" fill="currentColor" />
+            <line x1="9" y1="4" x2="9" y2="14" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+            <line x1="3" y1="9" x2="16" y2="9" stroke="currentColor" strokeWidth="1.5" />
+            <line x1="9" y1="4" x2="16" y2="2" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="9" y1="14" x2="16" y2="16" stroke="currentColor" strokeWidth="1.2" />
+        </svg>
+    ),
+    schiff_pitchfork: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <circle cx="3" cy="9" r="1.5" fill="currentColor" />
+            <circle cx="9" cy="4" r="1.5" fill="currentColor" />
+            <circle cx="9" cy="14" r="1.5" fill="currentColor" />
+            <line x1="9" y1="4" x2="9" y2="14" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+            <line x1="6" y1="9" x2="16" y2="9" stroke="currentColor" strokeWidth="1.5" />
+            <line x1="9" y1="4" x2="16" y2="2" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="9" y1="14" x2="16" y2="16" stroke="currentColor" strokeWidth="1.2" />
+            <circle cx="6" cy="9" r="1" fill="currentColor" strokeOpacity="0.6" />
+        </svg>
+    ),
+    modified_schiff_pitchfork: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <circle cx="3" cy="9" r="1.5" fill="currentColor" />
+            <circle cx="9" cy="4" r="1.5" fill="currentColor" />
+            <circle cx="9" cy="14" r="1.5" fill="currentColor" />
+            <line x1="9" y1="4" x2="9" y2="14" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+            <line x1="6" y1="6.5" x2="16" y2="9" stroke="currentColor" strokeWidth="1.5" />
+            <line x1="9" y1="4" x2="16" y2="2" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="9" y1="14" x2="16" y2="16" stroke="currentColor" strokeWidth="1.2" />
+            <circle cx="6" cy="6.5" r="1" fill="currentColor" strokeOpacity="0.6" />
+        </svg>
+    ),
+    inside_pitchfork: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <circle cx="3" cy="9" r="1.5" fill="currentColor" />
+            <circle cx="9" cy="4" r="1.5" fill="currentColor" strokeOpacity="0.4" />
+            <circle cx="9" cy="14" r="1.5" fill="currentColor" strokeOpacity="0.4" />
+            <circle cx="6" cy="6.5" r="1.5" fill="currentColor" />
+            <circle cx="6" cy="11.5" r="1.5" fill="currentColor" />
+            <line x1="9" y1="4" x2="9" y2="14" stroke="currentColor" strokeWidth="1" strokeOpacity="0.2" />
+            <line x1="3" y1="9" x2="16" y2="9" stroke="currentColor" strokeWidth="1.5" />
+            <line x1="6" y1="6.5" x2="16" y2="3.5" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="6" y1="11.5" x2="16" y2="14.5" stroke="currentColor" strokeWidth="1.2" />
+        </svg>
+    ),
 };
 
 const GROUPS = [
@@ -140,12 +229,22 @@ const GROUPS = [
     },
     {
         id: "fibonacci",
-        tools: ["fib_retracement"] as DrawingTool[],
+        tools: [
+            "fib_retracement",
+            "fib_time_zone",
+            "trend_based_fib_extension",
+            "fib_channel",
+            "fib_speed_resistance_fan"
+        ] as DrawingTool[],
     },
     {
         id: "shapes",
         tools: ["rectangle"] as DrawingTool[],
     },
+    {
+        id: "pitchfork",
+        tools: ["pitchfork", "schiff_pitchfork", "modified_schiff_pitchfork", "inside_pitchfork"] as DrawingTool[],
+    }
 ];
 
 interface Props {

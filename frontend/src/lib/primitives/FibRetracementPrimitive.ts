@@ -22,7 +22,6 @@ class FibRetracementRenderer implements IPrimitivePaneRenderer {
             verticalPixelRatio: number;
             horizontalPixelRatio: number;
         }) => {
-
             const x1 = this._drawing.p1.logical != null
                 ? this._chartRef.current?.timeScale().logicalToCoordinate(this._drawing.p1.logical as any)
                 : this._chartRef.current?.timeScale().timeToCoordinate(this._drawing.p1.time as any);
@@ -30,10 +29,8 @@ class FibRetracementRenderer implements IPrimitivePaneRenderer {
                 ? this._chartRef.current?.timeScale().logicalToCoordinate(this._drawing.p2.logical as any)
                 : this._chartRef.current?.timeScale().timeToCoordinate(this._drawing.p2.time as any);
             if (
-                x1 === null ||
-                x1 === undefined ||
-                x2 === null ||
-                x2 === undefined
+                x1 == null ||
+                x2 == null
             ) return;
             const x1Px = Math.round(x1 * horizontalPixelRatio);
             const x2Px = Math.round(x2 * horizontalPixelRatio);
