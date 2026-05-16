@@ -58,13 +58,11 @@ class FibTimeZoneRenderer implements IPrimitivePaneRenderer {
 
 class FibTimeZonePaneView implements IPanePrimitivePaneView {
     private _drawing: FibTimeZoneDrawing;
-    private _seriesRef: React.RefObject<any>;
     private _chartRef: React.RefObject<any>;
     private _isSelected: boolean;
 
-    constructor(drawing: FibTimeZoneDrawing, seriesRef: React.RefObject<any>, chartRef: React.RefObject<any>, isSelected: boolean) {
+    constructor(drawing: FibTimeZoneDrawing, chartRef: React.RefObject<any>, isSelected: boolean) {
         this._drawing = drawing;
-        this._seriesRef = seriesRef;
         this._chartRef = chartRef;
         this._isSelected = isSelected;
     }
@@ -76,14 +74,12 @@ class FibTimeZonePaneView implements IPanePrimitivePaneView {
 
 export class FibTimeZonePrimitive implements IPanePrimitive {
     private _drawing: FibTimeZoneDrawing;
-    private _seriesRef: React.RefObject<any>;
     private _chartRef: React.RefObject<any>;
     private _isSelected: boolean;
     private _requestUpdate?: () => void;
 
-    constructor(drawing: FibTimeZoneDrawing, seriesRef: React.RefObject<any>, chartRef: React.RefObject<any>, isSelected: boolean) {
+    constructor(drawing: FibTimeZoneDrawing, chartRef: React.RefObject<any>, isSelected: boolean) {
         this._drawing = drawing;
-        this._seriesRef = seriesRef;
         this._chartRef = chartRef;
         this._isSelected = isSelected;
     }
@@ -94,7 +90,7 @@ export class FibTimeZonePrimitive implements IPanePrimitive {
     }
 
     paneViews() {
-        return [new FibTimeZonePaneView(this._drawing, this._seriesRef, this._chartRef, this._isSelected)]
+        return [new FibTimeZonePaneView(this._drawing, this._chartRef, this._isSelected)]
     }
 
     update(drawing: FibTimeZoneDrawing, isSelected: boolean) {

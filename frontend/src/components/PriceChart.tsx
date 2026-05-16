@@ -156,7 +156,7 @@ function createPrimitive(drawing: any, seriesRef: React.RefObject<any>, chartRef
         case "modified_schiff_pitchfork":
         case "inside_pitchfork":
             return new PitchforkPrimitive(drawing, seriesRef, chartRef, false);
-        case "fib_time_zone": return new FibTimeZonePrimitive(drawing, seriesRef, chartRef, false);
+        case "fib_time_zone": return new FibTimeZonePrimitive(drawing, chartRef, false);
         case "trend_based_fib_extension": return new TrendBasedFibExtensionPrimitive(drawing, seriesRef, chartRef, false);
         case "fib_channel": return new FibChannelPrimitive(drawing, seriesRef, chartRef, false);
         case "fib_speed_resistance_fan": return new FibSpeedResistanceFanPrimitive(drawing, seriesRef, chartRef, false);
