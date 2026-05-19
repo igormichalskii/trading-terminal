@@ -1,14 +1,14 @@
 import type { IPanePrimitive, IPanePrimitivePaneView, IPrimitivePaneRenderer } from "lightweight-charts";
-import type { FibTimeZoneDrawing } from "../drawings";
+import type { TrendBasedFibTimeDrawing } from "../drawings";
 import type React from "react";
 import { lineDashForStyle } from "../drawingUtils";
 
-class FibTimeZoneRenderer implements IPrimitivePaneRenderer {
-    private _drawing: FibTimeZoneDrawing;
+class TrendBasedFibTimeRenderer implements IPrimitivePaneRenderer {
+    private _drawing: TrendBasedFibTimeDrawing;
     private _chartRef: React.RefObject<any>;
     private _isSelected: boolean;
 
-    constructor(drawing: FibTimeZoneDrawing, chartRef: React.RefObject<any>, isSelected: boolean) {
+    constructor(drawing: TrendBasedFibTimeDrawing, chartRef: React.RefObject<any>, isSelected: boolean) {
         this._drawing = drawing;
         this._chartRef = chartRef;
         this._isSelected = isSelected;
@@ -26,13 +26,14 @@ class FibTimeZoneRenderer implements IPrimitivePaneRenderer {
             const x2 = this._drawing.p2.logical != null
                 ? this._chartRef.current?.timeScale().logicalToCoordinate(this._drawing.p2.logical as any)
                 : this._chartRef.current?.timeScale().timeToCoordinate(this._drawing.p2.time as any);
-            if (x1 == null || x2 == null) return;
+            const x3 = this._drawing.p3.logical != null
+                ? this._chartRef.current?.timeScale().logicalToCoordinate(this._drawing.p3.logical as any)
+                : this._chartRef.current?.timeScale().timeToCoordinate(this._drawing.p3.time as any);
+            if (x1 == null || x2 == null || x3 == null) return;
             const p1 = this._chartRef.current?.timeScale().coordinateToLogical(x1);
             const p2 = this._chartRef.current?.timeScale().coordinateToLogical(x2);
-            if (
-                p1 == null ||
-                p2 == null
-            ) return;
+            const p3 = this._chartRef.current?.timeScale().coordinateToLogical(x3);
+            if (p1 == null || p2 == null || p3 == null) return;
             const n = p2 - p1;
             context.strokeStyle = this._drawing.color;
             context.lineWidth = (this._isSelected ? this._drawing.lineWidth + 1 : this._drawing.lineWidth) * verticalPixelRatio;
@@ -40,7 +41,7 @@ class FibTimeZoneRenderer implements IPrimitivePaneRenderer {
             context.font = `${11 * verticalPixelRatio}px monospace`;
             context.setLineDash(this._isSelected ? [5, 3] : lineDashForStyle(this._drawing.lineStyle));
             for (const l of this._drawing.levels) {
-                const targetLogical = p1 + l * n
+                const targetLogical = p3 + l * n;
                 const x = this._chartRef.current?.timeScale().logicalToCoordinate(targetLogical);
                 if (x == null) continue;
                 const xPx = Math.round(x * horizontalPixelRatio);
@@ -49,35 +50,34 @@ class FibTimeZoneRenderer implements IPrimitivePaneRenderer {
                 context.lineTo(xPx, context.canvas.height);
                 context.stroke();
                 context.fillText(String(l), xPx + 3, 14 * verticalPixelRatio);
-
             }
         })
     }
 }
 
-class FibTimeZonePaneView implements IPanePrimitivePaneView {
-    private _drawing: FibTimeZoneDrawing;
+class TrendBasedFibTimePaneView implements IPanePrimitivePaneView {
+    private _drawing: TrendBasedFibTimeDrawing;
     private _chartRef: React.RefObject<any>;
     private _isSelected: boolean;
 
-    constructor(drawing: FibTimeZoneDrawing, chartRef: React.RefObject<any>, isSelected: boolean) {
+    constructor(drawing: TrendBasedFibTimeDrawing, chartRef: React.RefObject<any>, isSelected: boolean) {
         this._drawing = drawing;
         this._chartRef = chartRef;
         this._isSelected = isSelected;
     }
 
     renderer(): IPrimitivePaneRenderer {
-        return new FibTimeZoneRenderer(this._drawing, this._chartRef, this._isSelected);
+        return new TrendBasedFibTimeRenderer(this._drawing, this._chartRef, this._isSelected);
     }
 }
 
-export class FibTimeZonePrimitive implements IPanePrimitive {
-    private _drawing: FibTimeZoneDrawing;
+export class TrendBasedFibTimePrimitive implements IPanePrimitive {
+    private _drawing: TrendBasedFibTimeDrawing;
     private _chartRef: React.RefObject<any>;
     private _isSelected: boolean;
     private _requestUpdate?: () => void;
 
-    constructor(drawing: FibTimeZoneDrawing, chartRef: React.RefObject<any>, isSelected: boolean) {
+    constructor(drawing: TrendBasedFibTimeDrawing, chartRef: React.RefObject<any>, isSelected: boolean) {
         this._drawing = drawing;
         this._chartRef = chartRef;
         this._isSelected = isSelected;
@@ -89,10 +89,10 @@ export class FibTimeZonePrimitive implements IPanePrimitive {
     }
 
     paneViews() {
-        return [new FibTimeZonePaneView(this._drawing, this._chartRef, this._isSelected)]
+        return [new TrendBasedFibTimePaneView(this._drawing, this._chartRef, this._isSelected)]
     }
 
-    update(drawing: FibTimeZoneDrawing, isSelected: boolean) {
+    update(drawing: TrendBasedFibTimeDrawing, isSelected: boolean) {
         this._drawing = drawing;
         this._isSelected = isSelected;
         this._requestUpdate?.();

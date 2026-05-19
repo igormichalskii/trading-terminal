@@ -271,6 +271,79 @@ export interface FibSpeedResistanceFanDrawing {
     levels: number[];
 }
 
+export interface TrendBasedFibTimeDrawing {
+    id: string;
+    type: "trend_based_fib_time";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    p3: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+    levels: number[];
+}
+
+export interface PitchfanDrawing {
+    id: string;
+    type: "pitchfan";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    p3: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+    levels: number[];
+}
+
+export interface FibCirclesDrawing {
+    id: string;
+    type: "fib_circles";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+    levels: number[];
+}
+
+export interface FibSpeedResistanceArcsDrawing {
+    id: string;
+    type: "fib_speed_resistance_arcs";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+    levels: number[];
+}
+
+export interface FibWedgeDrawing {
+    id: string;
+    type: "fib_wedge";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+    levels: number[];
+}
+
+export interface FibSpiralDrawing {
+    id: string;
+    type: "fib_spiral";
+    p1: DrawingPoint;
+    p2: DrawingPoint;
+    color: string;
+    lineWidth: number;
+    lineStyle?: "solid" | "dashed" | "dotted";
+    label?: string;
+}
+
 export type Drawing =
     | HorizontalLineDrawing
     | HorizontalRayDrawing
@@ -294,7 +367,13 @@ export type Drawing =
     | FibTimeZoneDrawing
     | TrendBasedFibExtensionDrawing
     | FibChannelDrawing
-    | FibSpeedResistanceFanDrawing;
+    | FibSpeedResistanceFanDrawing
+    | TrendBasedFibTimeDrawing
+    | PitchfanDrawing
+    | FibCirclesDrawing
+    | FibSpeedResistanceArcsDrawing
+    | FibWedgeDrawing
+    | FibSpiralDrawing;
 
 export type DrawingType = Drawing['type'];
 export type DrawingTool = DrawingType | null;
@@ -321,4 +400,10 @@ export type DrawingUpdate =
     | Partial<Omit<FibTimeZoneDrawing, 'id' | 'type'>>
     | Partial<Omit<TrendBasedFibExtensionDrawing, 'id' | 'type'>>
     | Partial<Omit<FibChannelDrawing, 'id' | 'type'>>
-    | Partial<Omit<FibSpeedResistanceFanDrawing, 'id' | 'type'>>;
+    | Partial<Omit<FibSpeedResistanceFanDrawing, 'id' | 'type'>>
+    | Partial<Omit<TrendBasedFibTimeDrawing, 'id' | 'type'>>
+    | Partial<Omit<PitchfanDrawing, 'id' | 'type'>>
+    | Partial<Omit<FibCirclesDrawing, 'id' | 'type'>>
+    | Partial<Omit<FibSpeedResistanceArcsDrawing, 'id' | 'type'>>
+    | Partial<Omit<FibWedgeDrawing, 'id' | 'type'>>
+    | Partial<Omit<FibSpiralDrawing, 'id' | 'type'>>;

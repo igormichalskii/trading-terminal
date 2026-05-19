@@ -1,15 +1,17 @@
 import type { IPanePrimitive, IPanePrimitivePaneView, IPrimitivePaneRenderer } from "lightweight-charts";
-import type { FibTimeZoneDrawing } from "../drawings";
+import type { FibCirclesDrawing } from "../drawings";
 import type React from "react";
 import { lineDashForStyle } from "../drawingUtils";
 
-class FibTimeZoneRenderer implements IPrimitivePaneRenderer {
-    private _drawing: FibTimeZoneDrawing;
+class FibCirclesRenderer implements IPrimitivePaneRenderer {
+    private _drawing: FibCirclesDrawing;
+    private _seriesRef: React.RefObject<any>;
     private _chartRef: React.RefObject<any>;
     private _isSelected: boolean;
 
-    constructor(drawing: FibTimeZoneDrawing, chartRef: React.RefObject<any>, isSelected: boolean) {
+    constructor(drawing: FibCirclesDrawing, seriesRef: React.RefObject<any>, chartRef: React.RefObject<any>, isSelected: boolean) {
         this._drawing = drawing;
+        this._seriesRef = seriesRef;
         this._chartRef = chartRef;
         this._isSelected = isSelected;
     }
@@ -26,59 +28,57 @@ class FibTimeZoneRenderer implements IPrimitivePaneRenderer {
             const x2 = this._drawing.p2.logical != null
                 ? this._chartRef.current?.timeScale().logicalToCoordinate(this._drawing.p2.logical as any)
                 : this._chartRef.current?.timeScale().timeToCoordinate(this._drawing.p2.time as any);
-            if (x1 == null || x2 == null) return;
-            const p1 = this._chartRef.current?.timeScale().coordinateToLogical(x1);
-            const p2 = this._chartRef.current?.timeScale().coordinateToLogical(x2);
-            if (
-                p1 == null ||
-                p2 == null
-            ) return;
-            const n = p2 - p1;
+            const y1 = this._seriesRef.current?.priceToCoordinate(this._drawing.p1.price);
+            const y2 = this._seriesRef.current?.priceToCoordinate(this._drawing.p2.price);
+            if (x1 == null || x2 == null || y1 == null || y2 == null) return;
+            const x1Px = Math.round(x1 * horizontalPixelRatio);
+            const x2Px = Math.round(x2 * horizontalPixelRatio);
+            const y1Px = Math.round(y1 * verticalPixelRatio);
+            const y2Px = Math.round(y2 * verticalPixelRatio);
+            const baseRadius = Math.sqrt((x2Px - x1Px) ** 2 + (y2Px - y1Px) ** 2);
             context.strokeStyle = this._drawing.color;
             context.lineWidth = (this._isSelected ? this._drawing.lineWidth + 1 : this._drawing.lineWidth) * verticalPixelRatio;
             context.fillStyle = this._drawing.color;
             context.font = `${11 * verticalPixelRatio}px monospace`;
             context.setLineDash(this._isSelected ? [5, 3] : lineDashForStyle(this._drawing.lineStyle));
             for (const l of this._drawing.levels) {
-                const targetLogical = p1 + l * n
-                const x = this._chartRef.current?.timeScale().logicalToCoordinate(targetLogical);
-                if (x == null) continue;
-                const xPx = Math.round(x * horizontalPixelRatio);
                 context.beginPath();
-                context.moveTo(xPx, 0);
-                context.lineTo(xPx, context.canvas.height);
+                context.arc(x1Px, y1Px, l * baseRadius, 0, Math.PI * 2);
                 context.stroke();
-                context.fillText(String(l), xPx + 3, 14 * verticalPixelRatio);
-
+                context.fillText(String(l), x1Px + l * baseRadius + 4, y1Px);
             }
         })
     }
 }
 
-class FibTimeZonePaneView implements IPanePrimitivePaneView {
-    private _drawing: FibTimeZoneDrawing;
+class FibCirclesPaneView implements IPanePrimitivePaneView {
+    private _drawing: FibCirclesDrawing;
+    private _seriesRef: React.RefObject<any>;
     private _chartRef: React.RefObject<any>;
     private _isSelected: boolean;
 
-    constructor(drawing: FibTimeZoneDrawing, chartRef: React.RefObject<any>, isSelected: boolean) {
+    constructor(drawing: FibCirclesDrawing, seriesRef: React.RefObject<any>, chartRef: React.RefObject<any>, isSelected: boolean) {
         this._drawing = drawing;
+        this._seriesRef = seriesRef;
         this._chartRef = chartRef;
         this._isSelected = isSelected;
     }
 
     renderer(): IPrimitivePaneRenderer {
-        return new FibTimeZoneRenderer(this._drawing, this._chartRef, this._isSelected);
+        return new FibCirclesRenderer(this._drawing, this._seriesRef, this._chartRef, this._isSelected);
     }
 }
 
-export class FibTimeZonePrimitive implements IPanePrimitive {
-    private _drawing: FibTimeZoneDrawing;
+export class FibCirclesPrimitive implements IPanePrimitive {
+    private _drawing: FibCirclesDrawing;
+    private _seriesRef: React.RefObject<any>;
     private _chartRef: React.RefObject<any>;
     private _isSelected: boolean;
     private _requestUpdate?: () => void;
 
-    constructor(drawing: FibTimeZoneDrawing, chartRef: React.RefObject<any>, isSelected: boolean) {
+    constructor(drawing: FibCirclesDrawing, seriesRef: React.RefObject<any>, chartRef: React.RefObject<any>, isSelected: boolean) {
         this._drawing = drawing;
+        this._seriesRef = seriesRef;
         this._chartRef = chartRef;
         this._isSelected = isSelected;
     }
@@ -89,10 +89,10 @@ export class FibTimeZonePrimitive implements IPanePrimitive {
     }
 
     paneViews() {
-        return [new FibTimeZonePaneView(this._drawing, this._chartRef, this._isSelected)]
+        return [new FibCirclesPaneView(this._drawing, this._seriesRef, this._chartRef, this._isSelected)]
     }
 
-    update(drawing: FibTimeZoneDrawing, isSelected: boolean) {
+    update(drawing: FibCirclesDrawing, isSelected: boolean) {
         this._drawing = drawing;
         this._isSelected = isSelected;
         this._requestUpdate?.();

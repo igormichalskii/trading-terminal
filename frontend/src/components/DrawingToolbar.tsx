@@ -47,6 +47,17 @@ const ICONS: Record<string, React.ReactNode> = {
             <line x1="9" y1="14" x2="16" y2="14" stroke="currentColor" strokeWidth="1" />
         </svg>
     ),
+    trend_based_fib_time: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <line x1="2" y1="9" x2="8" y2="3" stroke="currentColor" strokeWidth="1.5" />
+            <circle cx="2" cy="9" r="1.5" fill="currentColor" />
+            <circle cx="8" cy="3" r="1.5" fill="currentColor" />
+            <circle cx="8" cy="9" r="1.5" fill="currentColor" />
+            <line x1="8" y1="2" x2="8" y2="16" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="11" y1="2" x2="11" y2="16" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="15" y1="2" x2="15" y2="16" stroke="currentColor" strokeWidth="1.2" />
+        </svg>
+    ),
     fib_time_zone: (
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <line x1="3" y1="2" x2="3" y2="16" stroke="currentColor" strokeWidth="1.2" />
@@ -153,6 +164,52 @@ const ICONS: Record<string, React.ReactNode> = {
             <line x1="2" y1="10" x2="16" y2="15" stroke="currentColor" strokeWidth="1" strokeDasharray="2,2" />
         </svg>
     ),
+    pitchfan: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <circle cx="3" cy="9" r="1.5" fill="currentColor" />
+            <circle cx="9" cy="4" r="1.5" fill="currentColor" />
+            <circle cx="9" cy="14" r="1.5" fill="currentColor" />
+            <line x1="9" y1="4" x2="9" y2="14" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" />
+            <line x1="3" y1="9" x2="16" y2="2" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="3" y1="9" x2="16" y2="7" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="3" y1="9" x2="16" y2="11" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="3" y1="9" x2="16" y2="16" stroke="currentColor" strokeWidth="1.2" />
+        </svg>
+    ),
+    fib_circles: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <circle cx="9" cy="9" r="2" stroke="currentColor" strokeWidth="1.2" />
+            <circle cx="9" cy="9" r="4.5" stroke="currentColor" strokeWidth="1.2" />
+            <circle cx="9" cy="9" r="7" stroke="currentColor" strokeWidth="1.2" />
+            <circle cx="9" cy="9" r="1.5" fill="currentColor" />
+            <line x1="9" y1="9" x2="16" y2="9" stroke="currentColor" strokeWidth="1" strokeOpacity="0.4" strokeDasharray="2 2" />
+        </svg>
+    ),
+    fib_speed_resistance_arcs: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <circle cx="2" cy="16" r="1.5" fill="currentColor" />
+            <path d="M 2 10 A 6 6 0 0 1 8 16" stroke="currentColor" strokeWidth="1.2" fill="none" />
+            <path d="M 2 5 A 11 11 0 0 1 13 16" stroke="currentColor" strokeWidth="1.2" fill="none" />
+            <path d="M 2 1 A 15 15 0 0 1 17 16" stroke="currentColor" strokeWidth="1.2" fill="none" />
+        </svg>
+    ),
+    fib_wedge: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <circle cx="2" cy="16" r="1.5" fill="currentColor" />
+            <path d="M 2 10 A 6 6 0 0 1 8 16" stroke="currentColor" strokeWidth="1.2" fill="none" />
+            <path d="M 2 5 A 11 11 0 0 1 13 16" stroke="currentColor" strokeWidth="1.2" fill="none" />
+            <path d="M 2 1 A 15 15 0 0 1 17 16" stroke="currentColor" strokeWidth="1.2" fill="none" />
+            <line x1="2" y1="16" x2="17" y2="16" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="2" y1="16" x2="13" y2="4" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="2" y1="16" x2="17" y2="9" stroke="currentColor" strokeWidth="1.2" />
+        </svg>
+    ),
+    fib_spiral: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M 9 9 m 3 0 a 3 3 0 1 0 -3 3 a 6 6 0 1 0 6 -6 a 9 9 0 1 0 -9 9" stroke="currentColor" strokeWidth="1.2" fill="none" />
+            <circle cx="9" cy="9" r="1.5" fill="currentColor" />
+        </svg>
+    ),
     pitchfork: (
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <circle cx="3" cy="9" r="1.5" fill="currentColor" />
@@ -234,7 +291,13 @@ const GROUPS = [
             "fib_time_zone",
             "trend_based_fib_extension",
             "fib_channel",
-            "fib_speed_resistance_fan"
+            "fib_speed_resistance_fan",
+            "trend_based_fib_time",
+            "pitchfan",
+            "fib_circles",
+            "fib_speed_resistance_arcs",
+            "fib_wedge",
+            "fib_spiral"
         ] as DrawingTool[],
     },
     {

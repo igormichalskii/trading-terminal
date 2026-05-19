@@ -23,6 +23,12 @@ import { FibTimeZonePrimitive } from "../lib/primitives/FibTimeZonePrimitive";
 import { TrendBasedFibExtensionPrimitive } from "../lib/primitives/TrendBasedFibExtensionPrimitive";
 import { FibChannelPrimitive } from "../lib/primitives/FibChannelPrimitive";
 import { FibSpeedResistanceFanPrimitive } from "../lib/primitives/FibSpeedResistanceFanPrimitive";
+import { TrendBasedFibTimePrimitive } from "../lib/primitives/TrendBasedFibTimePrimitive";
+import { PitchfanPrimitive } from "../lib/primitives/PitchfanPrimitive";
+import { FibCirclesPrimitive } from "../lib/primitives/FibCirclesPrimitive";
+import { FibSpeedResistanceArcsPrimitive } from "../lib/primitives/FibSpeedResistanceArcsPrimitive";
+import { FibWedgePrimitive } from "../lib/primitives/FibWedgePrimitive";
+import { FibSpiralPrimitive } from "../lib/primitives/FibSpiralPrimitive";
 
 interface Candle {
     time: string | number;
@@ -160,6 +166,12 @@ function createPrimitive(drawing: any, seriesRef: React.RefObject<any>, chartRef
         case "trend_based_fib_extension": return new TrendBasedFibExtensionPrimitive(drawing, seriesRef, chartRef, false);
         case "fib_channel": return new FibChannelPrimitive(drawing, seriesRef, chartRef, false);
         case "fib_speed_resistance_fan": return new FibSpeedResistanceFanPrimitive(drawing, seriesRef, chartRef, false);
+        case "trend_based_fib_time": return new TrendBasedFibTimePrimitive(drawing, chartRef, false);
+        case "pitchfan": return new PitchfanPrimitive(drawing, seriesRef, chartRef, false);
+        case "fib_circles": return new FibCirclesPrimitive(drawing, seriesRef, chartRef, false);
+        case "fib_speed_resistance_arcs": return new FibSpeedResistanceArcsPrimitive(drawing, seriesRef, chartRef, false);
+        case "fib_wedge": return new FibWedgePrimitive(drawing, seriesRef, chartRef, false);
+        case "fib_spiral": return new FibSpiralPrimitive(drawing, seriesRef, chartRef, false);
     }
 }
 
@@ -194,12 +206,12 @@ export default function PriceChart({
     onStatsChange, onCandlesChange, onHoverChange, onSelectDrawing, onToolChange, activeTool, addDrawing, removeDrawing,
 }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const primitiveMapRef = useRef<Map<string, HorizontalLinePrimitive | TrendLinePrimitive | RectanglePrimitive | FibRetracementPrimitive | HorizontalRayPrimitive | VerticalLinePrimitive | CrossLinePrimitive | RayPrimitive | ExtendedLinePrimitive | InfoLinePrimitive | TrendAnglePrimitive | ParallelChannelPrimitive | DisjointChannelPrimitive | FlatTopBottomPrimitive | RegressionTrendPrimitive | PitchforkPrimitive | FibTimeZonePrimitive | TrendBasedFibExtensionPrimitive | FibChannelPrimitive | FibSpeedResistanceFanPrimitive>>(new Map());
+    const primitiveMapRef = useRef<Map<string, HorizontalLinePrimitive | TrendLinePrimitive | RectanglePrimitive | FibRetracementPrimitive | HorizontalRayPrimitive | VerticalLinePrimitive | CrossLinePrimitive | RayPrimitive | ExtendedLinePrimitive | InfoLinePrimitive | TrendAnglePrimitive | ParallelChannelPrimitive | DisjointChannelPrimitive | FlatTopBottomPrimitive | RegressionTrendPrimitive | PitchforkPrimitive | FibTimeZonePrimitive | TrendBasedFibExtensionPrimitive | FibChannelPrimitive | FibSpeedResistanceFanPrimitive | TrendBasedFibTimePrimitive | PitchfanPrimitive | FibCirclesPrimitive | FibSpeedResistanceArcsPrimitive | FibWedgePrimitive | FibSpiralPrimitive>>(new Map());
     const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
     const seriesRef = useRef<any>(null);
     const overlaySeriesRef = useRef<any[]>([]);
     const inProgressRef = useRef<DrawingPoint[]>([]);
-    const previewPrimitiveRef = useRef<HorizontalLinePrimitive | TrendLinePrimitive | RectanglePrimitive | FibRetracementPrimitive | HorizontalRayPrimitive | VerticalLinePrimitive | CrossLinePrimitive | RayPrimitive | ExtendedLinePrimitive | InfoLinePrimitive | TrendAnglePrimitive | ParallelChannelPrimitive | DisjointChannelPrimitive | FlatTopBottomPrimitive | RegressionTrendPrimitive | PitchforkPrimitive | FibTimeZonePrimitive | TrendBasedFibExtensionPrimitive | FibChannelPrimitive | FibSpeedResistanceFanPrimitive | null>(null);
+    const previewPrimitiveRef = useRef<HorizontalLinePrimitive | TrendLinePrimitive | RectanglePrimitive | FibRetracementPrimitive | HorizontalRayPrimitive | VerticalLinePrimitive | CrossLinePrimitive | RayPrimitive | ExtendedLinePrimitive | InfoLinePrimitive | TrendAnglePrimitive | ParallelChannelPrimitive | DisjointChannelPrimitive | FlatTopBottomPrimitive | RegressionTrendPrimitive | PitchforkPrimitive | FibTimeZonePrimitive | TrendBasedFibExtensionPrimitive | FibChannelPrimitive | FibSpeedResistanceFanPrimitive | TrendBasedFibTimePrimitive | PitchfanPrimitive | FibCirclesPrimitive | FibSpeedResistanceArcsPrimitive | FibWedgePrimitive | FibSpiralPrimitive | null>(null);
     const previewTypeRef = useRef<string | null>(null);
 
     // Pagination refs
@@ -544,7 +556,7 @@ export default function PriceChart({
             }
             return;
         }
-        const THREE_CLICK_TOOLS = ["parallel_channel", "disjoint_channel", "flat_top_bottom", "pitchfork", "schiff_pitchfork", "modified_schiff_pitchfork", "inside_pitchfork", "trend_based_fib_extension", "fib_channel"];
+        const THREE_CLICK_TOOLS = ["parallel_channel", "disjoint_channel", "flat_top_bottom", "pitchfork", "schiff_pitchfork", "modified_schiff_pitchfork", "inside_pitchfork", "trend_based_fib_extension", "fib_channel", "trend_based_fib_time", "pitchfan"];
         const rect = containerRef.current!.getBoundingClientRect();
         const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
         if (!point) return;
@@ -909,6 +921,96 @@ export default function PriceChart({
                             previewPrimitiveRef.current = null;
                             previewTypeRef.current = null;
                             addDrawing({ id: generateId(), type: "fib_speed_resistance_fan", p1, p2: point, color: COLOR_PALETTE[0], lineWidth: 1, lineStyle: "solid", label: "", levels: [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1] });
+                            onToolChange(null);
+                        }
+                    } else if (activeTool === "trend_based_fib_time") {
+                        const rect = containerRef.current!.getBoundingClientRect();
+                        const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+                        if (!point) return;
+                        if (inProgressRef.current.length < 2) {
+                            inProgressRef.current = [...inProgressRef.current, point];
+                        } else {
+                            const [p1, p2] = inProgressRef.current;
+                            inProgressRef.current = [];
+                            seriesRef.current?.detachPrimitive(previewPrimitiveRef.current);
+                            previewPrimitiveRef.current = null;
+                            previewTypeRef.current = null;
+                            addDrawing({ id: generateId(), type: "trend_based_fib_time", p1, p2, p3: point, color: COLOR_PALETTE[0], lineWidth: 1, lineStyle: "solid", label: "", levels: [1, 2, 3, 5, 8, 13, 21, 34, 55, 89] });
+                            onToolChange(null);
+                        }
+                    } else if (activeTool === "pitchfan") {
+                        const rect = containerRef.current!.getBoundingClientRect();
+                        const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+                        if (!point) return;
+                        if (inProgressRef.current.length < 2) {
+                            inProgressRef.current = [...inProgressRef.current, point];
+                        } else {
+                            const [p1, p2] = inProgressRef.current;
+                            inProgressRef.current = [];
+                            seriesRef.current?.detachPrimitive(previewPrimitiveRef.current);
+                            previewPrimitiveRef.current = null;
+                            previewTypeRef.current = null;
+                            addDrawing({ id: generateId(), type: "pitchfan", p1, p2, p3: point, color: COLOR_PALETTE[1], lineWidth: 1, lineStyle: "solid", label: "", levels: [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1] });
+                            onToolChange(null);
+                        }
+                    } else if (activeTool === "fib_circles") {
+                        const rect = containerRef.current!.getBoundingClientRect();
+                        const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+                        if (!point) return;
+                        if (inProgressRef.current.length === 0) {
+                            inProgressRef.current = [point]
+                        } else {
+                            const p1 = inProgressRef.current[0];
+                            inProgressRef.current = [];
+                            seriesRef.current?.detachPrimitive(previewPrimitiveRef.current);
+                            previewPrimitiveRef.current = null;
+                            previewTypeRef.current = null;
+                            addDrawing({ id: generateId(), type: "fib_circles", p1, p2: point, color: COLOR_PALETTE[0], lineWidth: 1, lineStyle: "solid", label: "", levels: [0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.618, 2.618] });
+                            onToolChange(null);
+                        }
+                    } else if (activeTool === "fib_speed_resistance_arcs") {
+                        const rect = containerRef.current!.getBoundingClientRect();
+                        const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+                        if (!point) return;
+                        if (inProgressRef.current.length === 0) {
+                            inProgressRef.current = [point];
+                        } else {
+                            const p1 = inProgressRef.current[0];
+                            inProgressRef.current = [];
+                            seriesRef.current?.detachPrimitive(previewPrimitiveRef.current);
+                            previewPrimitiveRef.current = null;
+                            previewTypeRef.current = null;
+                            addDrawing({ id: generateId(), type: "fib_speed_resistance_arcs", p1, p2: point, color: COLOR_PALETTE[0], lineWidth: 1, lineStyle: "solid", label: "", levels: [0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.618, 2.618] });
+                            onToolChange(null);
+                        }
+                    } else if (activeTool === "fib_wedge") {
+                        const rect = containerRef.current!.getBoundingClientRect();
+                        const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+                        if (!point) return;
+                        if (inProgressRef.current.length === 0) {
+                            inProgressRef.current = [point];
+                        } else {
+                            const p1 = inProgressRef.current[0];
+                            inProgressRef.current = [];
+                            seriesRef.current?.detachPrimitive(previewPrimitiveRef.current);
+                            previewPrimitiveRef.current = null;
+                            previewTypeRef.current = null;
+                            addDrawing({ id: generateId(), type: "fib_wedge", p1, p2: point, color: COLOR_PALETTE[0], lineWidth: 1, lineStyle: "solid", label: "", levels: [0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.618, 2.618] });
+                            onToolChange(null);
+                        }
+                    } else if (activeTool === "fib_spiral") {
+                        const rect = containerRef.current!.getBoundingClientRect();
+                        const point = toDrawingPoint(e.clientX - rect.left, e.clientY - rect.top, chartRef.current!, seriesRef);
+                        if (!point) return;
+                        if (inProgressRef.current.length === 0) {
+                            inProgressRef.current = [point];
+                        } else {
+                            const p1 = inProgressRef.current[0];
+                            inProgressRef.current = [];
+                            seriesRef.current?.detachPrimitive(previewPrimitiveRef.current);
+                            previewPrimitiveRef.current = null;
+                            previewTypeRef.current = null;
+                            addDrawing({ id: generateId(), type: "fib_spiral", p1, p2: point, color: COLOR_PALETTE[0], lineWidth: 1, lineStyle: "solid", label: "" });
                             onToolChange(null);
                         }
                     }
@@ -1464,6 +1566,175 @@ export default function PriceChart({
                                     if (t < 0) continue;
                                     const dist = Math.abs(dx * (y1 - cy) - dy * (x1 - cx)) / Math.sqrt(dx ** 2 + dy ** 2);
                                     if (dist < 5) { found = d.id; break; }
+                                }
+                                if (found) break;
+                            }
+                        }
+
+                        if (!found) {
+                            const cx = e.clientX - rect.left;
+                            for (const d of drawings.filter(d => d.type === "trend_based_fib_time")) {
+                                const x1 = d.p1.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p1.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
+                                const x2 = d.p2.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p2.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p2.time as any);
+                                const x3 = d.p3.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p3.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p3.time as any);
+                                if (x1 == null || x2 == null || x3 == null) continue;
+                                const p1 = chartRef.current?.timeScale().coordinateToLogical(x1);
+                                const p2 = chartRef.current?.timeScale().coordinateToLogical(x2);
+                                const p3 = chartRef.current?.timeScale().coordinateToLogical(x3);
+                                if (p1 == null || p2 == null || p3 == null) continue;
+                                const n = p2 - p1;
+                                for (const l of d.levels) {
+                                    const logical = p3 + l * n;
+                                    const lineX = chartRef.current?.timeScale().logicalToCoordinate(logical as any);
+                                    if (lineX == null) continue;
+                                    if (Math.abs(cx - lineX) < 5) { found = d.id; break; }
+                                }
+                                if (found) break;
+                            }
+                        }
+
+                        if (!found) {
+                            const cx = e.clientX - rect.left;
+                            const cy = e.clientY - rect.top;
+                            for (const d of drawings.filter(d => d.type === "pitchfan")) {
+                                const x1 = d.p1.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p1.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
+                                const x2 = d.p2.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p2.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p2.time as any);
+                                const x3 = d.p3.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p3.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p3.time as any);
+                                const y1 = seriesRef.current?.priceToCoordinate(d.p1.price);
+                                const y2 = seriesRef.current?.priceToCoordinate(d.p2.price);
+                                const y3 = seriesRef.current?.priceToCoordinate(d.p3.price);
+                                if (x1 == null || x2 == null || x3 == null || y1 == null || y2 == null || y3 == null) continue;
+                                const mx = (x2 + x3) / 2;
+                                for (const l of d.levels) {
+                                    const targetY = y2 + l * (y3 - y2);
+                                    const dx = mx - x1;
+                                    const dy = targetY - y1;
+                                    const len2 = dx ** 2 + dy ** 2;
+                                    const t = ((cx - x1) * dx + (cy - y1) * dy) / len2;
+                                    if (t < 0) continue;
+                                    const dist = Math.abs(dx * (y1 - cy) - dy * (x1 - cx)) / Math.sqrt(len2);
+                                    if (dist < 5) { found = d.id; break; }
+                                }
+                                if (found) break;
+                            }
+                        }
+
+                        if (!found) {
+                            const cx = e.clientX - rect.left;
+                            const cy = e.clientY - rect.top;
+                            for (const d of drawings.filter(d => d.type === "fib_circles")) {
+                                const x1 = d.p1.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p1.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
+                                const x2 = d.p2.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p2.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p2.time as any);
+                                const y1 = seriesRef.current?.priceToCoordinate(d.p1.price);
+                                const y2 = seriesRef.current?.priceToCoordinate(d.p2.price);
+                                if (x1 == null || x2 == null || y1 == null || y2 == null) continue;
+                                const baseRadius = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+                                const radius = Math.sqrt((cx - x1) ** 2 + (cy - y1) ** 2);
+                                for (const l of d.levels) {
+                                    if (Math.abs(radius - l * baseRadius) < 5) { found = d.id; break; }
+                                }
+                                if (found) break;
+                            }
+                        }
+
+                        if (!found) {
+                            const cx = e.clientX - rect.left;
+                            const cy = e.clientY - rect.top;
+                            for (const d of drawings.filter(d => d.type === "fib_speed_resistance_arcs")) {
+                                const x1 = d.p1.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p1.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
+                                const x2 = d.p2.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p2.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p2.time as any);
+                                const y1 = seriesRef.current?.priceToCoordinate(d.p1.price);
+                                const y2 = seriesRef.current?.priceToCoordinate(d.p2.price);
+                                if (x1 == null || x2 == null || y1 == null || y2 == null) continue;
+                                const baseRadius = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+                                const radius = Math.sqrt((cx - x1) ** 2 + (cy - y1) ** 2);
+                                for (const l of d.levels) {
+                                    if (Math.abs(radius - l * baseRadius) < 5) { found = d.id; break; }
+                                }
+                                if (found) break;
+                            }
+                        }
+
+                        if (!found) {
+                            const cx = e.clientX - rect.left;
+                            const cy = e.clientY - rect.top;
+                            for (const d of drawings.filter(d => d.type === "fib_wedge")) {
+                                const x1 = d.p1.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p1.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
+                                const x2 = d.p2.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p2.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p2.time as any);
+                                const y1 = seriesRef.current?.priceToCoordinate(d.p1.price);
+                                const y2 = seriesRef.current?.priceToCoordinate(d.p2.price);
+                                if (x1 == null || x2 == null || y1 == null || y2 == null) continue;
+                                const baseRadius = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+                                const radius = Math.sqrt((cx - x1) ** 2 + (cy - y1) ** 2);
+                                for (const l of d.levels) {
+                                    if (Math.abs(radius - l * baseRadius) < 5) { found = d.id; break; }
+                                }
+                                if (found) break;
+                                const dx = x2 - x1;
+                                const dy = y2 - y1;
+                                let startAngle = 0, endAngle = 0;
+                                if (dx >= 0 && dy >= 0) { startAngle = 0; endAngle = Math.PI / 2; }
+                                if (dx >= 0 && dy < 0) { startAngle = -Math.PI / 2; endAngle = 0; }
+                                if (dx < 0 && dy >= 0) { startAngle = Math.PI / 2; endAngle = Math.PI; }
+                                if (dx < 0 && dy < 0) { startAngle = Math.PI; endAngle = 3 * Math.PI / 2; }
+                                const outerRadius = d.levels[d.levels.length - 1] * baseRadius;
+                                const fanLevels = [0, ...d.levels.filter(l => l > 0 && l <= 1), 1];
+                                for (const l of fanLevels) {
+                                    const a = startAngle + l * (endAngle - startAngle);
+                                    const cosA = Math.cos(a), sinA = Math.sin(a);
+                                    const t = (cx - x1) * cosA + (cy - y1) * sinA;
+                                    const perp = Math.abs((cx - x1) * sinA - (cy - y1) * cosA);
+                                    if (t >= 0 && t <= outerRadius && perp < 5) { found = d.id; break; }
+                                }
+                                if (found) break;
+                            }
+                        }
+
+                        if (!found) {
+                            const cx = e.clientX - rect.left;
+                            const cy = e.clientY - rect.top;
+                            for (const d of drawings.filter(d => d.type === "fib_spiral")) {
+                                const x1 = d.p1.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p1.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p1.time as any);
+                                const x2 = d.p2.logical != null
+                                    ? chartRef.current?.timeScale().logicalToCoordinate(d.p2.logical as any)
+                                    : chartRef.current?.timeScale().timeToCoordinate(d.p2.time as any);
+                                const y1 = seriesRef.current?.priceToCoordinate(d.p1.price);
+                                const y2 = seriesRef.current?.priceToCoordinate(d.p2.price);
+                                if (x1 == null || x2 == null || y1 == null || y2 == null) continue;
+                                const r_click = Math.sqrt((cx - x1) ** 2 + (cy - y1) ** 2);
+                                const startAngle = Math.atan2(y2 - y1, x2 - x1);
+                                const baseRadius = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+                                const theta_click = Math.atan2(cy - y1, cx - x1) - startAngle;
+                                const b = Math.log(1.618) / (Math.PI / 2);
+                                for (let n = -5; n <= 5; n++) {
+                                    const r_n = baseRadius * Math.exp(b * (theta_click + 2 * Math.PI * n));
+                                    if (Math.abs(r_click - r_n) < 10) { found = d.id; break; }
                                 }
                                 if (found) break;
                             }
